@@ -207,9 +207,11 @@
       border: 2px solid #E2E8F0;
     }
 
-    .daily-task-svg {
-      width: 80px;
-      height: 80px;
+    .daily-task-img {
+      width: 130px;
+      height: 130px;
+      object-fit: contain;
+      border-radius: 12px;
     }
 
     .daily-task-name {
@@ -257,7 +259,13 @@
       color: #334155;
     }
 
-    .task-svg-small { width: 32px; height: 32px; flex-shrink: 0; }
+    .task-img-small { 
+      width: 40px; 
+      height: 40px; 
+      object-fit: contain; 
+      flex-shrink: 0; 
+      border-radius: 6px;
+    }
 
     .check-cell {
       background: var(--card-bg);
@@ -423,42 +431,43 @@
   <script>
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
     
+    // Tareas con las rutas de las imágenes independientes
     const tasks = [
       {
         id: 'read',
         name: 'Irakurri',
-        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><path d="M 8 16 Q 32 8 32 24 L 32 52 Q 32 36 8 40 Z" fill="#4A90E2"/><path d="M 56 16 Q 32 8 32 24 L 32 52 Q 32 36 56 40 Z" fill="#357ABD"/><path d="M 12 22 Q 24 16 28 22" stroke="#FFF" stroke-width="2" fill="none"/></svg>`
+        image: 'irakurri.png'
       },
       {
         id: 'homework',
         name: 'Eskolako lanak egin',
-        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><rect x="12" y="8" width="40" height="48" rx="4" fill="#F1C40F"/><rect x="18" y="14" width="28" height="36" rx="2" fill="#FFF"/><line x1="22" y1="22" x2="40" y2="22" stroke="#BDC3C7" stroke-width="3"/><line x1="22" y1="30" x2="36" y2="30" stroke="#BDC3C7" stroke-width="3"/><path d="M 36 44 L 46 34 L 50 38 L 40 48 Z" fill="#E67E22"/></svg>`
+        image: 'eskolako-lanak.png'
       },
       {
         id: 'piano',
         name: 'Pianoa jo',
-        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="32" rx="4" fill="#2C3E50"/><rect x="12" y="24" width="8" height="20" fill="#FFF"/><rect x="22" y="24" width="8" height="20" fill="#FFF"/><rect x="32" y="24" width="8" height="20" fill="#FFF"/><rect x="42" y="24" width="8" height="20" fill="#FFF"/><rect x="18" y="24" width="5" height="12" fill="#000"/><rect x="28" y="24" width="5" height="12" fill="#000"/><rect x="38" y="24" width="5" height="12" fill="#000"/></svg>`
+        image: 'pianoa.png'
       },
       {
         id: 'room',
         name: 'Gela jaso',
-        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><path d="M 12 40 L 52 40 L 48 56 L 16 56 Z" fill="#E74C3C"/><path d="M 20 28 L 32 16 L 44 28 Z" fill="#3498DB"/><circle cx="32" cy="34" r="5" fill="#F1C40F"/></svg>`
+        image: 'gela-jaso.png'
       },
       {
         id: 'set_table',
         name: 'Mahaia jarri',
-        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="3"/><line x1="8" y1="20" x2="8" y2="44" stroke="#7F8C8D" stroke-width="3"/><line x1="56" y1="20" x2="56" y2="44" stroke="#7F8C8D" stroke-width="3"/><ellipse cx="56" cy="20" rx="3" ry="5" fill="#7F8C8D"/></svg>`
+        image: 'mahaia-jarri.png'
       },
       {
         id: 'clear_table',
         name: 'Mahaia jaso',
-        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><circle cx="28" cy="36" r="16" fill="#BDC3C7"/><circle cx="36" cy="28" r="16" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="2"/><path d="M 42 16 Q 48 10 52 16 T 44 24" fill="#3498DB" opacity="0.6"/><circle cx="20" cy="20" r="4" fill="#3498DB" opacity="0.5"/></svg>`
+        image: 'mahaia-jaso.png'
       }
     ];
 
     let currentChild = '';
     let savedData = {};
-    let currentView = 'daily'; // 'daily' o 'weekly'
+    let currentView = 'daily';
 
     function getCurrentDayIndex() {
       const jsDay = new Date().getDay();
@@ -482,7 +491,6 @@
         const now = audioCtx.currentTime;
 
         if (type === 'done') {
-          // Éxito Alegre
           osc.type = 'sine';
           osc.frequency.setValueAtTime(523.25, now);
           osc.frequency.setValueAtTime(659.25, now + 0.08);
@@ -492,7 +500,6 @@
           osc.start(now);
           osc.stop(now + 0.35);
         } else if (type === 'fail') {
-          // Tono Grave (No realizado)
           osc.type = 'sawtooth';
           osc.frequency.setValueAtTime(220, now);
           osc.frequency.setValueAtTime(160, now + 0.12);
@@ -501,7 +508,6 @@
           osc.start(now);
           osc.stop(now + 0.25);
         } else {
-          // Pop neutro (Reset a sin marcar)
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(300, now);
           gain.gain.setValueAtTime(0.1, now);
@@ -567,7 +573,7 @@
 
       tasks.forEach(task => {
         const key = `${task.id}_${currentDayName}`;
-        const state = savedData[key] || 'none'; // 'none', 'done', 'fail'
+        const state = savedData[key] || 'none';
 
         let stateClass = '';
         if (state === 'done') stateClass = 'state-done';
@@ -575,7 +581,7 @@
 
         html += `
           <div class="daily-task-card">
-            <div class="daily-task-svg">${task.svg}</div>
+            <img class="daily-task-img" src="${task.image}" alt="${task.name}">
             <div class="daily-task-name">${task.name}</div>
             <div class="checkbox ${stateClass}" onclick="cycleCheck('${key}', this)"></div>
           </div>
@@ -607,7 +613,7 @@
       tasks.forEach(task => {
         const taskCell = document.createElement('div');
         taskCell.className = 'task-cell';
-        taskCell.innerHTML = `<div class="task-svg-small">${task.svg}</div> <span>${task.name}</span>`;
+        taskCell.innerHTML = `<img class="task-img-small" src="${task.image}" alt="${task.name}"> <span>${task.name}</span>`;
         container.appendChild(taskCell);
 
         days.forEach(day => {
@@ -631,7 +637,6 @@
       });
     }
 
-    // CICLO DE ESTADOS: none -> done -> fail -> none
     function cycleCheck(key, element) {
       const currentState = savedData[key] || 'none';
       let nextState = 'none';
@@ -656,7 +661,6 @@
       updateProgressBar();
     }
 
-    // ACTUALIZA LA BARRA DE PROGRESO DE HOY
     function updateProgressBar() {
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
