@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendario de Tareas Semanales</title>
+  <style>
+    :root {
+      --primary: #4A90E2;
+      --bg: #F4F7F6;
+      --card-bg: #FFFFFF;
+      --text: #333333;
+      --accent-luke: #FF6B6B;
+      --accent-marty: #4ECDC4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 15px; }
+
+    /* Pantalla de Selección */
+    #profile-selection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 90vh;
+      gap: 30px;
+    }
+    .profile-buttons { display: flex; gap: 40px; }
+    .btn-profile {
+      background: var(--card-bg);
+      border: 4px solid var(--primary);
+      border-radius: 20px;
+      padding: 30px 40px;
+      font-size: 1.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+      transition: transform 0.2s, background-color 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+    .btn-profile:hover { transform: scale(1.05); }
+    .avatar { font-size: 4rem; }
+
+    /* Calendario */
+    #calendar-screen { display: none; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .btn-switch {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 220px repeat(7, 1fr);
+      gap: 8px;
+      background: #E0E0E0;
+      border-radius: 12px;
+      padding: 8px;
+      overflow-x: auto;
+    }
+
+    .header-cell, .task-cell, .check-cell {
+      background: var(--card-bg);
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .header-cell {
+      font-weight: bold;
+      background: var(--primary);
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    .task-cell {
+      justify-content: flex-start;
+      gap: 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .task-icon { font-size: 1.8rem; }
+
+    /* Checkbox táctil */
+    .checkbox {
+      width: 45px;
+      height: 45px;
+      border: 3px solid #ccc;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .checkbox.checked {
+      background-color: #4CAF50;
+      border-color: #4CAF50;
+      color: white;
+    }
+    .checkbox.checked::after { content: '✓'; }
+
+    @media (max-width: 768px) {
+      body { padding: 5px; }
+      .grid-container { grid-template-columns: 140px repeat(7, 1fr); }
+      .task-cell { font-size: 0.8rem; flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA 1: SELECCIÓN DE NIÑO -->
+  <div id="profile-selection">
+    <h1>¿Quién va a completar sus tareas hoy?</h1>
+    <div class="profile-buttons">
+      <button class="btn-profile" onclick="selectProfile('Luke')">
+        <span class="avatar">🚀</span>
+        <span>LUKE</span>
+      </button>
+      <button class="btn-profile" onclick="selectProfile('Marty')">
+        <span class="avatar">🎨</span>
+        <span>MARTY</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: CALENDARIO INTERACTIVO -->
+  <div id="calendar-screen">
+    <header>
+      <h1 id="calendar-title">Asteko zereginen egutegia</h1>
+      <button class="btn-switch" onclick="showProfiles()">← Cambiar de Niño</button>
+    </header>
+
+    <div class="grid-container" id="grid"></div>
+  </div>
+
+  <script>
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const tasks = [
+      { id: 'read', name: 'Leer', icon: '📚' },
+      { id: 'homework', name: 'Deberes del colegio', icon: '✏️' },
+      { id: 'piano', name: 'Tocar el piano', icon: '🎹' },
+      { id: 'room', name: 'Recoger la habitación', icon: '🧹' },
+      { id: 'set_table', name: 'Poner la mesa', icon: '🍽️' },
+      { id: 'clear_table', name: 'Quitar la mesa', icon: '🧽' }
+    ];
+
+    let currentChild = '';
+    let savedData = {};
+
+    function selectProfile(name) {
+      currentChild = name;
+      document.getElementById('profile-selection').style.display = 'none';
+      document.getElementById('calendar-screen').style.display = 'block';
+      document.getElementById('calendar-title').innerText = `Tareas de ${name}`;
+      
+      // Cargar datos de localStorage
+      const stored = localStorage.getItem(`tasks_${currentChild}`);
+      savedData = stored ? JSON.parse(stored) : {};
+
+      renderGrid();
+    }
+
+    function showProfiles() {
+      document.getElementById('profile-selection').style.display = 'flex';
+      document.getElementById('calendar-screen').style.display = 'none';
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+
+      // Fila 0: Esquina vacía + Días de la semana
+      const emptyHeader = document.createElement('div');
+      emptyHeader.className = 'header-cell';
+      emptyHeader.style.background = '#333';
+      emptyHeader.innerText = 'Tarea';
+      grid.appendChild(emptyHeader);
+
+      days.forEach(day => {
+        const dayCell = document.createElement('div');
+        dayCell.className = 'header-cell';
+        dayCell.innerText = day;
+        grid.appendChild(dayCell);
+      });
+
+      // Filas de Tareas
+      tasks.forEach(task => {
+        // Columna de la tarea
+        const taskCell = document.createElement('div');
+        taskCell.className = 'task-cell';
+        taskCell.innerHTML = `<span class="task-icon">${task.icon}</span> <span>${task.name}</span>`;
+        grid.appendChild(taskCell);
+
+        // Columnas de días (Checkboxes)
+        days.forEach(day => {
+          const checkCell = document.createElement('div');
+          checkCell.className = 'check-cell';
+
+          const key = `${task.id}_${day}`;
+          const isChecked = savedData[key] || false;
+
+          const box = document.createElement('div');
+          box.className = `checkbox ${isChecked ? 'checked' : ''}`;
+          box.onclick = () => toggleCheck(key, box);
+
+          checkCell.appendChild(box);
+          grid.appendChild(checkCell);
+        });
+      });
+    }
+
+    function toggleCheck(key, element) {
+      savedData[key] = !savedData[key];
+      if (savedData[key]) {
+        element.classList.add('checked');
+      } else {
+        element.classList.remove('checked');
+      }
+      // Guardar permanentemente en la memoria de la tablet
+      localStorage.setItem(`tasks_${currentChild}`, JSON.stringify(savedData));
+    }
+  </script>
+</body>
+</html>
