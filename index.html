@@ -23,7 +23,6 @@
       --text: #2C3E50;
       --luke-color: #FF6B6B;
       --marty-color: #4ECDC4;
-      --border-color: #E2E8F0;
     }
 
     * {
@@ -60,7 +59,6 @@
       color: #2C3E50;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 1px;
     }
 
     .profile-buttons {
@@ -112,11 +110,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 15px;
       background: var(--card-bg);
-      padding: 10px 20px;
+      padding: 12px 20px;
       border-radius: 16px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .title-container {
@@ -126,7 +126,7 @@
     }
 
     #calendar-title {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       color: #2C3E50;
       font-weight: 800;
     }
@@ -140,8 +140,13 @@
       text-transform: uppercase;
     }
 
-    .btn-switch {
-      background: #7F8C8D;
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-action {
+      background: var(--primary);
       color: white;
       border: none;
       padding: 10px 18px;
@@ -149,41 +154,94 @@
       font-size: 0.95rem;
       cursor: pointer;
       font-weight: 700;
-      transition: background 0.2s;
+      transition: background 0.2s, transform 0.1s;
     }
 
-    .btn-switch:hover { background: #6C7A89; }
+    .btn-action:hover { background: var(--primary-dark); }
+    .btn-action:active { transform: scale(0.97); }
+    .btn-secondary { background: #7F8C8D; }
+    .btn-secondary:hover { background: #6C7A89; }
 
-    /* PARRILLA DE TAREAS */
+    /* CONTENEDOR PRINCIPAL DE VISTA */
+    #view-container {
+      flex: 1;
+      width: 100%;
+    }
+
+    /* --- VISTA DIARIA (VERTICAL) --- */
+    .daily-view-list {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+      max-width: 500px;
+      margin: 0 auto;
+      padding-bottom: 40px;
+    }
+
+    .day-header-badge {
+      background: #334155;
+      color: white;
+      font-size: 1.3rem;
+      font-weight: 800;
+      padding: 10px 24px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .daily-task-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 25px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      border: 2px solid #E2E8F0;
+    }
+
+    .daily-task-svg {
+      width: 85px;
+      height: 85px;
+    }
+
+    .daily-task-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #334155;
+      text-align: center;
+    }
+
+    /* --- VISTA SEMANAL (PARRILLA) --- */
     .grid-container {
       display: grid;
-      grid-template-columns: 240px repeat(7, 1fr);
+      grid-template-columns: 220px repeat(7, 1fr);
       gap: 8px;
       background: #CBD5E1;
       border-radius: 16px;
       padding: 8px;
-      flex: 1;
+      overflow-x: auto;
     }
 
     .header-cell {
       background: var(--primary);
       color: white;
       font-weight: 700;
-      font-size: 1.05rem;
+      font-size: 1rem;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       text-align: center;
       padding: 8px;
-      text-transform: capitalize;
     }
 
-    .header-cell.task-header {
-      background: #334155;
-      justify-content: flex-start;
-      padding-left: 15px;
-    }
+    .header-cell.task-header { background: #334155; justify-content: flex-start; padding-left: 15px; }
 
     .task-cell {
       background: var(--card-bg);
@@ -191,17 +249,13 @@
       padding: 8px 12px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: #334155;
     }
 
-    .task-svg {
-      width: 36px;
-      height: 36px;
-      flex-shrink: 0;
-    }
+    .task-svg-small { width: 32px; height: 32px; flex-shrink: 0; }
 
     .check-cell {
       background: var(--card-bg);
@@ -213,10 +267,10 @@
 
     /* CASILLA DE VERIFICACIÓN (TOUCH FRIENDLY) */
     .checkbox {
-      width: 48px;
-      height: 48px;
-      border: 3px solid #CBD5E1;
-      border-radius: 12px;
+      width: 60px;
+      height: 60px;
+      border: 4px solid #CBD5E1;
+      border-radius: 16px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -225,37 +279,30 @@
       background: #F8FAFC;
     }
 
+    .grid-container .checkbox {
+      width: 44px;
+      height: 44px;
+      border-width: 3px;
+      border-radius: 10px;
+    }
+
     .checkbox:hover { border-color: #94A3B8; }
 
     .checkbox.checked {
       background-color: #10B981;
       border-color: #10B981;
-      transform: scale(1.08);
-      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+      transform: scale(1.06);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
     }
 
     .checkbox.checked::after {
       content: '✓';
       color: white;
-      font-size: 1.8rem;
+      font-size: 2.2rem;
       font-weight: 900;
     }
 
-    @media (max-width: 900px) {
-      .grid-container {
-        grid-template-columns: 160px repeat(7, 1fr);
-      }
-      .task-cell {
-        flex-direction: column;
-        justify-content: center;
-        text-align: center;
-        gap: 4px;
-        font-size: 0.8rem;
-        padding: 4px;
-      }
-      .task-svg { width: 28px; height: 28px; }
-      .checkbox { width: 38px; height: 38px; }
-    }
+    .grid-container .checkbox.checked::after { font-size: 1.6rem; }
   </style>
 </head>
 <body>
@@ -294,57 +341,65 @@
   <div id="calendar-screen">
     <header>
       <div class="title-container">
-        <h1 id="calendar-title">Asteko zereginen egutegia</h1>
+        <h1 id="calendar-title">Zereginak</h1>
         <span id="child-badge" class="badge-child"></span>
       </div>
-      <button class="btn-switch" onclick="showProfiles()">← Aldatu / Cambiar</button>
+      <div class="header-actions">
+        <button id="btn-toggle-view" class="btn-action" onclick="toggleView()">Aste osoa ikusi</button>
+        <button class="btn-action btn-secondary" onclick="showProfiles()">← Aldatu</button>
+      </div>
     </header>
 
-    <div class="grid-container" id="grid"></div>
+    <div id="view-container"></div>
   </div>
 
   <script>
-    // Días de la semana en euskera
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
     
-    // Tareas con sus SVGs embebidos
     const tasks = [
       {
         id: 'read',
         name: 'Irakurri',
-        svg: `<svg class="task-svg" viewBox="0 0 64 64"><path d="M 8 16 Q 32 8 32 24 L 32 52 Q 32 36 8 40 Z" fill="#4A90E2"/><path d="M 56 16 Q 32 8 32 24 L 32 52 Q 32 36 56 40 Z" fill="#357ABD"/><path d="M 12 22 Q 24 16 28 22" stroke="#FFF" stroke-width="2" fill="none"/></svg>`
+        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><path d="M 8 16 Q 32 8 32 24 L 32 52 Q 32 36 8 40 Z" fill="#4A90E2"/><path d="M 56 16 Q 32 8 32 24 L 32 52 Q 32 36 56 40 Z" fill="#357ABD"/><path d="M 12 22 Q 24 16 28 22" stroke="#FFF" stroke-width="2" fill="none"/></svg>`
       },
       {
         id: 'homework',
         name: 'Eskolako lanak egin',
-        svg: `<svg class="task-svg" viewBox="0 0 64 64"><rect x="12" y="8" width="40" height="48" rx="4" fill="#F1C40F"/><rect x="18" y="14" width="28" height="36" rx="2" fill="#FFF"/><line x1="22" y1="22" x2="40" y2="22" stroke="#BDC3C7" stroke-width="3"/><line x1="22" y1="30" x2="36" y2="30" stroke="#BDC3C7" stroke-width="3"/><path d="M 36 44 L 46 34 L 50 38 L 40 48 Z" fill="#E67E22"/></svg>`
+        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><rect x="12" y="8" width="40" height="48" rx="4" fill="#F1C40F"/><rect x="18" y="14" width="28" height="36" rx="2" fill="#FFF"/><line x1="22" y1="22" x2="40" y2="22" stroke="#BDC3C7" stroke-width="3"/><line x1="22" y1="30" x2="36" y2="30" stroke="#BDC3C7" stroke-width="3"/><path d="M 36 44 L 46 34 L 50 38 L 40 48 Z" fill="#E67E22"/></svg>`
       },
       {
         id: 'piano',
         name: 'Pianoa jo',
-        svg: `<svg class="task-svg" viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="32" rx="4" fill="#2C3E50"/><rect x="12" y="24" width="8" height="20" fill="#FFF"/><rect x="22" y="24" width="8" height="20" fill="#FFF"/><rect x="32" y="24" width="8" height="20" fill="#FFF"/><rect x="42" y="24" width="8" height="20" fill="#FFF"/><rect x="18" y="24" width="5" height="12" fill="#000"/><rect x="28" y="24" width="5" height="12" fill="#000"/><rect x="38" y="24" width="5" height="12" fill="#000"/></svg>`
+        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="32" rx="4" fill="#2C3E50"/><rect x="12" y="24" width="8" height="20" fill="#FFF"/><rect x="22" y="24" width="8" height="20" fill="#FFF"/><rect x="32" y="24" width="8" height="20" fill="#FFF"/><rect x="42" y="24" width="8" height="20" fill="#FFF"/><rect x="18" y="24" width="5" height="12" fill="#000"/><rect x="28" y="24" width="5" height="12" fill="#000"/><rect x="38" y="24" width="5" height="12" fill="#000"/></svg>`
       },
       {
         id: 'room',
         name: 'Gela jaso',
-        svg: `<svg class="task-svg" viewBox="0 0 64 64"><path d="M 12 40 L 52 40 L 48 56 L 16 56 Z" fill="#E74C3C"/><path d="M 20 28 L 32 16 L 44 28 Z" fill="#3498DB"/><circle cx="32" cy="34" r="5" fill="#F1C40F"/></svg>`
+        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><path d="M 12 40 L 52 40 L 48 56 L 16 56 Z" fill="#E74C3C"/><path d="M 20 28 L 32 16 L 44 28 Z" fill="#3498DB"/><circle cx="32" cy="34" r="5" fill="#F1C40F"/></svg>`
       },
       {
         id: 'set_table',
         name: 'Mahaia jarri',
-        svg: `<svg class="task-svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="3"/><line x1="8" y1="20" x2="8" y2="44" stroke="#7F8C8D" stroke-width="3"/><line x1="56" y1="20" x2="56" y2="44" stroke="#7F8C8D" stroke-width="3"/><ellipse cx="56" cy="20" rx="3" ry="5" fill="#7F8C8D"/></svg>`
+        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="3"/><line x1="8" y1="20" x2="8" y2="44" stroke="#7F8C8D" stroke-width="3"/><line x1="56" y1="20" x2="56" y2="44" stroke="#7F8C8D" stroke-width="3"/><ellipse cx="56" cy="20" rx="3" ry="5" fill="#7F8C8D"/></svg>`
       },
       {
         id: 'clear_table',
         name: 'Mahaia jaso',
-        svg: `<svg class="task-svg" viewBox="0 0 64 64"><circle cx="28" cy="36" r="16" fill="#BDC3C7"/><circle cx="36" cy="28" r="16" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="2"/><path d="M 42 16 Q 48 10 52 16 T 44 24" fill="#3498DB" opacity="0.6"/><circle cx="20" cy="20" r="4" fill="#3498DB" opacity="0.5"/></svg>`
+        svg: `<svg class="task-svg-content" viewBox="0 0 64 64"><circle cx="28" cy="36" r="16" fill="#BDC3C7"/><circle cx="36" cy="28" r="16" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="2"/><path d="M 42 16 Q 48 10 52 16 T 44 24" fill="#3498DB" opacity="0.6"/><circle cx="20" cy="20" r="4" fill="#3498DB" opacity="0.5"/></svg>`
       }
     ];
 
     let currentChild = '';
     let savedData = {};
+    let currentView = 'daily'; // 'daily' o 'weekly'
 
-    // Web Audio API para generación de sonido offline sintético
+    // Obtener el día actual de la semana (0 = Astelehena, 6 = Igandea)
+    function getCurrentDayIndex() {
+      const jsDay = new Date().getDay();
+      return (jsDay + 6) % 7;
+    }
+
+    // Generador de audio sin archivos externos
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
 
@@ -361,17 +416,15 @@
         const now = audioCtx.currentTime;
 
         if (type === 'check') {
-          // Sonido alegre ascendente (Éxito)
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(523.25, now); // C5
-          osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
-          osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.08);
+          osc.frequency.setValueAtTime(783.99, now + 0.16);
           gain.gain.setValueAtTime(0.2, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
           osc.start(now);
           osc.stop(now + 0.35);
         } else {
-          // Pop suave (Desmarcar)
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(350, now);
           osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
@@ -394,11 +447,11 @@
       badge.innerText = name;
       badge.style.backgroundColor = (name === 'Luke') ? 'var(--luke-color)' : 'var(--marty-color)';
 
-      // Cargar datos de localStorage
       const stored = localStorage.getItem(`tasks_${currentChild}`);
       savedData = stored ? JSON.parse(stored) : {};
 
-      renderGrid();
+      currentView = 'daily';
+      renderView();
     }
 
     function showProfiles() {
@@ -406,30 +459,73 @@
       document.getElementById('calendar-screen').style.display = 'none';
     }
 
-    function renderGrid() {
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
+    function toggleView() {
+      currentView = (currentView === 'daily') ? 'weekly' : 'daily';
+      renderView();
+    }
 
-      // Cabecera: Tarea
+    function renderView() {
+      const toggleBtn = document.getElementById('btn-toggle-view');
+      if (currentView === 'daily') {
+        toggleBtn.innerText = 'Aste osoa ikusi';
+        renderDailyView();
+      } else {
+        toggleBtn.innerText = 'Gaurko eguna ikusi';
+        renderWeeklyView();
+      }
+    }
+
+    // RENDER VISTA DIARIA (VERTICAL)
+    function renderDailyView() {
+      const container = document.getElementById('view-container');
+      container.className = '';
+      
+      const dayIndex = getCurrentDayIndex();
+      const currentDayName = days[dayIndex];
+
+      let html = `<div class="daily-view-list">
+        <div class="day-header-badge">Gaur: ${currentDayName}</div>`;
+
+      tasks.forEach(task => {
+        const key = `${task.id}_${currentDayName}`;
+        const isChecked = savedData[key] || false;
+
+        html += `
+          <div class="daily-task-card">
+            <div class="daily-task-svg">${task.svg}</div>
+            <div class="daily-task-name">${task.name}</div>
+            <div class="checkbox ${isChecked ? 'checked' : ''}" onclick="toggleCheck('${key}', this)"></div>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    // RENDER VISTA SEMANAL (PARRILLA)
+    function renderWeeklyView() {
+      const container = document.getElementById('view-container');
+      container.className = 'grid-container';
+      container.innerHTML = '';
+
       const emptyHeader = document.createElement('div');
       emptyHeader.className = 'header-cell task-header';
       emptyHeader.innerText = 'Zeregina';
-      grid.appendChild(emptyHeader);
+      container.appendChild(emptyHeader);
 
-      // Cabeceras: Días de la semana
       days.forEach(day => {
         const dayCell = document.createElement('div');
         dayCell.className = 'header-cell';
         dayCell.innerText = day;
-        grid.appendChild(dayCell);
+        container.appendChild(dayCell);
       });
 
-      // Filas de Tareas
       tasks.forEach(task => {
         const taskCell = document.createElement('div');
         taskCell.className = 'task-cell';
-        taskCell.innerHTML = `${task.svg} <span>${task.name}</span>`;
-        grid.appendChild(taskCell);
+        taskCell.innerHTML = `<div class="task-svg-small">${task.svg}</div> <span>${task.name}</span>`;
+        container.appendChild(taskCell);
 
         days.forEach(day => {
           const checkCell = document.createElement('div');
@@ -443,7 +539,7 @@
           box.onclick = () => toggleCheck(key, box);
 
           checkCell.appendChild(box);
-          grid.appendChild(checkCell);
+          container.appendChild(checkCell);
         });
       });
     }
@@ -459,11 +555,10 @@
         playSound('uncheck');
       }
       
-      // Guardar permanentemente en la memoria de la tablet
       localStorage.setItem(`tasks_${currentChild}`, JSON.stringify(savedData));
     }
 
-    // Registro del Service Worker para funcionamiento 100% Offline
+    // Registro de Service Worker para PWA Offline
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
