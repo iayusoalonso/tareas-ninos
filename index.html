@@ -1,129 +1,260 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="eu">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calendario de Tareas Semanales</title>
+  <title>Asteko zereginen egutegia</title>
+
+  <!-- PWA Manifest & Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4A90E2">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Zereginak">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
   <style>
     :root {
       --primary: #4A90E2;
-      --bg: #F4F7F6;
+      --primary-dark: #357ABD;
+      --bg: #F0F4F8;
       --card-bg: #FFFFFF;
-      --text: #333333;
-      --accent-luke: #FF6B6B;
-      --accent-marty: #4ECDC4;
+      --text: #2C3E50;
+      --luke-color: #FF6B6B;
+      --marty-color: #4ECDC4;
+      --border-color: #E2E8F0;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 15px; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    /* Pantalla de Selección */
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 12px;
+      user-select: none;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* PANTALLA 1: SELECCIÓN DE PERFIL */
     #profile-selection {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 90vh;
+      flex: 1;
       gap: 30px;
+      text-align: center;
     }
-    .profile-buttons { display: flex; gap: 40px; }
+
+    #profile-selection h1 {
+      font-size: 2.2rem;
+      color: #2C3E50;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .profile-buttons {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
     .btn-profile {
       background: var(--card-bg);
       border: 4px solid var(--primary);
-      border-radius: 20px;
-      padding: 30px 40px;
-      font-size: 1.8rem;
-      font-weight: bold;
+      border-radius: 24px;
+      padding: 30px 50px;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text);
       cursor: pointer;
-      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-      transition: transform 0.2s, background-color 0.2s;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 15px;
+      gap: 20px;
+      min-width: 220px;
     }
-    .btn-profile:hover { transform: scale(1.05); }
-    .avatar { font-size: 4rem; }
 
-    /* Calendario */
-    #calendar-screen { display: none; }
+    .btn-profile:hover, .btn-profile:active {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+
+    .btn-profile.luke { border-color: var(--luke-color); }
+    .btn-profile.marty { border-color: var(--marty-color); }
+
+    .avatar-icon {
+      width: 90px;
+      height: 90px;
+    }
+
+    /* PANTALLA 2: CALENDARIO INTERACTIVO */
+    #calendar-screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+    }
+
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
+      background: var(--card-bg);
+      padding: 10px 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
+
+    .title-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    #calendar-title {
+      font-size: 1.6rem;
+      color: #2C3E50;
+      font-weight: 800;
+    }
+
+    .badge-child {
+      padding: 6px 16px;
+      border-radius: 20px;
+      color: white;
+      font-weight: bold;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+    }
+
     .btn-switch {
-      background: var(--primary);
+      background: #7F8C8D;
       color: white;
       border: none;
-      padding: 10px 20px;
-      border-radius: 10px;
-      font-size: 1rem;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 0.95rem;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 700;
+      transition: background 0.2s;
     }
 
+    .btn-switch:hover { background: #6C7A89; }
+
+    /* PARRILLA DE TAREAS */
     .grid-container {
       display: grid;
-      grid-template-columns: 220px repeat(7, 1fr);
+      grid-template-columns: 240px repeat(7, 1fr);
       gap: 8px;
-      background: #E0E0E0;
-      border-radius: 12px;
+      background: #CBD5E1;
+      border-radius: 16px;
       padding: 8px;
-      overflow-x: auto;
+      flex: 1;
     }
 
-    .header-cell, .task-cell, .check-cell {
-      background: var(--card-bg);
-      padding: 10px;
-      border-radius: 8px;
+    .header-cell {
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      font-size: 1.05rem;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       text-align: center;
+      padding: 8px;
+      text-transform: capitalize;
     }
 
-    .header-cell {
-      font-weight: bold;
-      background: var(--primary);
-      color: white;
-      font-size: 1.1rem;
+    .header-cell.task-header {
+      background: #334155;
+      justify-content: flex-start;
+      padding-left: 15px;
     }
 
     .task-cell {
-      justify-content: flex-start;
-      gap: 12px;
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-    .task-icon { font-size: 1.8rem; }
-
-    /* Checkbox táctil */
-    .checkbox {
-      width: 45px;
-      height: 45px;
-      border: 3px solid #ccc;
+      background: var(--card-bg);
       border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #334155;
+    }
+
+    .task-svg {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+    }
+
+    .check-cell {
+      background: var(--card-bg);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* CASILLA DE VERIFICACIÓN (TOUCH FRIENDLY) */
+    .checkbox {
+      width: 48px;
+      height: 48px;
+      border: 3px solid #CBD5E1;
+      border-radius: 12px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
-      user-select: none;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      background: #F8FAFC;
     }
-    .checkbox.checked {
-      background-color: #4CAF50;
-      border-color: #4CAF50;
-      color: white;
-    }
-    .checkbox.checked::after { content: '✓'; }
 
-    @media (max-width: 768px) {
-      body { padding: 5px; }
-      .grid-container { grid-template-columns: 140px repeat(7, 1fr); }
-      .task-cell { font-size: 0.8rem; flex-direction: column; text-align: center; }
+    .checkbox:hover { border-color: #94A3B8; }
+
+    .checkbox.checked {
+      background-color: #10B981;
+      border-color: #10B981;
+      transform: scale(1.08);
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+    }
+
+    .checkbox.checked::after {
+      content: '✓';
+      color: white;
+      font-size: 1.8rem;
+      font-weight: 900;
+    }
+
+    @media (max-width: 900px) {
+      .grid-container {
+        grid-template-columns: 160px repeat(7, 1fr);
+      }
+      .task-cell {
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        gap: 4px;
+        font-size: 0.8rem;
+        padding: 4px;
+      }
+      .task-svg { width: 28px; height: 28px; }
+      .checkbox { width: 38px; height: 38px; }
     }
   </style>
 </head>
@@ -131,14 +262,29 @@
 
   <!-- PANTALLA 1: SELECCIÓN DE NIÑO -->
   <div id="profile-selection">
-    <h1>¿Quién va a completar sus tareas hoy?</h1>
+    <h1>Asteko zereginen egutegia</h1>
+    <p style="color: #64748B; font-size: 1.2rem; margin-top: -15px;">Nor zarete gaur?</p>
+    
     <div class="profile-buttons">
-      <button class="btn-profile" onclick="selectProfile('Luke')">
-        <span class="avatar">🚀</span>
+      <button class="btn-profile luke" onclick="selectProfile('Luke')">
+        <svg class="avatar-icon" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="#FFE0B2"/>
+          <path d="M 30 70 Q 50 85 70 70" stroke="#E65100" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <circle cx="35" cy="45" r="6" fill="#424242"/>
+          <circle cx="65" cy="45" r="6" fill="#424242"/>
+          <path d="M 20 35 Q 50 10 80 35" fill="#FF6B6B"/>
+        </svg>
         <span>LUKE</span>
       </button>
-      <button class="btn-profile" onclick="selectProfile('Marty')">
-        <span class="avatar">🎨</span>
+
+      <button class="btn-profile marty" onclick="selectProfile('Marty')">
+        <svg class="avatar-icon" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="#E0F7FA"/>
+          <path d="M 32 68 Q 50 82 68 68" stroke="#006064" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <circle cx="35" cy="45" r="6" fill="#424242"/>
+          <circle cx="65" cy="45" r="6" fill="#424242"/>
+          <path d="M 15 40 Q 50 15 85 40" fill="#4ECDC4"/>
+        </svg>
         <span>MARTY</span>
       </button>
     </div>
@@ -147,33 +293,107 @@
   <!-- PANTALLA 2: CALENDARIO INTERACTIVO -->
   <div id="calendar-screen">
     <header>
-      <h1 id="calendar-title">Asteko zereginen egutegia</h1>
-      <button class="btn-switch" onclick="showProfiles()">← Cambiar de Niño</button>
+      <div class="title-container">
+        <h1 id="calendar-title">Asteko zereginen egutegia</h1>
+        <span id="child-badge" class="badge-child"></span>
+      </div>
+      <button class="btn-switch" onclick="showProfiles()">← Aldatu / Cambiar</button>
     </header>
 
     <div class="grid-container" id="grid"></div>
   </div>
 
   <script>
-    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    // Días de la semana en euskera
+    const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
+    
+    // Tareas con sus SVGs embebidos
     const tasks = [
-      { id: 'read', name: 'Leer', icon: '📚' },
-      { id: 'homework', name: 'Deberes del colegio', icon: '✏️' },
-      { id: 'piano', name: 'Tocar el piano', icon: '🎹' },
-      { id: 'room', name: 'Recoger la habitación', icon: '🧹' },
-      { id: 'set_table', name: 'Poner la mesa', icon: '🍽️' },
-      { id: 'clear_table', name: 'Quitar la mesa', icon: '🧽' }
+      {
+        id: 'read',
+        name: 'Irakurri',
+        svg: `<svg class="task-svg" viewBox="0 0 64 64"><path d="M 8 16 Q 32 8 32 24 L 32 52 Q 32 36 8 40 Z" fill="#4A90E2"/><path d="M 56 16 Q 32 8 32 24 L 32 52 Q 32 36 56 40 Z" fill="#357ABD"/><path d="M 12 22 Q 24 16 28 22" stroke="#FFF" stroke-width="2" fill="none"/></svg>`
+      },
+      {
+        id: 'homework',
+        name: 'Eskolako lanak egin',
+        svg: `<svg class="task-svg" viewBox="0 0 64 64"><rect x="12" y="8" width="40" height="48" rx="4" fill="#F1C40F"/><rect x="18" y="14" width="28" height="36" rx="2" fill="#FFF"/><line x1="22" y1="22" x2="40" y2="22" stroke="#BDC3C7" stroke-width="3"/><line x1="22" y1="30" x2="36" y2="30" stroke="#BDC3C7" stroke-width="3"/><path d="M 36 44 L 46 34 L 50 38 L 40 48 Z" fill="#E67E22"/></svg>`
+      },
+      {
+        id: 'piano',
+        name: 'Pianoa jo',
+        svg: `<svg class="task-svg" viewBox="0 0 64 64"><rect x="8" y="16" width="48" height="32" rx="4" fill="#2C3E50"/><rect x="12" y="24" width="8" height="20" fill="#FFF"/><rect x="22" y="24" width="8" height="20" fill="#FFF"/><rect x="32" y="24" width="8" height="20" fill="#FFF"/><rect x="42" y="24" width="8" height="20" fill="#FFF"/><rect x="18" y="24" width="5" height="12" fill="#000"/><rect x="28" y="24" width="5" height="12" fill="#000"/><rect x="38" y="24" width="5" height="12" fill="#000"/></svg>`
+      },
+      {
+        id: 'room',
+        name: 'Gela jaso',
+        svg: `<svg class="task-svg" viewBox="0 0 64 64"><path d="M 12 40 L 52 40 L 48 56 L 16 56 Z" fill="#E74C3C"/><path d="M 20 28 L 32 16 L 44 28 Z" fill="#3498DB"/><circle cx="32" cy="34" r="5" fill="#F1C40F"/></svg>`
+      },
+      {
+        id: 'set_table',
+        name: 'Mahaia jarri',
+        svg: `<svg class="task-svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="3"/><line x1="8" y1="20" x2="8" y2="44" stroke="#7F8C8D" stroke-width="3"/><line x1="56" y1="20" x2="56" y2="44" stroke="#7F8C8D" stroke-width="3"/><ellipse cx="56" cy="20" rx="3" ry="5" fill="#7F8C8D"/></svg>`
+      },
+      {
+        id: 'clear_table',
+        name: 'Mahaia jaso',
+        svg: `<svg class="task-svg" viewBox="0 0 64 64"><circle cx="28" cy="36" r="16" fill="#BDC3C7"/><circle cx="36" cy="28" r="16" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="2"/><path d="M 42 16 Q 48 10 52 16 T 44 24" fill="#3498DB" opacity="0.6"/><circle cx="20" cy="20" r="4" fill="#3498DB" opacity="0.5"/></svg>`
+      }
     ];
 
     let currentChild = '';
     let savedData = {};
 
+    // Web Audio API para generación de sonido offline sintético
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playSound(type) {
+      try {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'check') {
+          // Sonido alegre ascendente (Éxito)
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+          osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else {
+          // Pop suave (Desmarcar)
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(350, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        }
+      } catch (e) {
+        console.log('Audio no disponible:', e);
+      }
+    }
+
     function selectProfile(name) {
       currentChild = name;
       document.getElementById('profile-selection').style.display = 'none';
-      document.getElementById('calendar-screen').style.display = 'block';
-      document.getElementById('calendar-title').innerText = `Tareas de ${name}`;
+      document.getElementById('calendar-screen').style.display = 'flex';
       
+      const badge = document.getElementById('child-badge');
+      badge.innerText = name;
+      badge.style.backgroundColor = (name === 'Luke') ? 'var(--luke-color)' : 'var(--marty-color)';
+
       // Cargar datos de localStorage
       const stored = localStorage.getItem(`tasks_${currentChild}`);
       savedData = stored ? JSON.parse(stored) : {};
@@ -190,13 +410,13 @@
       const grid = document.getElementById('grid');
       grid.innerHTML = '';
 
-      // Fila 0: Esquina vacía + Días de la semana
+      // Cabecera: Tarea
       const emptyHeader = document.createElement('div');
-      emptyHeader.className = 'header-cell';
-      emptyHeader.style.background = '#333';
-      emptyHeader.innerText = 'Tarea';
+      emptyHeader.className = 'header-cell task-header';
+      emptyHeader.innerText = 'Zeregina';
       grid.appendChild(emptyHeader);
 
+      // Cabeceras: Días de la semana
       days.forEach(day => {
         const dayCell = document.createElement('div');
         dayCell.className = 'header-cell';
@@ -206,13 +426,11 @@
 
       // Filas de Tareas
       tasks.forEach(task => {
-        // Columna de la tarea
         const taskCell = document.createElement('div');
         taskCell.className = 'task-cell';
-        taskCell.innerHTML = `<span class="task-icon">${task.icon}</span> <span>${task.name}</span>`;
+        taskCell.innerHTML = `${task.svg} <span>${task.name}</span>`;
         grid.appendChild(taskCell);
 
-        // Columnas de días (Checkboxes)
         days.forEach(day => {
           const checkCell = document.createElement('div');
           checkCell.className = 'check-cell';
@@ -232,13 +450,26 @@
 
     function toggleCheck(key, element) {
       savedData[key] = !savedData[key];
+      
       if (savedData[key]) {
         element.classList.add('checked');
+        playSound('check');
       } else {
         element.classList.remove('checked');
+        playSound('uncheck');
       }
+      
       // Guardar permanentemente en la memoria de la tablet
       localStorage.setItem(`tasks_${currentChild}`, JSON.stringify(savedData));
+    }
+
+    // Registro del Service Worker para funcionamiento 100% Offline
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker registrado:', reg.scope))
+          .catch(err => console.error('Error Service Worker:', err));
+      });
     }
   </script>
 </body>
