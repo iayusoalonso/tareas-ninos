@@ -23,6 +23,8 @@
       --text: #2C3E50;
       --luke-color: #FF6B6B;
       --marty-color: #4ECDC4;
+      --success: #10B981;
+      --danger: #EF4444;
     }
 
     * {
@@ -37,6 +39,7 @@
       background-color: var(--bg);
       color: var(--text);
       padding: 12px;
+      padding-bottom: 90px; /* Espacio para la barra de progreso fija */
       user-select: none;
       min-height: 100vh;
       display: flex;
@@ -52,6 +55,7 @@
       flex: 1;
       gap: 30px;
       text-align: center;
+      margin-top: 40px;
     }
 
     #profile-selection h1 {
@@ -162,7 +166,6 @@
     .btn-secondary { background: #7F8C8D; }
     .btn-secondary:hover { background: #6C7A89; }
 
-    /* CONTENEDOR PRINCIPAL DE VISTA */
     #view-container {
       flex: 1;
       width: 100%;
@@ -173,10 +176,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 25px;
+      gap: 20px;
       max-width: 500px;
       margin: 0 auto;
-      padding-bottom: 40px;
     }
 
     .day-header-badge {
@@ -194,7 +196,7 @@
     .daily-task-card {
       background: var(--card-bg);
       border-radius: 20px;
-      padding: 25px;
+      padding: 20px;
       width: 100%;
       display: flex;
       flex-direction: column;
@@ -206,12 +208,12 @@
     }
 
     .daily-task-svg {
-      width: 85px;
-      height: 85px;
+      width: 80px;
+      height: 80px;
     }
 
     .daily-task-name {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 800;
       color: #334155;
       text-align: center;
@@ -265,7 +267,7 @@
       justify-content: center;
     }
 
-    /* CASILLA DE VERIFICACIÓN (TOUCH FRIENDLY) */
+    /* ESTADOS DEL CHECKBOX (PENDIENTE / SI / NO) */
     .checkbox {
       width: 60px;
       height: 60px;
@@ -277,6 +279,7 @@
       justify-content: center;
       transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       background: #F8FAFC;
+      font-weight: 900;
     }
 
     .grid-container .checkbox {
@@ -286,23 +289,76 @@
       border-radius: 10px;
     }
 
-    .checkbox:hover { border-color: #94A3B8; }
-
-    .checkbox.checked {
-      background-color: #10B981;
-      border-color: #10B981;
+    /* ESTADO: HECHO (VERDE) */
+    .checkbox.state-done {
+      background-color: var(--success);
+      border-color: var(--success);
       transform: scale(1.06);
       box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
     }
-
-    .checkbox.checked::after {
+    .checkbox.state-done::after {
       content: '✓';
       color: white;
       font-size: 2.2rem;
-      font-weight: 900;
     }
 
-    .grid-container .checkbox.checked::after { font-size: 1.6rem; }
+    /* ESTADO: NO HECHO (ROJO) */
+    .checkbox.state-fail {
+      background-color: var(--danger);
+      border-color: var(--danger);
+      transform: scale(1.06);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+    }
+    .checkbox.state-fail::after {
+      content: '✕';
+      color: white;
+      font-size: 2rem;
+    }
+
+    .grid-container .checkbox.state-done::after { font-size: 1.6rem; }
+    .grid-container .checkbox.state-fail::after { font-size: 1.5rem; }
+
+    /* BARRA DE PROGRESO FIJA (FOOTER) */
+    #progress-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #FFFFFF;
+      padding: 12px 20px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 1000;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #334155;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 16px;
+      background: #E2E8F0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10B981, #34D399);
+      border-radius: 10px;
+      transition: width 0.4s ease-out;
+    }
   </style>
 </head>
 <body>
@@ -353,6 +409,17 @@
     <div id="view-container"></div>
   </div>
 
+  <!-- BARRA DE PROGRESO FIJA -->
+  <div id="progress-footer">
+    <div class="progress-info">
+      <span>Gaurko garapena / Progreso de hoy</span>
+      <span id="progress-text">0 / 0 (%0)</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div id="progress-bar-fill" class="progress-bar-fill"></div>
+    </div>
+  </div>
+
   <script>
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
     
@@ -393,13 +460,12 @@
     let savedData = {};
     let currentView = 'daily'; // 'daily' o 'weekly'
 
-    // Obtener el día actual de la semana (0 = Astelehena, 6 = Igandea)
     function getCurrentDayIndex() {
       const jsDay = new Date().getDay();
       return (jsDay + 6) % 7;
     }
 
-    // Generador de audio sin archivos externos
+    // Sistema de sonidos sintetizados
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
 
@@ -415,7 +481,8 @@
 
         const now = audioCtx.currentTime;
 
-        if (type === 'check') {
+        if (type === 'done') {
+          // Éxito Alegre
           osc.type = 'sine';
           osc.frequency.setValueAtTime(523.25, now);
           osc.frequency.setValueAtTime(659.25, now + 0.08);
@@ -424,14 +491,23 @@
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
           osc.start(now);
           osc.stop(now + 0.35);
-        } else {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(350, now);
-          osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
-          gain.gain.setValueAtTime(0.2, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        } else if (type === 'fail') {
+          // Tono Grave (No realizado)
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.setValueAtTime(160, now + 0.12);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
           osc.start(now);
-          osc.stop(now + 0.12);
+          osc.stop(now + 0.25);
+        } else {
+          // Pop neutro (Reset a sin marcar)
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(300, now);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
         }
       } catch (e) {
         console.log('Audio no disponible:', e);
@@ -442,6 +518,7 @@
       currentChild = name;
       document.getElementById('profile-selection').style.display = 'none';
       document.getElementById('calendar-screen').style.display = 'flex';
+      document.getElementById('progress-footer').style.display = 'flex';
       
       const badge = document.getElementById('child-badge');
       badge.innerText = name;
@@ -457,6 +534,7 @@
     function showProfiles() {
       document.getElementById('profile-selection').style.display = 'flex';
       document.getElementById('calendar-screen').style.display = 'none';
+      document.getElementById('progress-footer').style.display = 'none';
     }
 
     function toggleView() {
@@ -473,6 +551,7 @@
         toggleBtn.innerText = 'Gaurko eguna ikusi';
         renderWeeklyView();
       }
+      updateProgressBar();
     }
 
     // RENDER VISTA DIARIA (VERTICAL)
@@ -488,13 +567,17 @@
 
       tasks.forEach(task => {
         const key = `${task.id}_${currentDayName}`;
-        const isChecked = savedData[key] || false;
+        const state = savedData[key] || 'none'; // 'none', 'done', 'fail'
+
+        let stateClass = '';
+        if (state === 'done') stateClass = 'state-done';
+        if (state === 'fail') stateClass = 'state-fail';
 
         html += `
           <div class="daily-task-card">
             <div class="daily-task-svg">${task.svg}</div>
             <div class="daily-task-name">${task.name}</div>
-            <div class="checkbox ${isChecked ? 'checked' : ''}" onclick="toggleCheck('${key}', this)"></div>
+            <div class="checkbox ${stateClass}" onclick="cycleCheck('${key}', this)"></div>
           </div>
         `;
       });
@@ -532,11 +615,15 @@
           checkCell.className = 'check-cell';
 
           const key = `${task.id}_${day}`;
-          const isChecked = savedData[key] || false;
+          const state = savedData[key] || 'none';
 
           const box = document.createElement('div');
-          box.className = `checkbox ${isChecked ? 'checked' : ''}`;
-          box.onclick = () => toggleCheck(key, box);
+          let stateClass = '';
+          if (state === 'done') stateClass = 'state-done';
+          if (state === 'fail') stateClass = 'state-fail';
+
+          box.className = `checkbox ${stateClass}`;
+          box.onclick = () => cycleCheck(key, box);
 
           checkCell.appendChild(box);
           container.appendChild(checkCell);
@@ -544,21 +631,52 @@
       });
     }
 
-    function toggleCheck(key, element) {
-      savedData[key] = !savedData[key];
-      
-      if (savedData[key]) {
-        element.classList.add('checked');
-        playSound('check');
+    // CICLO DE ESTADOS: none -> done -> fail -> none
+    function cycleCheck(key, element) {
+      const currentState = savedData[key] || 'none';
+      let nextState = 'none';
+
+      element.classList.remove('state-done', 'state-fail');
+
+      if (currentState === 'none') {
+        nextState = 'done';
+        element.classList.add('state-done');
+        playSound('done');
+      } else if (currentState === 'done') {
+        nextState = 'fail';
+        element.classList.add('state-fail');
+        playSound('fail');
       } else {
-        element.classList.remove('checked');
-        playSound('uncheck');
+        nextState = 'none';
+        playSound('reset');
       }
-      
+
+      savedData[key] = nextState;
       localStorage.setItem(`tasks_${currentChild}`, JSON.stringify(savedData));
+      updateProgressBar();
     }
 
-    // Registro de Service Worker para PWA Offline
+    // ACTUALIZA LA BARRA DE PROGRESO DE HOY
+    function updateProgressBar() {
+      const dayIndex = getCurrentDayIndex();
+      const currentDayName = days[dayIndex];
+      const totalTasks = tasks.length;
+      let completedTasks = 0;
+
+      tasks.forEach(task => {
+        const key = `${task.id}_${currentDayName}`;
+        if (savedData[key] === 'done') {
+          completedTasks++;
+        }
+      });
+
+      const percentage = Math.round((completedTasks / totalTasks) * 100);
+      
+      document.getElementById('progress-bar-fill').style.width = `${percentage}%`;
+      document.getElementById('progress-text').innerText = `${completedTasks} / ${totalTasks} eginda - %${percentage}`;
+    }
+
+    // Service Worker PWA Offline
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
