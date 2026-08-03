@@ -39,7 +39,7 @@
       background-color: var(--bg);
       color: var(--text);
       padding: 12px;
-      padding-bottom: 90px; /* Espacio para la barra de progreso fija */
+      padding-bottom: 90px;
       user-select: none;
       min-height: 100vh;
       display: flex;
@@ -56,6 +56,7 @@
       gap: 30px;
       text-align: center;
       margin-top: 40px;
+      position: relative;
     }
 
     #profile-selection h1 {
@@ -67,7 +68,7 @@
 
     .profile-buttons {
       display: flex;
-      gap: 40px;
+      gap: 30px;
       flex-wrap: wrap;
       justify-content: center;
     }
@@ -76,8 +77,8 @@
       background: var(--card-bg);
       border: 4px solid var(--primary);
       border-radius: 24px;
-      padding: 30px 50px;
-      font-size: 2rem;
+      padding: 30px 40px;
+      font-size: 1.8rem;
       font-weight: 800;
       color: var(--text);
       cursor: pointer;
@@ -86,8 +87,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 20px;
-      min-width: 220px;
+      gap: 15px;
+      min-width: 200px;
     }
 
     .btn-profile:hover, .btn-profile:active {
@@ -95,13 +96,30 @@
       box-shadow: 0 15px 30px rgba(0,0,0,0.15);
     }
 
-    .btn-profile.luke { border-color: var(--luke-color); }
-    .btn-profile.marty { border-color: var(--marty-color); }
-
     .avatar-icon {
-      width: 90px;
-      height: 90px;
+      width: 80px;
+      height: 80px;
     }
+
+    .btn-admin-access {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #334155;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.4rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transition: transform 0.2s;
+    }
+    .btn-admin-access:hover { transform: scale(1.1); }
 
     /* PANTALLA 2: CALENDARIO INTERACTIVO */
     #calendar-screen {
@@ -165,13 +183,17 @@
     .btn-action:active { transform: scale(0.97); }
     .btn-secondary { background: #7F8C8D; }
     .btn-secondary:hover { background: #6C7A89; }
+    .btn-danger { background: var(--danger); }
+    .btn-danger:hover { background: #DC2626; }
+    .btn-success { background: var(--success); }
+    .btn-success:hover { background: #059669; }
 
     #view-container {
       flex: 1;
       width: 100%;
     }
 
-    /* --- VISTA DIARIA (VERTICAL) --- */
+    /* VISTA DIARIA */
     .daily-view-list {
       display: flex;
       flex-direction: column;
@@ -179,6 +201,7 @@
       gap: 20px;
       max-width: 500px;
       margin: 0 auto;
+      width: 100%;
     }
 
     .day-header-badge {
@@ -196,32 +219,28 @@
     .daily-task-card {
       background: var(--card-bg);
       border-radius: 20px;
-      padding: 20px;
       width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-      border: 2px solid #E2E8F0;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      border: 3px solid #E2E8F0;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .daily-task-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.12);
     }
 
     .daily-task-img {
-      width: 130px;
-      height: 130px;
-      object-fit: contain;
-      border-radius: 12px;
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 16px;
     }
 
-    .daily-task-name {
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: #334155;
-      text-align: center;
-    }
-
-    /* --- VISTA SEMANAL (PARRILLA) --- */
+    /* VISTA SEMANAL */
     .grid-container {
       display: grid;
       grid-template-columns: 220px repeat(7, 1fr);
@@ -275,10 +294,9 @@
       justify-content: center;
     }
 
-    /* ESTADOS DEL CHECKBOX (PENDIENTE / SI / NO) */
     .checkbox {
-      width: 60px;
-      height: 60px;
+      width: 56px;
+      height: 56px;
       border: 4px solid #CBD5E1;
       border-radius: 16px;
       cursor: pointer;
@@ -290,6 +308,19 @@
       font-weight: 900;
     }
 
+    .daily-task-card .checkbox {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      border: 3px solid #FFFFFF;
+      background: rgba(248, 250, 252, 0.95);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      z-index: 2;
+    }
+
     .grid-container .checkbox {
       width: 44px;
       height: 44px;
@@ -297,36 +328,105 @@
       border-radius: 10px;
     }
 
-    /* ESTADO: HECHO (VERDE) */
     .checkbox.state-done {
       background-color: var(--success);
       border-color: var(--success);
       transform: scale(1.06);
       box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
     }
+    .daily-task-card .checkbox.state-done { border-color: #FFFFFF; }
     .checkbox.state-done::after {
       content: '✓';
       color: white;
-      font-size: 2.2rem;
+      font-size: 2rem;
     }
 
-    /* ESTADO: NO HECHO (ROJO) */
     .checkbox.state-fail {
       background-color: var(--danger);
       border-color: var(--danger);
       transform: scale(1.06);
       box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
     }
+    .daily-task-card .checkbox.state-fail { border-color: #FFFFFF; }
     .checkbox.state-fail::after {
       content: '✕';
       color: white;
-      font-size: 2rem;
+      font-size: 1.8rem;
     }
 
     .grid-container .checkbox.state-done::after { font-size: 1.6rem; }
     .grid-container .checkbox.state-fail::after { font-size: 1.5rem; }
 
-    /* BARRA DE PROGRESO FIJA (FOOTER) */
+    /* PANTALLA 3: ADMINISTRADOR */
+    #admin-screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      max-width: 700px;
+      margin: 0 auto;
+      width: 100%;
+      gap: 20px;
+    }
+
+    .admin-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      border: 2px solid #E2E8F0;
+    }
+
+    .admin-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      color: #334155;
+    }
+
+    .form-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .form-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid #CBD5E1;
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+    }
+    .form-input:focus { border-color: var(--primary); }
+
+    .user-list-admin, .task-list-admin {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .admin-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #F8FAFC;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #E2E8F0;
+    }
+
+    .task-edit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 8px;
+      align-items: center;
+      background: #F8FAFC;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #E2E8F0;
+      margin-bottom: 8px;
+    }
+
+    /* BARRA DE PROGRESO FIJA */
     #progress-footer {
       position: fixed;
       bottom: 0;
@@ -371,33 +471,14 @@
 </head>
 <body>
 
-  <!-- PANTALLA 1: SELECCIÓN DE NIÑO -->
+  <!-- PANTALLA 1: SELECCIÓN DE PERFIL -->
   <div id="profile-selection">
+    <button class="btn-admin-access" onclick="openAdmin()" title="Kudeaketa / Admin">⚙️</button>
     <h1>Asteko zereginen egutegia</h1>
     <p style="color: #64748B; font-size: 1.2rem; margin-top: -15px;">Nor zarete gaur?</p>
     
-    <div class="profile-buttons">
-      <button class="btn-profile luke" onclick="selectProfile('Luke')">
-        <svg class="avatar-icon" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" fill="#FFE0B2"/>
-          <path d="M 30 70 Q 50 85 70 70" stroke="#E65100" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <circle cx="35" cy="45" r="6" fill="#424242"/>
-          <circle cx="65" cy="45" r="6" fill="#424242"/>
-          <path d="M 20 35 Q 50 10 80 35" fill="#FF6B6B"/>
-        </svg>
-        <span>LUKE</span>
-      </button>
-
-      <button class="btn-profile marty" onclick="selectProfile('Marty')">
-        <svg class="avatar-icon" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" fill="#E0F7FA"/>
-          <path d="M 32 68 Q 50 82 68 68" stroke="#006064" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <circle cx="35" cy="45" r="6" fill="#424242"/>
-          <circle cx="65" cy="45" r="6" fill="#424242"/>
-          <path d="M 15 40 Q 50 15 85 40" fill="#4ECDC4"/>
-        </svg>
-        <span>MARTY</span>
-      </button>
+    <div id="profile-buttons-container" class="profile-buttons">
+      <!-- Se inyecta dinámicamente -->
     </div>
   </div>
 
@@ -417,6 +498,45 @@
     <div id="view-container"></div>
   </div>
 
+  <!-- PANTALLA 3: PANEL DE ADMINISTRACIÓN -->
+  <div id="admin-screen">
+    <header style="margin-bottom: 0;">
+      <div class="title-container">
+        <h1>Kudeaketa Panel</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-action btn-secondary" onclick="showProfiles()">← Atzera</button>
+      </div>
+    </header>
+
+    <!-- Gestión de Usuarios -->
+    <div class="admin-card">
+      <h2>Erabiltzaileak (Haurrak)</h2>
+      <div class="form-group">
+        <input type="text" id="new-user-input" class="form-input" placeholder="Haurraren izena (adib: Jon)...">
+        <button class="btn-action btn-success" onclick="addChildUser()">Gehitu</button>
+      </div>
+      <div id="admin-users-list" class="user-list-admin"></div>
+    </div>
+
+    <!-- Personalización de Tareas -->
+    <div class="admin-card">
+      <h2>Zereginak pertsonalizatu: <span id="admin-selected-user-label" style="color: var(--primary);"></span></h2>
+      <div class="form-group">
+        <select id="admin-user-select" class="form-input" onchange="loadAdminTasksForSelectedUser()">
+          <!-- Se llena dinámicamente -->
+        </select>
+      </div>
+      
+      <div id="admin-tasks-container"></div>
+
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button class="btn-action btn-success" onclick="addNewTaskRow()">+ Gehitu zeregina</button>
+        <button class="btn-action" onclick="saveAdminTasks()">Aldaketak gorde</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BARRA DE PROGRESO FIJA -->
   <div id="progress-footer">
     <div class="progress-info">
@@ -431,50 +551,32 @@
   <script>
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
     
-    // Tareas con las rutas de las imágenes independientes
-    const tasks = [
-      {
-        id: 'read',
-        name: 'Irakurri',
-        image: 'irakurri.png'
-      },
-      {
-        id: 'homework',
-        name: 'Eskolako lanak egin',
-        image: 'eskolako-lanak.png'
-      },
-      {
-        id: 'piano',
-        name: 'Pianoa jo',
-        image: 'pianoa.png'
-      },
-      {
-        id: 'room',
-        name: 'Gela jaso',
-        image: 'gela-jaso.png'
-      },
-      {
-        id: 'set_table',
-        name: 'Mahaia jarri',
-        image: 'mahaia-jarri.png'
-      },
-      {
-        id: 'clear_table',
-        name: 'Mahaia jaso',
-        image: 'mahaia-jaso.png'
-      }
+    const defaultTasks = [
+      { id: 'read', name: 'Irakurri', image: 'irakurri.png' },
+      { id: 'homework', name: 'Eskolako lanak egin', image: 'eskolako-lanak.png' },
+      { id: 'piano', name: 'Pianoa jo', image: 'pianoa.png' },
+      { id: 'room', name: 'Gela jaso', image: 'gela-jaso.png' },
+      { id: 'set_table', name: 'Mahaia jarri', image: 'mahaia-jarri.png' },
+      { id: 'clear_table', name: 'Mahaia jaso', image: 'mahaia-jaso.png' }
     ];
 
+    // Cargar niños guardados o usar por defecto Luke y Marty
+    let childrenList = JSON.parse(localStorage.getItem('app_children')) || ['Luke', 'Marty'];
     let currentChild = '';
     let savedData = {};
     let currentView = 'daily';
+
+    function getTasksForChild(childName) {
+      const stored = localStorage.getItem(`tasks_config_${childName}`);
+      return stored ? JSON.parse(stored) : defaultTasks;
+    }
 
     function getCurrentDayIndex() {
       const jsDay = new Date().getDay();
       return (jsDay + 6) % 7;
     }
 
-    // Sistema de sonidos sintetizados
+    // Audio sintetizado
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
 
@@ -487,7 +589,6 @@
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-
         const now = audioCtx.currentTime;
 
         if (type === 'done') {
@@ -507,30 +608,52 @@
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
           osc.start(now);
           osc.stop(now + 0.25);
-        } else {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(300, now);
-          gain.gain.setValueAtTime(0.1, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-          osc.start(now);
-          osc.stop(now + 0.08);
         }
       } catch (e) {
         console.log('Audio no disponible:', e);
       }
     }
 
+    // Inicializar pantalla de selección
+    function renderProfileSelection() {
+      const container = document.getElementById('profile-buttons-container');
+      container.innerHTML = '';
+
+      const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#6C5CE7', '#00B894'];
+
+      childrenList.forEach((name, index) => {
+        const color = colors[index % colors.length];
+        const btn = document.createElement('button');
+        btn.className = 'btn-profile';
+        btn.style.borderColor = color;
+        btn.onclick = () => selectProfile(name);
+
+        btn.innerHTML = `
+          <svg class="avatar-icon" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="${color}22"/>
+            <path d="M 30 70 Q 50 85 70 70" stroke="${color}" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <circle cx="35" cy="45" r="6" fill="#424242"/>
+            <circle cx="65" cy="45" r="6" fill="#424242"/>
+            <path d="M 20 35 Q 50 10 80 35" fill="${color}"/>
+          </svg>
+          <span>${name.toUpperCase()}</span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
     function selectProfile(name) {
       currentChild = name;
       document.getElementById('profile-selection').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'none';
       document.getElementById('calendar-screen').style.display = 'flex';
       document.getElementById('progress-footer').style.display = 'flex';
       
       const badge = document.getElementById('child-badge');
       badge.innerText = name;
-      badge.style.backgroundColor = (name === 'Luke') ? 'var(--luke-color)' : 'var(--marty-color)';
+      badge.style.backgroundColor = 'var(--primary)';
 
-      const stored = localStorage.getItem(`tasks_${currentChild}`);
+      const stored = localStorage.getItem(`tasks_state_${currentChild}`);
       savedData = stored ? JSON.parse(stored) : {};
 
       currentView = 'daily';
@@ -540,7 +663,9 @@
     function showProfiles() {
       document.getElementById('profile-selection').style.display = 'flex';
       document.getElementById('calendar-screen').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'none';
       document.getElementById('progress-footer').style.display = 'none';
+      renderProfileSelection();
     }
 
     function toggleView() {
@@ -560,13 +685,14 @@
       updateProgressBar();
     }
 
-    // RENDER VISTA DIARIA (VERTICAL)
+    // RENDER VISTA DIARIA
     function renderDailyView() {
       const container = document.getElementById('view-container');
       container.className = '';
       
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
+      const tasks = getTasksForChild(currentChild);
 
       let html = `<div class="daily-view-list">
         <div class="day-header-badge">Gaur: ${currentDayName}</div>`;
@@ -580,10 +706,9 @@
         if (state === 'fail') stateClass = 'state-fail';
 
         html += `
-          <div class="daily-task-card">
-            <img class="daily-task-img" src="${task.image}" alt="${task.name}">
-            <div class="daily-task-name">${task.name}</div>
-            <div class="checkbox ${stateClass}" onclick="cycleCheck('${key}', this)"></div>
+          <div class="daily-task-card" onclick="cycleCheck('${key}', this.querySelector('.checkbox'))">
+            <img class="daily-task-img" src="${task.image}" alt="${task.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><text x=\'10\' y=\'50\' font-size=\'14\'>Irudia ez da aurkitu</text></svg>'">
+            <div class="checkbox ${stateClass}" onclick="event.stopPropagation(); cycleCheck('${key}', this)"></div>
           </div>
         `;
       });
@@ -592,11 +717,13 @@
       container.innerHTML = html;
     }
 
-    // RENDER VISTA SEMANAL (PARRILLA)
+    // RENDER VISTA SEMANAL
     function renderWeeklyView() {
       const container = document.getElementById('view-container');
       container.className = 'grid-container';
       container.innerHTML = '';
+
+      const tasks = getTasksForChild(currentChild);
 
       const emptyHeader = document.createElement('div');
       emptyHeader.className = 'header-cell task-header';
@@ -653,17 +780,17 @@
         playSound('fail');
       } else {
         nextState = 'none';
-        playSound('reset');
       }
 
       savedData[key] = nextState;
-      localStorage.setItem(`tasks_${currentChild}`, JSON.stringify(savedData));
+      localStorage.setItem(`tasks_state_${currentChild}`, JSON.stringify(savedData));
       updateProgressBar();
     }
 
     function updateProgressBar() {
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
+      const tasks = getTasksForChild(currentChild);
       const totalTasks = tasks.length;
       let completedTasks = 0;
 
@@ -674,11 +801,142 @@
         }
       });
 
-      const percentage = Math.round((completedTasks / totalTasks) * 100);
+      const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
       
       document.getElementById('progress-bar-fill').style.width = `${percentage}%`;
       document.getElementById('progress-text').innerText = `${completedTasks} / ${totalTasks} eginda - %${percentage}`;
     }
+
+    // PANEL DE ADMINISTRACIÓN
+    function openAdmin() {
+      document.getElementById('profile-selection').style.display = 'none';
+      document.getElementById('calendar-screen').style.display = 'none';
+      document.getElementById('progress-footer').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'flex';
+      
+      renderAdminUsersList();
+      populateAdminUserSelect();
+    }
+
+    function renderAdminUsersList() {
+      const container = document.getElementById('admin-users-list');
+      container.innerHTML = '';
+
+      childrenList.forEach(name => {
+        const row = document.createElement('div');
+        row.className = 'admin-item-row';
+        row.innerHTML = `
+          <span style="font-weight: 700; font-size: 1.1rem;">${name}</span>
+          <button class="btn-action btn-danger" style="padding: 6px 12px; font-size: 0.85rem;" onclick="removeChildUser('${name}')">Ezabatu</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function addChildUser() {
+      const input = document.getElementById('new-user-input');
+      const name = input.value.trim();
+      if (!name) return;
+      if (childrenList.includes(name)) {
+        alert('Erabiltzaile hau badago jada.');
+        return;
+      }
+      childrenList.push(name);
+      localStorage.setItem('app_children', JSON.stringify(childrenList));
+      input.value = '';
+      renderAdminUsersList();
+      populateAdminUserSelect();
+    }
+
+    function removeChildUser(name) {
+      if (childrenList.length <= 1) {
+        alert('Gutxienez erabiltzaile bat egon behar da.');
+        return;
+      }
+      if (confirm(`Ziur ${name} ezabatu nahi duzula?`)) {
+        childrenList = childrenList.filter(c => c !== name);
+        localStorage.setItem('app_children', JSON.stringify(childrenList));
+        localStorage.removeItem(`tasks_config_${name}`);
+        localStorage.removeItem(`tasks_state_${name}`);
+        renderAdminUsersList();
+        populateAdminUserSelect();
+      }
+    }
+
+    function populateAdminUserSelect() {
+      const select = document.getElementById('admin-user-select');
+      select.innerHTML = '';
+      childrenList.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.innerText = name;
+        select.appendChild(opt);
+      });
+      loadAdminTasksForSelectedUser();
+    }
+
+    function loadAdminTasksForSelectedUser() {
+      const select = document.getElementById('admin-user-select');
+      const selectedUser = select.value;
+      if (!selectedUser) return;
+
+      document.getElementById('admin-selected-user-label').innerText = selectedUser;
+      const tasks = getTasksForChild(selectedUser);
+      const container = document.getElementById('admin-tasks-container');
+      container.innerHTML = '';
+
+      tasks.forEach((task, index) => {
+        appendTaskRow(task.name, task.image, task.id);
+      });
+    }
+
+    function appendTaskRow(name = '', image = '', id = '') {
+      const container = document.getElementById('admin-tasks-container');
+      const row = document.createElement('div');
+      row.className = 'task-edit-grid';
+      const uniqueId = id || 'task_' + Math.random().toString(36.substring(2, 9));
+
+      row.innerHTML = `
+        <input type="text" class="form-input task-name-input" value="${name}" placeholder="Zereginaren izena...">
+        <input type="text" class="form-input task-img-input" value="${image}" placeholder="irudia.png">
+        <button class="btn-action btn-danger" style="padding: 10px;" onclick="this.parentElement.remove()">✕</button>
+        <input type="hidden" class="task-id-input" value="${uniqueId}">
+      `;
+      container.appendChild(row);
+    }
+
+    function addNewTaskRow() {
+      appendTaskRow('', '', '');
+    }
+
+    function saveAdminTasks() {
+      const select = document.getElementById('admin-user-select');
+      const selectedUser = select.value;
+      if (!selectedUser) return;
+
+      const rows = document.querySelectorAll('.task-edit-grid');
+      const newTasks = [];
+
+      rows.forEach(row => {
+        const name = row.querySelector('.task-name-input').value.trim();
+        const image = row.querySelector('.task-img-input').value.trim();
+        const id = row.querySelector('.task-id-input').value;
+
+        if (name) {
+          newTasks.push({
+            id: id || name.toLowerCase().replace(/\s+/g, '_'),
+            name: name,
+            image: image || 'default.png'
+          });
+        }
+      });
+
+      localStorage.setItem(`tasks_config_${selectedUser}`, JSON.stringify(newTasks));
+      alert('Aldaketak ondo gorde dira!');
+    }
+
+    // Inicialización inicial al cargar la página
+    renderProfileSelection();
 
     // Service Worker PWA Offline
     if ('serviceWorker' in navigator) {
