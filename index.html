@@ -94,9 +94,11 @@
       box-shadow: 0 15px 30px rgba(0,0,0,0.15);
     }
 
-    .avatar-icon {
+    .avatar-icon, .profile-avatar-img {
       width: 80px;
       height: 80px;
+      object-fit: cover;
+      border-radius: 50%;
     }
 
     .btn-admin-access {
@@ -361,7 +363,7 @@
       display: none;
       flex-direction: column;
       flex: 1;
-      max-width: 700px;
+      max-width: 750px;
       margin: 0 auto;
       width: 100%;
       gap: 20px;
@@ -385,6 +387,8 @@
       display: flex;
       gap: 10px;
       margin-bottom: 15px;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
     .form-input {
@@ -394,16 +398,17 @@
       border-radius: 10px;
       font-size: 1rem;
       outline: none;
+      min-width: 150px;
     }
     .form-input:focus { border-color: var(--primary); }
 
-    .user-list-admin, .task-list-admin {
+    .user-list-admin {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    .admin-item-row {
+    .admin-user-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -411,18 +416,29 @@
       padding: 10px 14px;
       border-radius: 10px;
       border: 1px solid #E2E8F0;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .task-edit-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 8px;
+      grid-template-columns: 50px 1fr auto auto;
+      gap: 10px;
       align-items: center;
       background: #F8FAFC;
       padding: 10px;
       border-radius: 10px;
       border: 1px solid #E2E8F0;
       margin-bottom: 8px;
+    }
+
+    .task-thumb-preview {
+      width: 45px;
+      height: 45px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #E2E8F0;
+      border: 1px solid #CBD5E1;
     }
 
     /* BARRA DE PROGRESO FIJA */
@@ -508,11 +524,15 @@
       </div>
     </header>
 
-    <!-- Gestión de Usuarios -->
+    <!-- Gestión de Usuarios y Avatares -->
     <div class="admin-card">
-      <h2>Erabiltzaileak (Haurrak)</h2>
+      <h2>Erabiltzaileak eta Abatarrak</h2>
       <div class="form-group">
         <input type="text" id="new-user-input" class="form-input" placeholder="Haurraren izena (adib: Jon)...">
+        <label class="btn-action btn-secondary" style="cursor: pointer; margin: 0;">
+          Abatar irudia argazkitik 📁 <input type="file" id="new-user-avatar-input" accept="image/*" style="display:none;" onchange="previewNewUserAvatar(this)">
+        </label>
+        <img id="new-user-avatar-preview" class="task-thumb-preview" style="display:none;" />
         <button class="btn-action btn-success" onclick="addChildUser()">Gehitu</button>
       </div>
       <div id="admin-users-list" class="user-list-admin"></div>
@@ -559,10 +579,14 @@
       { id: 'clear_table', name: 'Mahaia jaso', image: 'mahaia-jaso.png' }
     ];
 
-    let childrenList = JSON.parse(localStorage.getItem('app_children')) || ['Luke', 'Marty'];
+    // Migración y carga segura de lista de usuarios (ahora objetos con nombre y avatar)
+    let rawChildren = JSON.parse(localStorage.getItem('app_children')) || ['Luke', 'Marty'];
+    let childrenList = rawChildren.map(c => typeof c === 'string' ? { name: c, avatar: '' } : c);
+
     let currentChild = '';
     let savedData = {};
     let currentView = 'daily';
+    let newUserAvatarBase64 = '';
 
     function getTasksForChild(childName) {
       const stored = localStorage.getItem(`tasks_config_${childName}`);
@@ -618,22 +642,30 @@
 
       const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#6C5CE7', '#00B894'];
 
-      childrenList.forEach((name, index) => {
+      childrenList.forEach((child, index) => {
         const color = colors[index % colors.length];
         const btn = document.createElement('button');
         btn.className = 'btn-profile';
         btn.style.borderColor = color;
-        btn.onclick = () => selectProfile(name);
+        btn.onclick = () => selectProfile(child.name);
+
+        let avatarHtml = '';
+        if (child.avatar) {
+          avatarHtml = `<img src="${child.avatar}" class="profile-avatar-img" alt="${child.name}">`;
+        } else {
+          avatarHtml = `
+            <svg class="avatar-icon" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" fill="${color}22"/>
+              <path d="M 30 70 Q 50 85 70 70" stroke="${color}" stroke-width="5" fill="none" stroke-linecap="round"/>
+              <circle cx="35" cy="45" r="6" fill="#424242"/>
+              <circle cx="65" cy="45" r="6" fill="#424242"/>
+              <path d="M 20 35 Q 50 10 80 35" fill="${color}"/>
+            </svg>`;
+        }
 
         btn.innerHTML = `
-          <svg class="avatar-icon" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="45" fill="${color}22"/>
-            <path d="M 30 70 Q 50 85 70 70" stroke="${color}" stroke-width="5" fill="none" stroke-linecap="round"/>
-            <circle cx="35" cy="45" r="6" fill="#424242"/>
-            <circle cx="65" cy="45" r="6" fill="#424242"/>
-            <path d="M 20 35 Q 50 10 80 35" fill="${color}"/>
-          </svg>
-          <span>${name.toUpperCase()}</span>
+          ${avatarHtml}
+          <span>${child.name.toUpperCase()}</span>
         `;
         container.appendChild(btn);
       });
@@ -703,7 +735,7 @@
 
         html += `
           <div class="daily-task-card" onclick="cycleCheck('${key}', this.querySelector('.checkbox'))">
-            <img class="daily-task-img" src="${task.image}" alt="${task.name}">
+            <img class="daily-task-img" src="${task.image}" alt="${task.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><text x=\'10\' y=\'50\' font-size=\'14\' fill=\'%23888\'>Irudia ez da aurkitu</text></svg>'">
             <div class="checkbox ${stateClass}" onclick="event.stopPropagation(); cycleCheck('${key}', this)"></div>
           </div>
         `;
@@ -813,16 +845,35 @@
       populateAdminUserSelect();
     }
 
+    function previewNewUserAvatar(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          newUserAvatarBase64 = e.target.result;
+          const preview = document.getElementById('new-user-avatar-preview');
+          preview.src = newUserAvatarBase64;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
     function renderAdminUsersList() {
       const container = document.getElementById('admin-users-list');
       container.innerHTML = '';
 
-      childrenList.forEach(name => {
+      childrenList.forEach((child) => {
         const row = document.createElement('div');
-        row.className = 'admin-item-row';
+        row.className = 'admin-user-row';
+
+        let avatarThumb = child.avatar ? `<img src="${child.avatar}" class="task-thumb-preview">` : `<span style="font-size:0.8rem; color:#64748B;">Abatar gabe</span>`;
+
         row.innerHTML = `
-          <span style="font-weight: 700; font-size: 1.1rem;">${name}</span>
-          <button class="btn-action btn-danger" style="padding: 6px 12px; font-size: 0.85rem;" onclick="removeChildUser('${name}')">Ezabatu</button>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            ${avatarThumb}
+            <span style="font-weight: 700; font-size: 1.1rem;">${child.name}</span>
+          </div>
+          <button class="btn-action btn-danger" style="padding: 6px 12px; font-size: 0.85rem;" onclick="removeChildUser('${child.name}')">Ezabatu</button>
         `;
         container.appendChild(row);
       });
@@ -832,13 +883,18 @@
       const input = document.getElementById('new-user-input');
       const name = input.value.trim();
       if (!name) return;
-      if (childrenList.includes(name)) {
+      if (childrenList.some(c => c.name === name)) {
         alert('Erabiltzaile hau badago jada.');
         return;
       }
-      childrenList.push(name);
+      childrenList.push({ name: name, avatar: newUserAvatarBase64 });
       localStorage.setItem('app_children', JSON.stringify(childrenList));
+      
       input.value = '';
+      newUserAvatarBase64 = '';
+      document.getElementById('new-user-avatar-preview').style.display = 'none';
+      document.getElementById('new-user-avatar-input').value = '';
+
       renderAdminUsersList();
       populateAdminUserSelect();
     }
@@ -849,7 +905,7 @@
         return;
       }
       if (confirm(`Ziur ${name} ezabatu nahi duzula?`)) {
-        childrenList = childrenList.filter(c => c !== name);
+        childrenList = childrenList.filter(c => c.name !== name);
         localStorage.setItem('app_children', JSON.stringify(childrenList));
         localStorage.removeItem(`tasks_config_${name}`);
         localStorage.removeItem(`tasks_state_${name}`);
@@ -861,10 +917,10 @@
     function populateAdminUserSelect() {
       const select = document.getElementById('admin-user-select');
       select.innerHTML = '';
-      childrenList.forEach(name => {
+      childrenList.forEach(child => {
         const opt = document.createElement('option');
-        opt.value = name;
-        opt.innerText = name;
+        opt.value = child.name;
+        opt.innerText = child.name;
         select.appendChild(opt);
       });
       loadAdminTasksForSelectedUser();
@@ -892,12 +948,29 @@
       const uniqueId = id || 'task_' + Math.random().toString(36).substring(2, 9);
 
       row.innerHTML = `
+        <img src="${image || ''}" class="task-thumb-preview task-img-preview" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'45\' height=\'45\'><text x=\'5\' y=\'26\' font-size=\'10\' fill=\'%23aaa\'>Irudia</text></svg>'">
         <input type="text" class="form-input task-name-input" value="${name}" placeholder="Zereginaren izena...">
-        <input type="text" class="form-input task-img-input" value="${image}" placeholder="irudia.png">
+        <label class="btn-action btn-secondary" style="padding: 10px 14px; font-size: 0.9rem; cursor: pointer; margin: 0; white-space: nowrap;">
+          Irudia aukeratu 📁 <input type="file" accept="image/*" style="display:none;" onchange="handleTaskImageUpload(this)">
+        </label>
         <button class="btn-action btn-danger" style="padding: 10px;" onclick="this.parentElement.remove()">✕</button>
+        <input type="hidden" class="task-img-input" value="${image}">
         <input type="hidden" class="task-id-input" value="${uniqueId}">
       `;
       container.appendChild(row);
+    }
+
+    function handleTaskImageUpload(fileInput) {
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const base64Data = e.target.result;
+          const row = fileInput.closest('.task-edit-grid');
+          row.querySelector('.task-img-input').value = base64Data;
+          row.querySelector('.task-img-preview').src = base64Data;
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      }
     }
 
     function addNewTaskRow() {
