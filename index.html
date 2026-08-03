@@ -21,8 +21,6 @@
       --bg: #F0F4F8;
       --card-bg: #FFFFFF;
       --text: #2C3E50;
-      --luke-color: #FF6B6B;
-      --marty-color: #4ECDC4;
       --success: #10B981;
       --danger: #EF4444;
     }
@@ -118,6 +116,7 @@
       justify-content: center;
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
       transition: transform 0.2s;
+      z-index: 10;
     }
     .btn-admin-access:hover { transform: scale(1.1); }
 
@@ -560,7 +559,6 @@
       { id: 'clear_table', name: 'Mahaia jaso', image: 'mahaia-jaso.png' }
     ];
 
-    // Cargar niños guardados o usar por defecto Luke y Marty
     let childrenList = JSON.parse(localStorage.getItem('app_children')) || ['Luke', 'Marty'];
     let currentChild = '';
     let savedData = {};
@@ -614,7 +612,6 @@
       }
     }
 
-    // Inicializar pantalla de selección
     function renderProfileSelection() {
       const container = document.getElementById('profile-buttons-container');
       container.innerHTML = '';
@@ -685,7 +682,6 @@
       updateProgressBar();
     }
 
-    // RENDER VISTA DIARIA
     function renderDailyView() {
       const container = document.getElementById('view-container');
       container.className = '';
@@ -707,7 +703,7 @@
 
         html += `
           <div class="daily-task-card" onclick="cycleCheck('${key}', this.querySelector('.checkbox'))">
-            <img class="daily-task-img" src="${task.image}" alt="${task.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><text x=\'10\' y=\'50\' font-size=\'14\'>Irudia ez da aurkitu</text></svg>'">
+            <img class="daily-task-img" src="${task.image}" alt="${task.name}">
             <div class="checkbox ${stateClass}" onclick="event.stopPropagation(); cycleCheck('${key}', this)"></div>
           </div>
         `;
@@ -717,7 +713,6 @@
       container.innerHTML = html;
     }
 
-    // RENDER VISTA SEMANAL
     function renderWeeklyView() {
       const container = document.getElementById('view-container');
       container.className = 'grid-container';
@@ -885,7 +880,7 @@
       const container = document.getElementById('admin-tasks-container');
       container.innerHTML = '';
 
-      tasks.forEach((task, index) => {
+      tasks.forEach((task) => {
         appendTaskRow(task.name, task.image, task.id);
       });
     }
@@ -894,7 +889,7 @@
       const container = document.getElementById('admin-tasks-container');
       const row = document.createElement('div');
       row.className = 'task-edit-grid';
-      const uniqueId = id || 'task_' + Math.random().toString(36.substring(2, 9));
+      const uniqueId = id || 'task_' + Math.random().toString(36).substring(2, 9);
 
       row.innerHTML = `
         <input type="text" class="form-input task-name-input" value="${name}" placeholder="Zereginaren izena...">
@@ -935,7 +930,7 @@
       alert('Aldaketak ondo gorde dira!');
     }
 
-    // Inicialización inicial al cargar la página
+    // Inicialización al cargar la página
     renderProfileSelection();
 
     // Service Worker PWA Offline
@@ -949,3 +944,4 @@
   </script>
 </body>
 </html>
+
