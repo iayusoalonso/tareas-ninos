@@ -123,22 +123,45 @@
       padding: 10px 24px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;
     }
 
+    /* Tarjeta diaria (Corregida) */
     .daily-task-card {
-      background: var(--card-bg); border-radius: 20px; width: 100%; position: relative;
-      overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08); border: 3px solid #E2E8F0;
+      background: var(--card-bg);
+      border-radius: 20px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      border: 3px solid #E2E8F0;
+      display: flex;
+      flex-direction: column;
     }
 
-    .daily-task-img { width: 100%; height: auto; display: block; border-radius: 16px; }
+    .task-card-header {
+      padding: 12px 14px 8px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .task-card-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .daily-task-img { 
+      width: 100%; 
+      max-height: 220px; 
+      object-fit: cover; 
+      display: block; 
+    }
 
     /* BADGES EN LA TARJETA DE TAREA */
-    .task-meta-bar {
-      position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; flex-wrap: wrap; z-index: 2;
-    }
     .badge-info {
-      background: rgba(15, 23, 42, 0.85); color: white; padding: 4px 10px; border-radius: 12px;
-      font-size: 0.8rem; font-weight: 800; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 4px;
+      background: #334155; color: white; padding: 4px 10px; border-radius: 12px;
+      font-size: 0.8rem; font-weight: 800; display: flex; align-items: center; gap: 4px;
     }
-    .badge-coop { background: rgba(124, 58, 237, 0.9); border: 1px solid #A78BFA; }
+    .badge-coop { background: #7C3AED; }
 
     /* CONTENEDOR MULTI-CHECK */
     .checks-container {
@@ -180,11 +203,32 @@
     .form-group { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap; }
     .form-input { flex: 1; padding: 8px 12px; border: 2px solid #CBD5E1; border-radius: 10px; font-size: 0.95rem; outline: none; min-width: 130px; }
 
+    /* Ajustes para la cuadrícula de tareas en administración (Corregido para móvil) */
     .task-edit-grid {
-      display: grid; grid-template-columns: 45px 1fr 120px 80px 70px auto auto; gap: 8px;
-      align-items: center; background: #F8FAFC; padding: 10px; border-radius: 10px; border: 1px solid #E2E8F0; margin-bottom: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      background: #F8FAFC;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #E2E8F0;
+      margin-bottom: 10px;
     }
-    .task-thumb-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 8px; background: #E2E8F0; }
+
+    .task-thumb-preview { 
+      width: 48px; 
+      height: 48px; 
+      object-fit: cover; 
+      border-radius: 8px; 
+      background: #E2E8F0; 
+      flex-shrink: 0;
+    }
+
+    .task-name-input { flex: 1 1 180px; }
+    .task-cat-input { flex: 1 1 130px; }
+    .task-pts-input { width: 70px; }
+    .task-checks-input { width: 95px; }
 
     /* BARRA DE PROGRESO Y PUNTOS FIJA */
     #progress-footer {
@@ -455,20 +499,25 @@
           checksHtml += `<div class="checkbox ${doneClass}" onclick="toggleCheck('${key}', this)"></div>`;
         }
 
-        const coopBadge = task.isCoop ? `<span class="badge-info badge-coop">🤝 Co-op (+Puntos)</span>` : '';
+        const coopBadge = task.isCoop ? `<span class="badge-info badge-coop">🤝 Co-op (+Pts)</span>` : '';
         const categoryBadge = `<span class="badge-info">🏷️ ${task.category || 'Besteak'}</span>`;
         const pointsBadge = `<span class="badge-info" style="color:var(--gold);">⭐ ${task.points || 10} pts</span>`;
 
         html += `
           <div class="daily-task-card">
-            <div class="task-meta-bar">
-              ${categoryBadge}
-              ${pointsBadge}
-              ${coopBadge}
+            <div class="task-card-header">
+              <div class="task-card-title">${task.name}</div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${categoryBadge}
+                ${pointsBadge}
+                ${coopBadge}
+              </div>
             </div>
-            <img class="daily-task-img" src="${task.image}" alt="${task.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><text x=\'10\' y=\'50\' font-size=\'14\' fill=\'%23888\'>Irudia ez da aurkitu</text></svg>'">
-            <div class="checks-container">
-              ${checksHtml}
+            <div style="position:relative;">
+              <img class="daily-task-img" src="${task.image}" alt="${task.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><text x=\'10\' y=\'50\' font-size=\'14\' fill=\'%23888\'>Irudia ez da aurkitu</text></svg>'">
+              <div class="checks-container">
+                ${checksHtml}
+              </div>
             </div>
           </div>
         `;
@@ -677,6 +726,7 @@
       tasks.forEach(task => appendTaskRow(task));
     }
 
+    // Fila del administrador corregida
     function appendTaskRow(task = {}) {
       const container = document.getElementById('admin-tasks-container');
       const row = document.createElement('div');
@@ -686,25 +736,27 @@
       let catOptionsHtml = categories.map(c => `<option value="${c}" ${task.category === c ? 'selected' : ''}>${c}</option>`).join('');
 
       row.innerHTML = `
-        <img src="${task.image || ''}" class="task-thumb-preview task-img-preview">
-        <input type="text" class="form-input task-name-input" value="${task.name || ''}" placeholder="Tarea...">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <img src="${task.image || ''}" class="task-thumb-preview task-img-preview" title="Toca para cambiar imagen">
+          <button type="button" class="btn-action btn-secondary" style="padding:6px 10px; font-size:0.8rem;" onclick="this.parentElement.querySelector('input[type=file]').click()">📷</button>
+          <input type="file" accept="image/*" style="display:none;" onchange="handleTaskImageUpload(this)">
+        </div>
+        <input type="text" class="form-input task-name-input" value="${task.name || ''}" placeholder="Nombre tarea...">
         <select class="form-input task-cat-input">${catOptionsHtml}</select>
         <input type="number" class="form-input task-pts-input" value="${task.points || 10}" placeholder="Pts" title="Puntos">
-        <select class="form-input task-checks-input" title="Número de veces al día">
+        <select class="form-input task-checks-input">
           <option value="1" ${task.checks === 1 ? 'selected' : ''}>1 check</option>
           <option value="2" ${task.checks === 2 ? 'selected' : ''}>2 checks</option>
           <option value="3" ${task.checks === 3 ? 'selected' : ''}>3 checks</option>
         </select>
-        <label style="font-size:0.8rem; font-weight:bold; cursor:pointer;" title="Tarea compartida entre hermanos">
+        <label style="font-size:0.85rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px;">
           <input type="checkbox" class="task-coop-input" ${task.isCoop ? 'checked' : ''}> 🤝 Co-op
         </label>
-        <button class="btn-action btn-danger" style="padding:6px 10px;" onclick="this.parentElement.remove()">✕</button>
+        <button class="btn-action btn-danger" style="padding:6px 12px; margin-left:auto;" onclick="this.parentElement.remove()">✕</button>
         <input type="hidden" class="task-img-input" value="${task.image || ''}">
         <input type="hidden" class="task-id-input" value="${uniqueId}">
-        <input type="file" accept="image/*" style="display:none;" onchange="handleTaskImageUpload(this)">
       `;
       
-      row.querySelector('.task-img-preview').onclick = () => row.querySelector('input[type="file"]').click();
       container.appendChild(row);
     }
 
