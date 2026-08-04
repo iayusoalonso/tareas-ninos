@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Asteko zereginen egutegia</title>
+  <title>Asteko zereginen egutegia & Gamifikazioa</title>
 
-  <!-- PWA Manifest & Meta Tags -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4A90E2">
   <meta name="mobile-web-app-capable" content="yes">
@@ -23,6 +22,7 @@
       --text: #2C3E50;
       --success: #10B981;
       --danger: #EF4444;
+      --gold: #F59E0B;
     }
 
     * {
@@ -37,7 +37,7 @@
       background-color: var(--bg);
       color: var(--text);
       padding: 12px;
-      padding-bottom: 90px;
+      padding-bottom: 110px;
       user-select: none;
       min-height: 100vh;
       display: flex;
@@ -57,26 +57,16 @@
       position: relative;
     }
 
-    #profile-selection h1 {
-      font-size: 2.2rem;
-      color: #2C3E50;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
+    #profile-selection h1 { font-size: 2.2rem; color: #2C3E50; font-weight: 800; text-transform: uppercase; }
 
-    .profile-buttons {
-      display: flex;
-      gap: 30px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
+    .profile-buttons { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; }
 
     .btn-profile {
       background: var(--card-bg);
       border: 4px solid var(--primary);
       border-radius: 24px;
-      padding: 30px 40px;
-      font-size: 1.8rem;
+      padding: 25px 35px;
+      font-size: 1.6rem;
       font-weight: 800;
       color: var(--text);
       cursor: pointer;
@@ -85,403 +75,126 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 15px;
-      min-width: 200px;
+      gap: 12px;
+      min-width: 180px;
     }
+    .btn-profile:hover { transform: translateY(-5px) scale(1.03); }
 
-    .btn-profile:hover, .btn-profile:active {
-      transform: translateY(-6px) scale(1.03);
-      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-    }
-
-    .avatar-icon, .profile-avatar-img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 50%;
-    }
+    .avatar-icon, .profile-avatar-img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; }
 
     .btn-admin-access {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #334155;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      font-size: 1.4rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      transition: transform 0.2s;
-      z-index: 10;
+      position: absolute; top: 10px; right: 10px;
+      background: #334155; color: white; border: none; border-radius: 50%;
+      width: 50px; height: 50px; font-size: 1.4rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 10;
     }
-    .btn-admin-access:hover { transform: scale(1.1); }
 
     /* PANTALLA 2: CALENDARIO INTERACTIVO */
-    #calendar-screen {
-      display: none;
-      flex-direction: column;
-      flex: 1;
-    }
+    #calendar-screen { display: none; flex-direction: column; flex: 1; }
 
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      background: var(--card-bg);
-      padding: 12px 20px;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      flex-wrap: wrap;
-      gap: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 15px; background: var(--card-bg); padding: 12px 20px;
+      border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
     }
 
-    .title-container {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
+    .title-container { display: flex; align-items: center; gap: 15px; }
+    #calendar-title { font-size: 1.5rem; color: #2C3E50; font-weight: 800; }
+    .badge-child { padding: 6px 16px; border-radius: 20px; color: white; font-weight: bold; font-size: 1.1rem; text-transform: uppercase; }
 
-    #calendar-title {
-      font-size: 1.5rem;
-      color: #2C3E50;
-      font-weight: 800;
-    }
-
-    .badge-child {
-      padding: 6px 16px;
-      border-radius: 20px;
-      color: white;
-      font-weight: bold;
-      font-size: 1.1rem;
-      text-transform: uppercase;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 10px;
-    }
+    .header-actions { display: flex; gap: 10px; }
 
     .btn-action {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      cursor: pointer;
-      font-weight: 700;
-      transition: background 0.2s, transform 0.1s;
+      background: var(--primary); color: white; border: none; padding: 10px 18px;
+      border-radius: 12px; font-size: 0.95rem; cursor: pointer; font-weight: 700; transition: background 0.2s;
     }
-
     .btn-action:hover { background: var(--primary-dark); }
-    .btn-action:active { transform: scale(0.97); }
     .btn-secondary { background: #7F8C8D; }
-    .btn-secondary:hover { background: #6C7A89; }
+    .btn-trophy { background: var(--gold); color: white; font-size: 1.1rem; }
     .btn-danger { background: var(--danger); }
-    .btn-danger:hover { background: #DC2626; }
     .btn-success { background: var(--success); }
-    .btn-success:hover { background: #059669; }
 
-    #view-container {
-      flex: 1;
-      width: 100%;
-    }
-
-    /* VISTA DIARIA */
-    .daily-view-list {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      max-width: 500px;
-      margin: 0 auto;
-      width: 100%;
-    }
+    /* VISTA DIARIA Y TARJETAS */
+    .daily-view-list { display: flex; flex-direction: column; align-items: center; gap: 20px; max-width: 500px; margin: 0 auto; width: 100%; }
 
     .day-header-badge {
-      background: #334155;
-      color: white;
-      font-size: 1.3rem;
-      font-weight: 800;
-      padding: 10px 24px;
-      border-radius: 20px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      background: #334155; color: white; font-size: 1.2rem; font-weight: 800;
+      padding: 10px 24px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;
     }
 
     .daily-task-card {
-      background: var(--card-bg);
-      border-radius: 20px;
-      width: 100%;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-      border: 3px solid #E2E8F0;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      background: var(--card-bg); border-radius: 20px; width: 100%; position: relative;
+      overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.08); border: 3px solid #E2E8F0;
     }
 
-    .daily-task-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    .daily-task-img { width: 100%; height: auto; display: block; border-radius: 16px; }
+
+    /* BADGES EN LA TARJETA DE TAREA */
+    .task-meta-bar {
+      position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; flex-wrap: wrap; z-index: 2;
     }
-
-    .daily-task-img {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 16px;
+    .badge-info {
+      background: rgba(15, 23, 42, 0.85); color: white; padding: 4px 10px; border-radius: 12px;
+      font-size: 0.8rem; font-weight: 800; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 4px;
     }
+    .badge-coop { background: rgba(124, 58, 237, 0.9); border: 1px solid #A78BFA; }
 
-    /* VISTA SEMANAL */
-    .grid-container {
-      display: grid;
-      grid-template-columns: 220px repeat(7, 1fr);
-      gap: 8px;
-      background: #CBD5E1;
-      border-radius: 16px;
-      padding: 8px;
-      overflow-x: auto;
-    }
-
-    .header-cell {
-      background: var(--primary);
-      color: white;
-      font-weight: 700;
-      font-size: 1rem;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 8px;
-    }
-
-    .header-cell.task-header { background: #334155; justify-content: flex-start; padding-left: 15px; }
-
-    .task-cell {
-      background: var(--card-bg);
-      border-radius: 10px;
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: #334155;
-    }
-
-    .task-img-small { 
-      width: 40px; 
-      height: 40px; 
-      object-fit: contain; 
-      flex-shrink: 0; 
-      border-radius: 6px;
-    }
-
-    .check-cell {
-      background: var(--card-bg);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    /* CONTENEDOR MULTI-CHECK */
+    .checks-container {
+      position: absolute; bottom: 15px; right: 15px; display: flex; gap: 10px; z-index: 2;
     }
 
     .checkbox {
-      width: 56px;
-      height: 56px;
-      border: 4px solid #CBD5E1;
-      border-radius: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 52px; height: 52px; border: 3px solid #FFFFFF; border-radius: 14px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      background: #F8FAFC;
-      font-weight: 900;
+      background: rgba(248, 250, 252, 0.95); font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.25);
     }
+    .checkbox.state-done { background-color: var(--success); border-color: #FFFFFF; transform: scale(1.05); }
+    .checkbox.state-done::after { content: '✓'; color: white; font-size: 1.8rem; }
 
-    .daily-task-card .checkbox {
-      position: absolute;
-      bottom: 15px;
-      right: 15px;
-      border: 3px solid #FFFFFF;
-      background: rgba(248, 250, 252, 0.95);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
-      width: 54px;
-      height: 54px;
-      border-radius: 14px;
-      z-index: 2;
+    /* VISTA SEMANAL */
+    .grid-container {
+      display: grid; grid-template-columns: 220px repeat(7, 1fr); gap: 8px;
+      background: #CBD5E1; border-radius: 16px; padding: 8px; overflow-x: auto;
     }
+    .header-cell { background: var(--primary); color: white; font-weight: 700; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 8px; }
+    .header-cell.task-header { background: #334155; justify-content: flex-start; padding-left: 15px; }
+    .task-cell { background: var(--card-bg); border-radius: 10px; padding: 8px; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.85rem; }
+    .task-img-small { width: 35px; height: 35px; object-fit: contain; flex-shrink: 0; border-radius: 6px; }
+    .check-cell { background: var(--card-bg); border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 4px; }
+    .grid-container .checkbox { width: 34px; height: 34px; border-width: 2px; border-radius: 8px; }
+    .grid-container .checkbox.state-done::after { font-size: 1.2rem; }
 
-    .grid-container .checkbox {
-      width: 44px;
-      height: 44px;
-      border-width: 3px;
-      border-radius: 10px;
-    }
-
-    .checkbox.state-done {
-      background-color: var(--success);
-      border-color: var(--success);
-      transform: scale(1.06);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
-    }
-    .daily-task-card .checkbox.state-done { border-color: #FFFFFF; }
-    .checkbox.state-done::after {
-      content: '✓';
-      color: white;
-      font-size: 2rem;
-    }
-
-    .checkbox.state-fail {
-      background-color: var(--danger);
-      border-color: var(--danger);
-      transform: scale(1.06);
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
-    }
-    .daily-task-card .checkbox.state-fail { border-color: #FFFFFF; }
-    .checkbox.state-fail::after {
-      content: '✕';
-      color: white;
-      font-size: 1.8rem;
-    }
-
-    .grid-container .checkbox.state-done::after { font-size: 1.6rem; }
-    .grid-container .checkbox.state-fail::after { font-size: 1.5rem; }
+    /* PANTALLA DE PREMIOS (MODAL/SCREEN) */
+    #rewards-screen { display: none; flex-direction: column; flex: 1; max-width: 700px; margin: 0 auto; width: 100%; gap: 20px; }
+    .rewards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    .reward-card { background: var(--card-bg); border-radius: 16px; padding: 20px; text-align: center; border: 3px solid #E2E8F0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .reward-points { font-size: 1.4rem; font-weight: 900; color: var(--gold); margin: 8px 0; }
 
     /* PANTALLA 3: ADMINISTRADOR */
-    #admin-screen {
-      display: none;
-      flex-direction: column;
-      flex: 1;
-      max-width: 750px;
-      margin: 0 auto;
-      width: 100%;
-      gap: 20px;
-    }
-
-    .admin-card {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-      border: 2px solid #E2E8F0;
-    }
-
-    .admin-card h2 {
-      font-size: 1.3rem;
-      margin-bottom: 15px;
-      color: #334155;
-    }
-
-    .form-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .form-input {
-      flex: 1;
-      padding: 10px 14px;
-      border: 2px solid #CBD5E1;
-      border-radius: 10px;
-      font-size: 1rem;
-      outline: none;
-      min-width: 150px;
-    }
-    .form-input:focus { border-color: var(--primary); }
-
-    .user-list-admin {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .admin-user-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #F8FAFC;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid #E2E8F0;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    #admin-screen { display: none; flex-direction: column; flex: 1; max-width: 800px; margin: 0 auto; width: 100%; gap: 20px; }
+    .admin-card { background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); border: 2px solid #E2E8F0; }
+    .admin-card h2 { font-size: 1.2rem; margin-bottom: 15px; color: #334155; }
+    .form-group { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap; }
+    .form-input { flex: 1; padding: 8px 12px; border: 2px solid #CBD5E1; border-radius: 10px; font-size: 0.95rem; outline: none; min-width: 130px; }
 
     .task-edit-grid {
-      display: grid;
-      grid-template-columns: 50px 1fr auto auto;
-      gap: 10px;
-      align-items: center;
-      background: #F8FAFC;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #E2E8F0;
-      margin-bottom: 8px;
+      display: grid; grid-template-columns: 45px 1fr 120px 80px 70px auto auto; gap: 8px;
+      align-items: center; background: #F8FAFC; padding: 10px; border-radius: 10px; border: 1px solid #E2E8F0; margin-bottom: 8px;
     }
+    .task-thumb-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 8px; background: #E2E8F0; }
 
-    .task-thumb-preview {
-      width: 45px;
-      height: 45px;
-      object-fit: cover;
-      border-radius: 8px;
-      background: #E2E8F0;
-      border: 1px solid #CBD5E1;
-    }
-
-    /* BARRA DE PROGRESO FIJA */
+    /* BARRA DE PROGRESO Y PUNTOS FIJA */
     #progress-footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #FFFFFF;
-      padding: 12px 20px;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-      display: none;
-      flex-direction: column;
-      gap: 6px;
-      z-index: 1000;
-      border-top-left-radius: 16px;
-      border-top-right-radius: 16px;
+      position: fixed; bottom: 0; left: 0; right: 0; background: #FFFFFF; padding: 12px 20px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 6px; z-index: 1000;
+      border-top-left-radius: 16px; border-top-right-radius: 16px;
     }
-
-    .progress-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: 800;
-      font-size: 1rem;
-      color: #334155;
-    }
-
-    .progress-bar-bg {
-      width: 100%;
-      height: 16px;
-      background: #E2E8F0;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #10B981, #34D399);
-      border-radius: 10px;
-      transition: width 0.4s ease-out;
-    }
+    .progress-info { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 1rem; color: #334155; }
+    .progress-bar-bg { width: 100%; height: 16px; background: #E2E8F0; border-radius: 10px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #F59E0B, #10B981); border-radius: 10px; transition: width 0.4s ease-out; }
   </style>
 </head>
 <body>
@@ -491,10 +204,7 @@
     <button class="btn-admin-access" onclick="openAdmin()" title="Kudeaketa / Admin">⚙️</button>
     <h1>Asteko zereginen egutegia</h1>
     <p style="color: #64748B; font-size: 1.2rem; margin-top: -15px;">Nor zarete gaur?</p>
-    
-    <div id="profile-buttons-container" class="profile-buttons">
-      <!-- Se inyecta dinámicamente -->
-    </div>
+    <div id="profile-buttons-container" class="profile-buttons"></div>
   </div>
 
   <!-- PANTALLA 2: CALENDARIO INTERACTIVO -->
@@ -505,12 +215,25 @@
         <span id="child-badge" class="badge-child"></span>
       </div>
       <div class="header-actions">
+        <button class="btn-action btn-trophy" onclick="openRewardsView()" title="Sariak">🏆 Sariak</button>
         <button id="btn-toggle-view" class="btn-action" onclick="toggleView()">Aste osoa ikusi</button>
         <button class="btn-action btn-secondary" onclick="showProfiles()">← Aldatu</button>
       </div>
     </header>
-
     <div id="view-container"></div>
+  </div>
+
+  <!-- PANTALLA DE PREMIOS/CATÁLOGO -->
+  <div id="rewards-screen">
+    <header>
+      <div class="title-container">
+        <h1>🏆 Sariak eta Recompensas</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-action btn-secondary" onclick="closeRewardsView()">← Atzera</button>
+      </div>
+    </header>
+    <div id="rewards-container" class="rewards-grid"></div>
   </div>
 
   <!-- PANTALLA 3: PANEL DE ADMINISTRACIÓN -->
@@ -524,27 +247,25 @@
       </div>
     </header>
 
-    <!-- Gestión de Usuarios y Avatares -->
+    <!-- Gestión de Usuarios -->
     <div class="admin-card">
-      <h2>Erabiltzaileak eta Abatarrak</h2>
+      <h2>1. Erabiltzaileak (Haurrak)</h2>
       <div class="form-group">
-        <input type="text" id="new-user-input" class="form-input" placeholder="Haurraren izena (adib: Jon)...">
+        <input type="text" id="new-user-input" class="form-input" placeholder="Haurraren izena...">
         <label class="btn-action btn-secondary" style="cursor: pointer; margin: 0;">
-          Abatar irudia argazkitik 📁 <input type="file" id="new-user-avatar-input" accept="image/*" style="display:none;" onchange="previewNewUserAvatar(this)">
+          Abatar 📁 <input type="file" id="new-user-avatar-input" accept="image/*" style="display:none;" onchange="previewNewUserAvatar(this)">
         </label>
         <img id="new-user-avatar-preview" class="task-thumb-preview" style="display:none;" />
         <button class="btn-action btn-success" onclick="addChildUser()">Gehitu</button>
       </div>
-      <div id="admin-users-list" class="user-list-admin"></div>
+      <div id="admin-users-list"></div>
     </div>
 
     <!-- Personalización de Tareas -->
     <div class="admin-card">
-      <h2>Zereginak pertsonalizatu: <span id="admin-selected-user-label" style="color: var(--primary);"></span></h2>
+      <h2>2. Zereginak pertsonalizatu: <span id="admin-selected-user-label" style="color: var(--primary);"></span></h2>
       <div class="form-group">
-        <select id="admin-user-select" class="form-input" onchange="loadAdminTasksForSelectedUser()">
-          <!-- Se llena dinámicamente -->
-        </select>
+        <select id="admin-user-select" class="form-input" onchange="loadAdminTasksForSelectedUser()"></select>
       </div>
       
       <div id="admin-tasks-container"></div>
@@ -554,13 +275,23 @@
         <button class="btn-action" onclick="saveAdminTasks()">Aldaketak gorde</button>
       </div>
     </div>
+
+    <!-- Gestión de Premios -->
+    <div class="admin-card">
+      <h2>3. Catálogo de Premios</h2>
+      <div id="admin-rewards-container"></div>
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button class="btn-action btn-success" onclick="addNewRewardRow()">+ Gehitu Saria</button>
+        <button class="btn-action" onclick="saveAdminRewards()">Sariak gorde</button>
+      </div>
+    </div>
   </div>
 
-  <!-- BARRA DE PROGRESO FIJA -->
+  <!-- BARRA DE PROGRESO Y PUNTOS FIJA -->
   <div id="progress-footer">
     <div class="progress-info">
-      <span>Gaurko garapena / Progreso de hoy</span>
-      <span id="progress-text">0 / 0 (%0)</span>
+      <span>Gaurko Puntuak / Puntos de Hoy: <b id="today-points" style="color:var(--gold);">0 pts</b></span>
+      <span id="streak-badge" style="color:#7C3AED; font-weight:900;">🔥 Racha: 0 días</span>
     </div>
     <div class="progress-bar-bg">
       <div id="progress-bar-fill" class="progress-bar-fill"></div>
@@ -569,19 +300,24 @@
 
   <script>
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
-    
+    const categories = ['Higiene', 'Ordena', 'Eskola', 'Extraescolar', 'Comportamiento', 'Besteak'];
+
     const defaultTasks = [
-      { id: 'read', name: 'Irakurri', image: 'irakurri.png' },
-      { id: 'homework', name: 'Eskolako lanak egin', image: 'eskolako-lanak.png' },
-      { id: 'piano', name: 'Pianoa jo', image: 'pianoa.png' },
-      { id: 'room', name: 'Gela jaso', image: 'gela-jaso.png' },
-      { id: 'set_table', name: 'Mahaia jarri', image: 'mahaia-jarri.png' },
-      { id: 'clear_table', name: 'Mahaia jaso', image: 'mahaia-jaso.png' }
+      { id: 'dientes', name: 'Lavarse los dientes', image: 'dientes.png', category: 'Higiene', points: 10, checks: 3, isCoop: false },
+      { id: 'habitacion', name: 'Recoger la habitación', image: 'gela-jaso.png', category: 'Ordena', points: 15, checks: 1, isCoop: false },
+      { id: 'juegos_coop', name: 'Recoger zona común de juegos', image: 'juegos.png', category: 'Ordena', points: 25, checks: 1, isCoop: true },
+      { id: 'deberes', name: 'Eskolako lanak egin', image: 'eskolako-lanak.png', category: 'Eskola', points: 20, checks: 1, isCoop: false }
     ];
 
-    // Migración y carga segura de lista de usuarios (ahora objetos con nombre y avatar)
+    const defaultRewards = [
+      { id: 'reward_1', name: 'Elegir el postre de la cena', points: 50 },
+      { id: 'reward_2', name: '30 min extra de pantalla / juego', points: 100 },
+      { id: 'reward_3', name: 'Salida especial al parque / pumptrack', points: 250 }
+    ];
+
     let rawChildren = JSON.parse(localStorage.getItem('app_children')) || ['Luke', 'Marty'];
     let childrenList = rawChildren.map(c => typeof c === 'string' ? { name: c, avatar: '' } : c);
+    let rewardsList = JSON.parse(localStorage.getItem('app_rewards')) || defaultRewards;
 
     let currentChild = '';
     let savedData = {};
@@ -622,14 +358,6 @@
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
           osc.start(now);
           osc.stop(now + 0.35);
-        } else if (type === 'fail') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(220, now);
-          osc.frequency.setValueAtTime(160, now + 0.12);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-          osc.start(now);
-          osc.stop(now + 0.25);
         }
       } catch (e) {
         console.log('Audio no disponible:', e);
@@ -639,7 +367,6 @@
     function renderProfileSelection() {
       const container = document.getElementById('profile-buttons-container');
       container.innerHTML = '';
-
       const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#6C5CE7', '#00B894'];
 
       childrenList.forEach((child, index) => {
@@ -649,24 +376,16 @@
         btn.style.borderColor = color;
         btn.onclick = () => selectProfile(child.name);
 
-        let avatarHtml = '';
-        if (child.avatar) {
-          avatarHtml = `<img src="${child.avatar}" class="profile-avatar-img" alt="${child.name}">`;
-        } else {
-          avatarHtml = `
-            <svg class="avatar-icon" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="${color}22"/>
-              <path d="M 30 70 Q 50 85 70 70" stroke="${color}" stroke-width="5" fill="none" stroke-linecap="round"/>
-              <circle cx="35" cy="45" r="6" fill="#424242"/>
-              <circle cx="65" cy="45" r="6" fill="#424242"/>
-              <path d="M 20 35 Q 50 10 80 35" fill="${color}"/>
-            </svg>`;
-        }
+        let avatarHtml = child.avatar ? 
+          `<img src="${child.avatar}" class="profile-avatar-img" alt="${child.name}">` :
+          `<svg class="avatar-icon" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="${color}22"/>
+            <path d="M 30 70 Q 50 85 70 70" stroke="${color}" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <circle cx="35" cy="45" r="6" fill="#424242"/><circle cx="65" cy="45" r="6" fill="#424242"/>
+            <path d="M 20 35 Q 50 10 80 35" fill="${color}"/>
+          </svg>`;
 
-        btn.innerHTML = `
-          ${avatarHtml}
-          <span>${child.name.toUpperCase()}</span>
-        `;
+        btn.innerHTML = `${avatarHtml}<span>${child.name.toUpperCase()}</span>`;
         container.appendChild(btn);
       });
     }
@@ -675,12 +394,12 @@
       currentChild = name;
       document.getElementById('profile-selection').style.display = 'none';
       document.getElementById('admin-screen').style.display = 'none';
+      document.getElementById('rewards-screen').style.display = 'none';
       document.getElementById('calendar-screen').style.display = 'flex';
       document.getElementById('progress-footer').style.display = 'flex';
       
       const badge = document.getElementById('child-badge');
       badge.innerText = name;
-      badge.style.backgroundColor = 'var(--primary)';
 
       const stored = localStorage.getItem(`tasks_state_${currentChild}`);
       savedData = stored ? JSON.parse(stored) : {};
@@ -693,6 +412,7 @@
       document.getElementById('profile-selection').style.display = 'flex';
       document.getElementById('calendar-screen').style.display = 'none';
       document.getElementById('admin-screen').style.display = 'none';
+      document.getElementById('rewards-screen').style.display = 'none';
       document.getElementById('progress-footer').style.display = 'none';
       renderProfileSelection();
     }
@@ -711,13 +431,11 @@
         toggleBtn.innerText = 'Gaurko eguna ikusi';
         renderWeeklyView();
       }
-      updateProgressBar();
+      updateGamificationStats();
     }
 
     function renderDailyView() {
       const container = document.getElementById('view-container');
-      container.className = '';
-      
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
       const tasks = getTasksForChild(currentChild);
@@ -726,17 +444,32 @@
         <div class="day-header-badge">Gaur: ${currentDayName}</div>`;
 
       tasks.forEach(task => {
-        const key = `${task.id}_${currentDayName}`;
-        const state = savedData[key] || 'none';
+        const numChecks = task.checks || 1;
+        let checksHtml = '';
 
-        let stateClass = '';
-        if (state === 'done') stateClass = 'state-done';
-        if (state === 'fail') stateClass = 'state-fail';
+        for (let i = 1; i <= numChecks; i++) {
+          const key = `${task.id}_${currentDayName}_chk${i}`;
+          const isDone = savedData[key] === true;
+          const doneClass = isDone ? 'state-done' : '';
+
+          checksHtml += `<div class="checkbox ${doneClass}" onclick="toggleCheck('${key}', this)"></div>`;
+        }
+
+        const coopBadge = task.isCoop ? `<span class="badge-info badge-coop">🤝 Co-op (+Puntos)</span>` : '';
+        const categoryBadge = `<span class="badge-info">🏷️ ${task.category || 'Besteak'}</span>`;
+        const pointsBadge = `<span class="badge-info" style="color:var(--gold);">⭐ ${task.points || 10} pts</span>`;
 
         html += `
-          <div class="daily-task-card" onclick="cycleCheck('${key}', this.querySelector('.checkbox'))">
+          <div class="daily-task-card">
+            <div class="task-meta-bar">
+              ${categoryBadge}
+              ${pointsBadge}
+              ${coopBadge}
+            </div>
             <img class="daily-task-img" src="${task.image}" alt="${task.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><text x=\'10\' y=\'50\' font-size=\'14\' fill=\'%23888\'>Irudia ez da aurkitu</text></svg>'">
-            <div class="checkbox ${stateClass}" onclick="event.stopPropagation(); cycleCheck('${key}', this)"></div>
+            <div class="checks-container">
+              ${checksHtml}
+            </div>
           </div>
         `;
       });
@@ -767,113 +500,136 @@
       tasks.forEach(task => {
         const taskCell = document.createElement('div');
         taskCell.className = 'task-cell';
-        taskCell.innerHTML = `<img class="task-img-small" src="${task.image}" alt="${task.name}"> <span>${task.name}</span>`;
+        const coopIcon = task.isCoop ? '🤝 ' : '';
+        taskCell.innerHTML = `<img class="task-img-small" src="${task.image}"> <span>${coopIcon}${task.name}</span>`;
         container.appendChild(taskCell);
 
         days.forEach(day => {
           const checkCell = document.createElement('div');
           checkCell.className = 'check-cell';
 
-          const key = `${task.id}_${day}`;
-          const state = savedData[key] || 'none';
-
-          const box = document.createElement('div');
-          let stateClass = '';
-          if (state === 'done') stateClass = 'state-done';
-          if (state === 'fail') stateClass = 'state-fail';
-
-          box.className = `checkbox ${stateClass}`;
-          box.onclick = () => cycleCheck(key, box);
-
-          checkCell.appendChild(box);
+          const numChecks = task.checks || 1;
+          for (let i = 1; i <= numChecks; i++) {
+            const key = `${task.id}_${day}_chk${i}`;
+            const isDone = savedData[key] === true;
+            const box = document.createElement('div');
+            box.className = `checkbox ${isDone ? 'state-done' : ''}`;
+            box.onclick = () => toggleCheck(key, box);
+            checkCell.appendChild(box);
+          }
           container.appendChild(checkCell);
         });
       });
     }
 
-    function cycleCheck(key, element) {
-      const currentState = savedData[key] || 'none';
-      let nextState = 'none';
-
-      element.classList.remove('state-done', 'state-fail');
-
-      if (currentState === 'none') {
-        nextState = 'done';
+    function toggleCheck(key, element) {
+      const isDone = savedData[key] === true;
+      if (!isDone) {
+        savedData[key] = true;
         element.classList.add('state-done');
         playSound('done');
-      } else if (currentState === 'done') {
-        nextState = 'fail';
-        element.classList.add('state-fail');
-        playSound('fail');
       } else {
-        nextState = 'none';
+        savedData[key] = false;
+        element.classList.remove('state-done');
       }
 
-      savedData[key] = nextState;
       localStorage.setItem(`tasks_state_${currentChild}`, JSON.stringify(savedData));
-      updateProgressBar();
+      updateGamificationStats();
     }
 
-    function updateProgressBar() {
+    function updateGamificationStats() {
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
       const tasks = getTasksForChild(currentChild);
-      const totalTasks = tasks.length;
-      let completedTasks = 0;
+      
+      let earnedToday = 0;
+      let totalMaxToday = 0;
 
       tasks.forEach(task => {
-        const key = `${task.id}_${currentDayName}`;
-        if (savedData[key] === 'done') {
-          completedTasks++;
+        const numChecks = task.checks || 1;
+        const ptsPerCheck = (task.points || 10) / numChecks;
+        totalMaxToday += (task.points || 10);
+
+        for (let i = 1; i <= numChecks; i++) {
+          const key = `${task.id}_${currentDayName}_chk${i}`;
+          if (savedData[key] === true) {
+            earnedToday += ptsPerCheck;
+          }
         }
       });
 
-      const percentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      earnedToday = Math.round(earnedToday);
+      document.getElementById('today-points').innerText = `${earnedToday} pts`;
+
+      const pct = totalMaxToday > 0 ? Math.min(100, Math.round((earnedToday / totalMaxToday) * 100)) : 0;
+      document.getElementById('progress-bar-fill').style.width = `${pct}%`;
+
+      // Racha simple de días con tareas completadas al >75%
+      let streak = 0;
+      days.forEach(day => {
+        let dayPts = 0;
+        let dayMax = 0;
+        tasks.forEach(t => {
+          const n = t.checks || 1;
+          dayMax += (t.points || 10);
+          for (let i = 1; i <= n; i++) {
+            if (savedData[`${t.id}_${day}_chk${i}`]) dayPts += ((t.points || 10) / n);
+          }
+        });
+        if (dayMax > 0 && (dayPts / dayMax) >= 0.75) streak++;
+      });
+
+      document.getElementById('streak-badge').innerText = `🔥 Racha: ${streak} días (+Bonus)`;
+    }
+
+    // VISTA DE PREMIOS
+    function openRewardsView() {
+      document.getElementById('calendar-screen').style.display = 'none';
+      document.getElementById('rewards-screen').style.display = 'flex';
       
-      document.getElementById('progress-bar-fill').style.width = `${percentage}%`;
-      document.getElementById('progress-text').innerText = `${completedTasks} / ${totalTasks} eginda - %${percentage}`;
+      const container = document.getElementById('rewards-container');
+      container.innerHTML = '';
+
+      rewardsList.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'reward-card';
+        card.innerHTML = `
+          <div style="font-size:2.5rem;">🎁</div>
+          <h3 style="font-size:1.1rem; margin-top:5px;">${r.name}</h3>
+          <div class="reward-points">⭐ ${r.points} pts</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function closeRewardsView() {
+      document.getElementById('rewards-screen').style.display = 'none';
+      document.getElementById('calendar-screen').style.display = 'flex';
     }
 
     // PANEL DE ADMINISTRACIÓN
     function openAdmin() {
       document.getElementById('profile-selection').style.display = 'none';
       document.getElementById('calendar-screen').style.display = 'none';
+      document.getElementById('rewards-screen').style.display = 'none';
       document.getElementById('progress-footer').style.display = 'none';
       document.getElementById('admin-screen').style.display = 'flex';
       
       renderAdminUsersList();
       populateAdminUserSelect();
-    }
-
-    function previewNewUserAvatar(input) {
-      if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          newUserAvatarBase64 = e.target.result;
-          const preview = document.getElementById('new-user-avatar-preview');
-          preview.src = newUserAvatarBase64;
-          preview.style.display = 'block';
-        };
-        reader.readAsDataURL(input.files[0]);
-      }
+      renderAdminRewards();
     }
 
     function renderAdminUsersList() {
       const container = document.getElementById('admin-users-list');
       container.innerHTML = '';
-
       childrenList.forEach((child) => {
         const row = document.createElement('div');
-        row.className = 'admin-user-row';
-
-        let avatarThumb = child.avatar ? `<img src="${child.avatar}" class="task-thumb-preview">` : `<span style="font-size:0.8rem; color:#64748B;">Abatar gabe</span>`;
-
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#F8FAFC; padding:8px 12px; border-radius:10px; margin-bottom:8px;';
+        let thumb = child.avatar ? `<img src="${child.avatar}" class="task-thumb-preview">` : `<span style="font-size:0.8rem;">Sin foto</span>`;
         row.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 10px;">
-            ${avatarThumb}
-            <span style="font-weight: 700; font-size: 1.1rem;">${child.name}</span>
-          </div>
-          <button class="btn-action btn-danger" style="padding: 6px 12px; font-size: 0.85rem;" onclick="removeChildUser('${child.name}')">Ezabatu</button>
+          <div style="display:flex; align-items:center; gap:10px;">${thumb}<b>${child.name}</b></div>
+          <button class="btn-action btn-danger" style="padding:4px 10px;" onclick="removeChildUser('${child.name}')">Ezabatu</button>
         `;
         container.appendChild(row);
       });
@@ -883,34 +639,20 @@
       const input = document.getElementById('new-user-input');
       const name = input.value.trim();
       if (!name) return;
-      if (childrenList.some(c => c.name === name)) {
-        alert('Erabiltzaile hau badago jada.');
-        return;
-      }
+      if (childrenList.some(c => c.name === name)) return alert('Ya existe');
       childrenList.push({ name: name, avatar: newUserAvatarBase64 });
       localStorage.setItem('app_children', JSON.stringify(childrenList));
-      
-      input.value = '';
-      newUserAvatarBase64 = '';
+      input.value = ''; newUserAvatarBase64 = '';
       document.getElementById('new-user-avatar-preview').style.display = 'none';
-      document.getElementById('new-user-avatar-input').value = '';
-
-      renderAdminUsersList();
-      populateAdminUserSelect();
+      renderAdminUsersList(); populateAdminUserSelect();
     }
 
     function removeChildUser(name) {
-      if (childrenList.length <= 1) {
-        alert('Gutxienez erabiltzaile bat egon behar da.');
-        return;
-      }
-      if (confirm(`Ziur ${name} ezabatu nahi duzula?`)) {
+      if (childrenList.length <= 1) return alert('Debe haber al menos 1 usuario');
+      if (confirm(`¿Eliminar a ${name}?`)) {
         childrenList = childrenList.filter(c => c.name !== name);
         localStorage.setItem('app_children', JSON.stringify(childrenList));
-        localStorage.removeItem(`tasks_config_${name}`);
-        localStorage.removeItem(`tasks_state_${name}`);
-        renderAdminUsersList();
-        populateAdminUserSelect();
+        renderAdminUsersList(); populateAdminUserSelect();
       }
     }
 
@@ -919,44 +661,50 @@
       select.innerHTML = '';
       childrenList.forEach(child => {
         const opt = document.createElement('option');
-        opt.value = child.name;
-        opt.innerText = child.name;
+        opt.value = child.name; opt.innerText = child.name;
         select.appendChild(opt);
       });
       loadAdminTasksForSelectedUser();
     }
 
     function loadAdminTasksForSelectedUser() {
-      const select = document.getElementById('admin-user-select');
-      const selectedUser = select.value;
+      const selectedUser = document.getElementById('admin-user-select').value;
       if (!selectedUser) return;
-
       document.getElementById('admin-selected-user-label').innerText = selectedUser;
       const tasks = getTasksForChild(selectedUser);
       const container = document.getElementById('admin-tasks-container');
       container.innerHTML = '';
-
-      tasks.forEach((task) => {
-        appendTaskRow(task.name, task.image, task.id);
-      });
+      tasks.forEach(task => appendTaskRow(task));
     }
 
-    function appendTaskRow(name = '', image = '', id = '') {
+    function appendTaskRow(task = {}) {
       const container = document.getElementById('admin-tasks-container');
       const row = document.createElement('div');
       row.className = 'task-edit-grid';
-      const uniqueId = id || 'task_' + Math.random().toString(36).substring(2, 9);
+      const uniqueId = task.id || 'task_' + Math.random().toString(36).substring(2, 9);
+
+      let catOptionsHtml = categories.map(c => `<option value="${c}" ${task.category === c ? 'selected' : ''}>${c}</option>`).join('');
 
       row.innerHTML = `
-        <img src="${image || ''}" class="task-thumb-preview task-img-preview" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'45\' height=\'45\'><text x=\'5\' y=\'26\' font-size=\'10\' fill=\'%23aaa\'>Irudia</text></svg>'">
-        <input type="text" class="form-input task-name-input" value="${name}" placeholder="Zereginaren izena...">
-        <label class="btn-action btn-secondary" style="padding: 10px 14px; font-size: 0.9rem; cursor: pointer; margin: 0; white-space: nowrap;">
-          Irudia aukeratu 📁 <input type="file" accept="image/*" style="display:none;" onchange="handleTaskImageUpload(this)">
+        <img src="${task.image || ''}" class="task-thumb-preview task-img-preview">
+        <input type="text" class="form-input task-name-input" value="${task.name || ''}" placeholder="Tarea...">
+        <select class="form-input task-cat-input">${catOptionsHtml}</select>
+        <input type="number" class="form-input task-pts-input" value="${task.points || 10}" placeholder="Pts" title="Puntos">
+        <select class="form-input task-checks-input" title="Número de veces al día">
+          <option value="1" ${task.checks === 1 ? 'selected' : ''}>1 check</option>
+          <option value="2" ${task.checks === 2 ? 'selected' : ''}>2 checks</option>
+          <option value="3" ${task.checks === 3 ? 'selected' : ''}>3 checks</option>
+        </select>
+        <label style="font-size:0.8rem; font-weight:bold; cursor:pointer;" title="Tarea compartida entre hermanos">
+          <input type="checkbox" class="task-coop-input" ${task.isCoop ? 'checked' : ''}> 🤝 Co-op
         </label>
-        <button class="btn-action btn-danger" style="padding: 10px;" onclick="this.parentElement.remove()">✕</button>
-        <input type="hidden" class="task-img-input" value="${image}">
+        <button class="btn-action btn-danger" style="padding:6px 10px;" onclick="this.parentElement.remove()">✕</button>
+        <input type="hidden" class="task-img-input" value="${task.image || ''}">
         <input type="hidden" class="task-id-input" value="${uniqueId}">
+        <input type="file" accept="image/*" style="display:none;" onchange="handleTaskImageUpload(this)">
       `;
+      
+      row.querySelector('.task-img-preview').onclick = () => row.querySelector('input[type="file"]').click();
       container.appendChild(row);
     }
 
@@ -973,45 +721,86 @@
       }
     }
 
-    function addNewTaskRow() {
-      appendTaskRow('', '', '');
-    }
+    function addNewTaskRow() { appendTaskRow(); }
 
     function saveAdminTasks() {
-      const select = document.getElementById('admin-user-select');
-      const selectedUser = select.value;
+      const selectedUser = document.getElementById('admin-user-select').value;
       if (!selectedUser) return;
 
-      const rows = document.querySelectorAll('.task-edit-grid');
+      const rows = document.querySelectorAll('#admin-tasks-container .task-edit-grid');
       const newTasks = [];
 
       rows.forEach(row => {
         const name = row.querySelector('.task-name-input').value.trim();
-        const image = row.querySelector('.task-img-input').value.trim();
-        const id = row.querySelector('.task-id-input').value;
-
         if (name) {
           newTasks.push({
-            id: id || name.toLowerCase().replace(/\s+/g, '_'),
+            id: row.querySelector('.task-id-input').value,
             name: name,
-            image: image || 'default.png'
+            image: row.querySelector('.task-img-input').value || 'default.png',
+            category: row.querySelector('.task-cat-input').value,
+            points: parseInt(row.querySelector('.task-pts-input').value) || 10,
+            checks: parseInt(row.querySelector('.task-checks-input').value) || 1,
+            isCoop: row.querySelector('.task-coop-input').checked
           });
         }
       });
 
       localStorage.setItem(`tasks_config_${selectedUser}`, JSON.stringify(newTasks));
-      alert('Aldaketak ondo gorde dira!');
+      alert('¡Tareas guardadas correctamente!');
     }
 
-    // Inicialización al cargar la página
+    // ADMINISTRACIÓN DE PREMIOS
+    function renderAdminRewards() {
+      const container = document.getElementById('admin-rewards-container');
+      container.innerHTML = '';
+      rewardsList.forEach(r => appendRewardRow(r.name, r.points));
+    }
+
+    function appendRewardRow(name = '', points = 50) {
+      const container = document.getElementById('admin-rewards-container');
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; gap:10px; margin-bottom:8px; align-items:center;';
+      row.className = 'reward-edit-row';
+      row.innerHTML = `
+        <input type="text" class="form-input reward-name-input" value="${name}" placeholder="Nombre del premio...">
+        <input type="number" class="form-input reward-pts-input" value="${points}" style="max-width:100px;" placeholder="Pts">
+        <button class="btn-action btn-danger" style="padding:6px 10px;" onclick="this.parentElement.remove()">✕</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function addNewRewardRow() { appendRewardRow(); }
+
+    function saveAdminRewards() {
+      const rows = document.querySelectorAll('.reward-edit-row');
+      const updated = [];
+      rows.forEach(r => {
+        const name = r.querySelector('.reward-name-input').value.trim();
+        const pts = parseInt(r.querySelector('.reward-pts-input').value) || 50;
+        if (name) updated.push({ id: 'rew_' + Math.random().toString(36).substring(2,7), name, points: pts });
+      });
+      rewardsList = updated;
+      localStorage.setItem('app_rewards', JSON.stringify(rewardsList));
+      alert('¡Premios actualizados!');
+    }
+
+    function previewNewUserAvatar(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          newUserAvatarBase64 = e.target.result;
+          const p = document.getElementById('new-user-avatar-preview');
+          p.src = newUserAvatarBase64; p.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
     renderProfileSelection();
 
-    // Service Worker PWA Offline
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker registrado:', reg.scope))
-          .catch(err => console.error('Error Service Worker:', err));
+        navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
       });
     }
   </script>
