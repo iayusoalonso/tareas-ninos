@@ -123,7 +123,6 @@
       padding: 10px 24px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;
     }
 
-    /* Tarjeta diaria (Corregida) */
     .daily-task-card {
       background: var(--card-bg);
       border-radius: 20px;
@@ -203,7 +202,6 @@
     .form-group { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap; }
     .form-input { flex: 1; padding: 8px 12px; border: 2px solid #CBD5E1; border-radius: 10px; font-size: 0.95rem; outline: none; min-width: 130px; }
 
-    /* Ajustes para la cuadrícula de tareas en administración (Corregido para móvil) */
     .task-edit-grid {
       display: flex;
       flex-wrap: wrap;
@@ -378,7 +376,6 @@
       return (jsDay + 6) % 7;
     }
 
-    // Audio sintetizado
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
 
@@ -468,6 +465,11 @@
 
     function renderView() {
       const toggleBtn = document.getElementById('btn-toggle-view');
+      const container = document.getElementById('view-container');
+      
+      // Limpiamos las clases del contenedor para evitar arrastrar la cuadrícula semanal
+      container.className = '';
+
       if (currentView === 'daily') {
         toggleBtn.innerText = 'Aste osoa ikusi';
         renderDailyView();
@@ -613,7 +615,6 @@
       const pct = totalMaxToday > 0 ? Math.min(100, Math.round((earnedToday / totalMaxToday) * 100)) : 0;
       document.getElementById('progress-bar-fill').style.width = `${pct}%`;
 
-      // Racha simple de días con tareas completadas al >75%
       let streak = 0;
       days.forEach(day => {
         let dayPts = 0;
@@ -631,7 +632,6 @@
       document.getElementById('streak-badge').innerText = `🔥 Racha: ${streak} días (+Bonus)`;
     }
 
-    // VISTA DE PREMIOS
     function openRewardsView() {
       document.getElementById('calendar-screen').style.display = 'none';
       document.getElementById('rewards-screen').style.display = 'flex';
@@ -656,7 +656,6 @@
       document.getElementById('calendar-screen').style.display = 'flex';
     }
 
-    // PANEL DE ADMINISTRACIÓN
     function openAdmin() {
       document.getElementById('profile-selection').style.display = 'none';
       document.getElementById('calendar-screen').style.display = 'none';
@@ -726,7 +725,6 @@
       tasks.forEach(task => appendTaskRow(task));
     }
 
-    // Fila del administrador corregida
     function appendTaskRow(task = {}) {
       const container = document.getElementById('admin-tasks-container');
       const row = document.createElement('div');
@@ -801,7 +799,6 @@
       alert('¡Tareas guardadas correctamente!');
     }
 
-    // ADMINISTRACIÓN DE PREMIOS
     function renderAdminRewards() {
       const container = document.getElementById('admin-rewards-container');
       container.innerHTML = '';
