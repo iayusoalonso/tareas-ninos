@@ -39,22 +39,38 @@
       gap: 1rem;
     }
 
-    .nav-tabs {
+    .switch-child-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
       display: flex;
+      align-items: center;
       gap: 0.5rem;
+    }
+
+    .nav-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.3rem;
       max-width: 1000px;
       margin: 0.75rem auto 0;
-      overflow-x: auto;
     }
 
     .tab-btn {
-      padding: 0.5rem 1rem;
+      padding: 0.5rem 0.2rem;
       border: 1px solid var(--border);
       background: var(--bg);
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
+      font-size: 0.85rem;
+      text-align: center;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .tab-btn.active {
@@ -64,6 +80,64 @@
     }
 
     main { max-width: 1000px; margin: 1.5rem auto; padding: 0 1rem; }
+
+    /* Initial Child Select Screen */
+    .child-select-container {
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+
+    .child-select-title {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .child-select-subtitle {
+      color: #64748b;
+      margin-bottom: 2rem;
+    }
+
+    .child-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .child-card {
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .child-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .child-avatar-lg {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #e2e8f0;
+      border: 3px solid var(--primary);
+    }
+
+    .child-card-name {
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
 
     /* Day Navigation */
     .day-nav {
@@ -151,7 +225,7 @@
     /* Weekly Grid */
     .grid-container {
       display: grid;
-      grid-template-columns: 180px repeat(7, 1fr);
+      grid-template-columns: 160px repeat(7, 1fr);
       gap: 4px;
       background: var(--border);
       border: 1px solid var(--border);
@@ -176,7 +250,7 @@
     /* Rewards View */
     .rewards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 1rem;
     }
 
@@ -211,23 +285,61 @@
     }
     .reward-btn:disabled { opacity: 0.4; cursor: not-allowed; background: #94a3b8; }
 
-    /* Admin Config Form */
-    .admin-form {
+    /* Admin Styles */
+    .admin-section {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      padding: 1rem;
+      padding: 1.25rem;
       border-radius: 8px;
       margin-bottom: 1.5rem;
+    }
+
+    .admin-section h3 { margin-bottom: 1rem; color: var(--primary); }
+
+    .admin-form {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
     }
 
     .admin-form input, .admin-form select {
-      padding: 0.5rem;
+      padding: 0.6rem;
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 6px;
     }
+
+    .item-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.8rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      gap: 0.5rem;
+    }
+
+    .item-row-info { display: flex; align-items: center; gap: 0.75rem; flex-grow: 1; }
+    .item-row-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+    .item-actions { display: flex; gap: 0.3rem; }
+
+    .btn-action {
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-danger { background: var(--danger); color: white; border-color: var(--danger); }
 
     /* Fixed Footer */
     footer {
@@ -273,17 +385,15 @@
   <header>
     <div class="top-bar">
       <h2>Planifikatzailea</h2>
-      <div>
-        <label for="child-select"><strong>Umea:</strong> </label>
-        <select id="child-select" onchange="switchChild(this.value)">
-          <option value="child1">Haurra 1</option>
-          <option value="child2">Haurra 2</option>
-        </select>
+      <div id="header-child-info" style="display:none; align-items:center; gap:0.5rem;">
+        <button class="switch-child-btn" onclick="openChildSelector()">
+          <span id="header-child-name">Haurra</span> 🔄
+        </button>
       </div>
     </div>
-    <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchView('daily', this)">Eguneroko Ikuspegia</button>
-      <button class="tab-btn" onclick="switchView('weekly', this)">Astean Zehar</button>
+    <div class="nav-tabs" id="nav-tabs" style="display:none;">
+      <button class="tab-btn active" onclick="switchView('daily', this)">Eguna</button>
+      <button class="tab-btn" onclick="switchView('weekly', this)">Astea</button>
       <button class="tab-btn" onclick="switchView('rewards', this)">Sariak</button>
       <button class="tab-btn" onclick="switchView('config', this)">Kudeaketa</button>
     </div>
@@ -291,7 +401,7 @@
 
   <main id="view-container"></main>
 
-  <footer>
+  <footer id="main-footer" style="display:none;">
     <div class="footer-content">
       <div class="points-display" id="footer-pts-text">⭐ 0 Puntu</div>
       <div class="progress-bar-bg">
@@ -302,16 +412,23 @@
 
   <script>
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
+    const avatarPlaceholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23cbd5e1'/%3E%3Ctext x='50%25' y='50%25' font-size='30' fill='%23475569' text-anchor='middle' dy='.3em'%3E👤%3C/text%3E%3C/svg%3E";
     const imgPlaceholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100%25' height='100%25' fill='%23cbd5e1'/%3E%3Ctext x='50%25' y='50%25' font-size='12' fill='%23475569' text-anchor='middle' dy='.3em'%3EIrudirik gabe%3C/text%3E%3C/svg%3E";
 
-    let currentChild = 'child1';
-    let currentView = 'daily';
+    let currentChild = null;
+    let currentView = 'select_child';
     let dailyViewDayIndex = getCurrentDayIndex();
+    let configSelectedChildFilter = null;
 
     // Data persistent states
+    let childrenData = JSON.parse(localStorage.getItem('children_data_')) || [
+      { id: 'c1', name: 'Haurra 1', avatar: '' },
+      { id: 'c2', name: 'Haurra 2', avatar: '' }
+    ];
+
     let tasksData = JSON.parse(localStorage.getItem('tasks_data_')) || [
-      { id: 't1', childId: 'child1', name: 'Gela txukundu', points: 10, checks: 1, image: '', category: 'Etxea', isCoop: false },
-      { id: 't2', childId: 'child1', name: 'Atsedenaldia / Ikasi', points: 15, checks: 2, image: '', category: 'Eskola', isCoop: true }
+      { id: 't1', childId: 'c1', name: 'Gela txukundu', points: 10, checks: 1, image: '', category: 'Etxea' },
+      { id: 't2', childId: 'c1', name: 'Atsedenaldia / Ikasi', points: 15, checks: 2, image: '', category: 'Eskola' }
     ];
 
     let rewardsData = JSON.parse(localStorage.getItem('rewards_data_')) || [
@@ -320,17 +437,18 @@
     ];
 
     let savedData = JSON.parse(localStorage.getItem('saved_checks_')) || {};
-    let historyData = JSON.parse(localStorage.getItem('history_data_')) || []; // Last 4 weeks
+    let historyData = JSON.parse(localStorage.getItem('history_data_')) || [];
     let spentPointsData = JSON.parse(localStorage.getItem('spent_points_')) || {};
 
     function esc(str) { return String(str || '').replace(/"/g, '&quot;'); }
 
     function getCurrentDayIndex() {
       const d = new Date().getDay();
-      return d === 0 ? 6 : d - 1; // Convert Sunday=0 to Monday=0
+      return d === 0 ? 6 : d - 1;
     }
 
     function saveData() {
+      localStorage.setItem('children_data_', JSON.stringify(childrenData));
       localStorage.setItem('tasks_data_', JSON.stringify(tasksData));
       localStorage.setItem('rewards_data_', JSON.stringify(rewardsData));
       localStorage.setItem('saved_checks_', JSON.stringify(savedData));
@@ -350,6 +468,7 @@
     }
 
     function getPointsSummary(childId) {
+      if (!childId) return { earned: 0, spent: 0, available: 0 };
       let currentWeekEarned = 0;
       const tasks = getTasksForChild(childId);
 
@@ -395,20 +514,25 @@
     }
 
     function updateGamificationStats() {
+      if (!currentChild) return;
       const summary = getPointsSummary(currentChild);
       const textEl = document.getElementById('footer-pts-text');
       const fillEl = document.getElementById('footer-progress-fill');
 
       textEl.textContent = `⭐ ${summary.available} Puntu erabilgarri`;
-
-      // Visual progress relative to lowest unearned reward or 100 pt goal
-      const nextGoal = 100;
-      const pct = Math.min(100, Math.round((summary.available / nextGoal) * 100));
+      const pct = Math.min(100, Math.round((summary.available / 100) * 100));
       fillEl.style.width = pct + '%';
     }
 
-    function switchChild(val) {
-      currentChild = val;
+    function openChildSelector() {
+      currentChild = null;
+      currentView = 'select_child';
+      renderCurrentView();
+    }
+
+    function selectChild(childId) {
+      currentChild = childId;
+      currentView = 'daily';
       renderCurrentView();
     }
 
@@ -420,6 +544,25 @@
     }
 
     function renderCurrentView() {
+      const headerChildInfo = document.getElementById('header-child-info');
+      const navTabs = document.getElementById('nav-tabs');
+      const mainFooter = document.getElementById('main-footer');
+
+      if (!currentChild || currentView === 'select_child') {
+        headerChildInfo.style.display = 'none';
+        navTabs.style.display = 'none';
+        mainFooter.style.display = 'none';
+        renderSelectChildView();
+        return;
+      }
+
+      headerChildInfo.style.display = 'flex';
+      navTabs.style.display = 'grid';
+      mainFooter.style.display = 'block';
+
+      const activeChildObj = childrenData.find(c => c.id === currentChild);
+      document.getElementById('header-child-name').textContent = activeChildObj ? activeChildObj.name : 'Haurra';
+
       updateGamificationStats();
       if (currentView === 'daily') renderDailyView();
       else if (currentView === 'weekly') renderWeeklyView();
@@ -427,10 +570,65 @@
       else if (currentView === 'config') renderConfigView();
     }
 
+    // --- VIEW: SELECT CHILD (LANDING SCREEN) ---
+    function renderSelectChildView() {
+      const container = document.getElementById('view-container');
+      container.innerHTML = '';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'child-select-container';
+
+      const title = document.createElement('h1');
+      title.className = 'child-select-title';
+      title.textContent = 'Nor zara zu? / ¿Quién eres?';
+
+      const subtitle = document.createElement('p');
+      subtitle.className = 'child-select-subtitle';
+      subtitle.textContent = 'Aukeratu zure profila sartzeko';
+
+      const grid = document.createElement('div');
+      grid.className = 'child-grid';
+
+      childrenData.forEach(child => {
+        const card = document.createElement('div');
+        card.className = 'child-card';
+        card.onclick = () => selectChild(child.id);
+
+        const img = document.createElement('img');
+        img.className = 'child-avatar-lg';
+        img.src = child.avatar || avatarPlaceholder;
+        img.onerror = function() { this.src = avatarPlaceholder; };
+
+        const name = document.createElement('div');
+        name.className = 'child-card-name';
+        name.textContent = child.name;
+
+        card.appendChild(img);
+        card.appendChild(name);
+        grid.appendChild(card);
+      });
+
+      // Direct Link to Admin from main screen
+      const adminBtn = document.createElement('button');
+      adminBtn.className = 'tab-btn';
+      adminBtn.style.cssText = 'margin-top: 2.5rem; padding: 0.6rem 1.2rem; display: inline-block; width: auto;';
+      adminBtn.textContent = '⚙️ Kudeaketa / Administración';
+      adminBtn.onclick = () => {
+        if (childrenData.length > 0) currentChild = childrenData[0].id;
+        switchView('config');
+      };
+
+      wrapper.appendChild(title);
+      wrapper.appendChild(subtitle);
+      wrapper.appendChild(grid);
+      wrapper.appendChild(adminBtn);
+      container.appendChild(wrapper);
+    }
+
+    // --- VIEW: DAILY ---
     function renderDailyView() {
       const container = document.getElementById('view-container');
       container.innerHTML = '';
-      container.className = '';
       const dayName = days[dailyViewDayIndex];
       const tasks = getTasksForChild(currentChild);
       const isToday = dailyViewDayIndex === getCurrentDayIndex();
@@ -450,7 +648,7 @@
 
       const badge = document.createElement('div');
       badge.className = 'day-header-badge';
-      badge.textContent = isToday ? 'Gaur: ' + dayName : dayName + (dailyViewDayIndex < getCurrentDayIndex() ? ' (Iragana - Blokeatuta)' : ' (Etorkizuna - Blokeatuta)');
+      badge.textContent = isToday ? 'Gaur: ' + dayName : dayName + (dailyViewDayIndex < getCurrentDayIndex() ? ' (Iragana)' : ' (Etorkizuna)');
 
       nav.appendChild(btnPrev);
       nav.appendChild(badge);
@@ -512,7 +710,7 @@
             box.onclick = () => toggleCheck(key, box);
           } else {
             box.style.cursor = 'not-allowed';
-            box.style.opacity = '0.5';
+            box.style.opacity = '0.4';
           }
           checksContainer.appendChild(box);
         }
@@ -525,6 +723,7 @@
       container.appendChild(list);
     }
 
+    // --- VIEW: WEEKLY ---
     function renderWeeklyView() {
       const container = document.getElementById('view-container');
       container.innerHTML = '';
@@ -586,11 +785,10 @@
       });
     }
 
+    // --- VIEW: REWARDS ---
     function renderRewardsView() {
       const container = document.getElementById('view-container');
       container.innerHTML = '';
-      container.className = '';
-
       const summary = getPointsSummary(currentChild);
 
       const grid = document.createElement('div');
@@ -618,7 +816,7 @@
 
         const btn = document.createElement('button');
         btn.className = 'reward-btn';
-        btn.textContent = 'Canjear / Trukatu';
+        btn.textContent = 'Trukatu';
         btn.disabled = summary.available < reward.points;
 
         btn.onclick = () => {
@@ -641,26 +839,97 @@
       container.appendChild(grid);
     }
 
+    // --- VIEW: CONFIG / ADMIN ---
     function renderConfigView() {
       const container = document.getElementById('view-container');
       container.innerHTML = '';
 
-      // Task Creation Form
-      const taskForm = document.createElement('form');
-      taskForm.className = 'admin-form';
-      taskForm.innerHTML = `
-        <h3>Gehitu Zeregin Berria</h3>
-        <input type="text" id="cfg-task-name" placeholder="Zereginaren izena" required />
-        <input type="number" id="cfg-task-pts" placeholder="Puntuak (adib: 10)" value="10" required />
-        <input type="number" id="cfg-task-checks" placeholder="Egunean zenbat aldiz (adib: 1)" value="1" min="1" max="4" required />
-        <input type="url" id="cfg-task-img" placeholder="Irudiaren URL-a (aukerazkoa)" />
-        <button type="submit" class="tab-btn active">Gorde Zeregina</button>
+      if (!configSelectedChildFilter && childrenData.length > 0) {
+        configSelectedChildFilter = childrenData[0].id;
+      }
+
+      // 1. CHILDREN MANAGEMENT SECTION
+      const childSection = document.createElement('div');
+      childSection.className = 'admin-section';
+      childSection.innerHTML = `
+        <h3>1. Haurrak Kudeatu (Gestionar Niños)</h3>
+        <form class="admin-form" id="form-add-child">
+          <input type="text" id="cfg-child-name" placeholder="Haurraren izena" required />
+          <input type="url" id="cfg-child-avatar" placeholder="Avatarraren URL-a (aukerazkoa)" />
+          <button type="submit" class="tab-btn active" style="padding:0.6rem;">Gehitu Haurra</button>
+        </form>
+        <div class="item-list" id="child-item-list"></div>
       `;
-      taskForm.onsubmit = (e) => {
+
+      container.appendChild(childSection);
+
+      // Render Child List
+      const childListEl = childSection.querySelector('#child-item-list');
+      childrenData.forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+          <div class="item-row-info">
+            <img class="item-row-avatar" src="${c.avatar || avatarPlaceholder}" onerror="this.src='${avatarPlaceholder}'" />
+            <strong>${esc(c.name)}</strong>
+          </div>
+          <div class="item-actions">
+            <button class="btn-action btn-danger" onclick="deleteChild('${c.id}')">Ezabatu</button>
+          </div>
+        `;
+        childListEl.appendChild(row);
+      });
+
+      document.getElementById('form-add-child').onsubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('cfg-child-name').value;
+        const avatar = document.getElementById('cfg-child-avatar').value;
+        const newChildId = 'c_' + Date.now();
+        childrenData.push({ id: newChildId, name, avatar });
+        configSelectedChildFilter = newChildId;
+        saveData();
+        renderConfigView();
+      };
+
+      // 2. TASK MANAGEMENT & REORDERING SECTION
+      const taskSection = document.createElement('div');
+      taskSection.className = 'admin-section';
+      
+      let childSelectOptions = childrenData.map(c => 
+        `<option value="${c.id}" ${c.id === configSelectedChildFilter ? 'selected' : ''}>${esc(c.name)}</option>`
+      ).join('');
+
+      taskSection.innerHTML = `
+        <h3>2. Zereginak Ordenean Kudeatu (Gestionar Tareas)</h3>
+        <div style="margin-bottom:1rem;">
+          <label><strong>Aukeratu Haurra:</strong> </label>
+          <select id="cfg-filter-child" style="padding:0.4rem; border-radius:4px;">
+            ${childSelectOptions}
+          </select>
+        </div>
+        <form class="admin-form" id="form-add-task">
+          <input type="text" id="cfg-task-name" placeholder="Zereginaren izena" required />
+          <input type="number" id="cfg-task-pts" placeholder="Puntuak (adib: 10)" value="10" required />
+          <input type="number" id="cfg-task-checks" placeholder="Eguneko txek-kopurua (1-4)" value="1" min="1" max="4" required />
+          <input type="url" id="cfg-task-img" placeholder="Irudiaren URL-a (aukerazkoa)" />
+          <button type="submit" class="tab-btn active" style="padding:0.6rem;">Gehitu Zeregina</button>
+        </form>
+        <div class="item-list" id="task-item-list"></div>
+      `;
+
+      container.appendChild(taskSection);
+
+      const filterSelect = taskSection.querySelector('#cfg-filter-child');
+      filterSelect.onchange = (e) => {
+        configSelectedChildFilter = e.target.value;
+        renderConfigView();
+      };
+
+      document.getElementById('form-add-task').onsubmit = (e) => {
         e.preventDefault();
         tasksData.push({
           id: 't_' + Date.now(),
-          childId: currentChild,
+          childId: configSelectedChildFilter,
           name: document.getElementById('cfg-task-name').value,
           points: parseInt(document.getElementById('cfg-task-pts').value) || 10,
           checks: parseInt(document.getElementById('cfg-task-checks').value) || 1,
@@ -671,17 +940,47 @@
         renderConfigView();
       };
 
-      // Reward Creation Form (with Image URL)
-      const rewardForm = document.createElement('form');
-      rewardForm.className = 'admin-form';
-      rewardForm.innerHTML = `
-        <h3>Gehitu Sari Berria</h3>
-        <input type="text" id="cfg-rew-name" placeholder="Sariaren izena" required />
-        <input type="number" id="cfg-rew-pts" placeholder="Puntu balioa (adib: 50)" value="50" required />
-        <input type="url" id="cfg-rew-img" placeholder="Sariaren irudiaren URL-a (aukerazkoa)" />
-        <button type="submit" class="tab-btn active">Gorde Saria</button>
+      // Render Filtered Tasks with Reorder buttons
+      const taskListEl = taskSection.querySelector('#task-item-list');
+      const filteredTasks = getTasksForChild(configSelectedChildFilter);
+
+      filteredTasks.forEach((t, idx) => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+          <div class="item-row-info">
+            <img class="item-row-avatar" src="${t.image || imgPlaceholder}" onerror="this.src='${imgPlaceholder}'" />
+            <div>
+              <strong>${esc(t.name)}</strong>
+              <div style="font-size:0.75rem; color:#64748b;">⭐ ${t.points} pts | ${t.checks} check</div>
+            </div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-action" onclick="moveTask('${t.id}', -1)" ${idx === 0 ? 'disabled' : ''}>⬆️</button>
+            <button class="btn-action" onclick="moveTask('${t.id}', 1)" ${idx === filteredTasks.length - 1 ? 'disabled' : ''}>⬇️</button>
+            <button class="btn-action btn-danger" onclick="deleteTask('${t.id}')">Ezabatu</button>
+          </div>
+        `;
+        taskListEl.appendChild(row);
+      });
+
+      // 3. REWARDS MANAGEMENT SECTION
+      const rewardSection = document.createElement('div');
+      rewardSection.className = 'admin-section';
+      rewardSection.innerHTML = `
+        <h3>3. Sariak Kudeatu (Gestionar Premios)</h3>
+        <form class="admin-form" id="form-add-reward">
+          <input type="text" id="cfg-rew-name" placeholder="Sariaren izena" required />
+          <input type="number" id="cfg-rew-pts" placeholder="Puntu balioa (adib: 50)" value="50" required />
+          <input type="url" id="cfg-rew-img" placeholder="Sariaren irudiaren URL-a (aukerazkoa)" />
+          <button type="submit" class="tab-btn active" style="padding:0.6rem;">Gehitu Saria</button>
+        </form>
+        <div class="item-list" id="reward-item-list"></div>
       `;
-      rewardForm.onsubmit = (e) => {
+
+      container.appendChild(rewardSection);
+
+      document.getElementById('form-add-reward').onsubmit = (e) => {
         e.preventDefault();
         rewardsData.push({
           id: 'r_' + Date.now(),
@@ -693,14 +992,84 @@
         renderConfigView();
       };
 
-      container.appendChild(taskForm);
-      container.appendChild(rewardForm);
+      const rewardListEl = rewardSection.querySelector('#reward-item-list');
+      rewardsData.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+          <div class="item-row-info">
+            <img class="item-row-avatar" src="${r.image || imgPlaceholder}" onerror="this.src='${imgPlaceholder}'" />
+            <div>
+              <strong>${esc(r.name)}</strong>
+              <div style="font-size:0.75rem; color:#64748b;">⭐ ${r.points} pts</div>
+            </div>
+          </div>
+          <div class="item-actions">
+            <button class="btn-action btn-danger" onclick="deleteReward('${r.id}')">Ezabatu</button>
+          </div>
+        `;
+        rewardListEl.appendChild(row);
+      });
     }
 
-    // Initial Render
+    // --- ACTIONS: REORDER AND DELETE ---
+    function moveTask(taskId, direction) {
+      const childTasks = getTasksForChild(configSelectedChildFilter);
+      const index = childTasks.findIndex(t => t.id === taskId);
+      if (index < 0) return;
+
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= childTasks.length) return;
+
+      const task1 = childTasks[index];
+      const task2 = childTasks[targetIndex];
+
+      const mainIdx1 = tasksData.findIndex(t => t.id === task1.id);
+      const mainIdx2 = tasksData.findIndex(t => t.id === task2.id);
+
+      // Swap in main array
+      const temp = tasksData[mainIdx1];
+      tasksData[mainIdx1] = tasksData[mainIdx2];
+      tasksData[mainIdx2] = temp;
+
+      saveData();
+      renderConfigView();
+    }
+
+    function deleteTask(taskId) {
+      if (confirm('Ziur zaude zeregin hau ezabatu nahi duzulako?')) {
+        tasksData = tasksData.filter(t => t.id !== taskId);
+        saveData();
+        renderConfigView();
+      }
+    }
+
+    function deleteReward(rewardId) {
+      if (confirm('Ziur zaude sari hau ezabatu nahi duzulako?')) {
+        rewardsData = rewardsData.filter(r => r.id !== rewardId);
+        saveData();
+        renderConfigView();
+      }
+    }
+
+    function deleteChild(childId) {
+      if (childrenData.length <= 1) {
+        alert('Ezin da ezabatu! Gutxienez haur bat egon behar da sistemak funtzionatzeko.');
+        return;
+      }
+      if (confirm('Ziur zaude haur hau eta bere zeregin guztiak ezabatu nahi dituzula?')) {
+        childrenData = childrenData.filter(c => c.id !== childId);
+        tasksData = tasksData.filter(t => t.childId !== childId);
+        if (currentChild === childId) currentChild = null;
+        if (configSelectedChildFilter === childId) configSelectedChildFilter = childrenData[0].id;
+        saveData();
+        renderCurrentView();
+      }
+    }
+
+    // Initial load
     cleanOldHistory();
     renderCurrentView();
   </script>
 </body>
 </html>
-
