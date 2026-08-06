@@ -1,24 +1,21 @@
 {
-  "name": "Asteko zereginen egutegia",
+  "name": "Zereginak",
   "short_name": "Zereginak",
-  "description": "Luke eta Martyren asteko zereginen egutegia",
+  "description": "Etxeko zereginen kudeaketa",
   "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "landscape",
-  "background_color": "#F4F7F6",
-  "theme_color": "#4A90E2",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
