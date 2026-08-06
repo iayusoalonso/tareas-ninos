@@ -3,1481 +3,303 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Asteko zereginen egutegia & Gamifikazioa</title>
-
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4A90E2">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Zereginak">
-  <link rel="apple-touch-icon" href="icon-192.png">
-
+  <title>Zereginak</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root {
-      --primary: #4A90E2;
-      --primary-dark: #357ABD;
-      --bg: #F0F4F8;
-      --card-bg: #FFFFFF;
-      --text: #2C3E50;
-      --success: #10B981;
-      --danger: #EF4444;
-      --gold: #F59E0B;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      padding: 12px;
-      padding-bottom: 110px;
-      user-select: none;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* PANTAILA 1: PROFILE SELEKTIONALA */
-    #profile-selection {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-      gap: 25px;
-      text-align: center;
-      margin-top: 20px;
-      position: relative;
-    }
-
-    .app-title-container {
-      margin-top: 10px;
-    }
-
-    #profile-selection h1 { font-size: 2.2rem; color: #2C3E50; font-weight: 800; text-transform: uppercase; }
-
-    .profile-buttons { display: flex; gap: 25px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 600px; }
-
-    .btn-profile {
-      background: var(--card-bg);
-      border: 4px solid var(--primary);
-      border-radius: 24px;
-      padding: 25px 35px;
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: var(--text);
-      cursor: pointer;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      min-width: 180px;
-    }
-    .btn-profile:hover { transform: translateY(-5px) scale(1.03); }
-
-    .avatar-icon, .profile-avatar-img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; }
-
-    /* BOTÓN KUDEAKETA MEJORADO EN PANTALLA PRINCIPAL */
-    .btn-admin-access-main {
-      background: #334155;
-      color: white;
-      border: none;
-      border-radius: 14px;
-      padding: 12px 24px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-      transition: all 0.2s ease;
-      margin-top: 10px;
-    }
-    .btn-admin-access-main:hover {
-      background: #1E293B;
-      transform: translateY(-2px);
-    }
-
-    /* PANTAILA 2: EGUTEGI INTERAKTIBOA */
-    #calendar-screen { display: none; flex-direction: column; flex: 1; }
-
-    header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 15px; background: var(--card-bg); padding: 12px 20px;
-      border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
-    }
-
-    .title-container { display: flex; align-items: center; gap: 15px; }
-    #calendar-title { font-size: 1.5rem; color: #2C3E50; font-weight: 800; }
-    .badge-child { padding: 6px 16px; border-radius: 20px; color: white; font-weight: bold; font-size: 1.1rem; text-transform: uppercase; }
-
-    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-
-    .btn-action {
-      background: var(--primary); color: white; border: none; padding: 10px 18px;
-      border-radius: 12px; font-size: 0.95rem; cursor: pointer; font-weight: 700; transition: background 0.2s;
-    }
-    .btn-action:hover { background: var(--primary-dark); }
-    .btn-secondary { background: #7F8C8D; }
-    .btn-trophy { background: var(--gold); color: white; font-size: 1.1rem; }
-    .btn-danger { background: var(--danger); }
-    .btn-success { background: var(--success); }
-
-    /* EGUNEROKO IKUSPEGIA */
-    .day-nav { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px; }
-    .day-nav button { background: var(--card-bg); border: 2px solid #CBD5E1; border-radius: 12px; padding: 8px 16px; font-size: 1.2rem; cursor: pointer; font-weight: bold; }
-    .daily-view-list { display: flex; flex-direction: column; align-items: center; gap: 20px; max-width: 500px; margin: 0 auto; width: 100%; }
-
-    .day-header-badge {
-      background: #334155; color: white; font-size: 1.2rem; font-weight: 800;
-      padding: 10px 24px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px;
-    }
-
-    .daily-task-card {
-      background: var(--card-bg);
-      border-radius: 20px;
-      width: 100%;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-      border: 3px solid #E2E8F0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .task-card-header {
-      padding: 12px 14px 8px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .task-card-title {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .daily-task-img-container {
-      position: relative;
-      width: 100%;
-      height: 220px;
-      overflow: hidden;
-      background: #E2E8F0;
-    }
-
-    .daily-task-img { 
-      width: 100%; 
-      height: 100%; 
-      object-fit: cover; 
-      object-position: center;
-      display: block; 
-    }
-
-    .badge-info {
-      background: #334155; color: white; padding: 4px 10px; border-radius: 12px;
-      font-size: 0.8rem; font-weight: 800; display: flex; align-items: center; gap: 4px;
-    }
-    .badge-coop { background: #7C3AED; }
-
-    .checks-container {
-      position: absolute; bottom: 15px; right: 15px; display: flex; gap: 10px; z-index: 2;
-    }
-
-    .checkbox {
-      width: 52px; height: 52px; border: 3px solid #FFFFFF; border-radius: 14px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      background: rgba(248, 250, 252, 0.95); font-weight: 900; box-shadow: 0 4px 15px rgba(0,0,0,0.25);
-    }
-    .checkbox.state-done { background-color: var(--success); border-color: #FFFFFF; transform: scale(1.05); }
-    .checkbox.state-done::after { content: '✓'; color: white; font-size: 1.8rem; }
-
-    /* ASTEKO IKUSPEGIA */
-    .grid-container {
-      display: grid; grid-template-columns: 220px repeat(7, 1fr); gap: 8px;
-      background: #CBD5E1; border-radius: 16px; padding: 8px; overflow-x: auto;
-    }
-    .header-cell { background: var(--primary); color: white; font-weight: 700; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 8px; }
-    .header-cell.task-header { background: #334155; justify-content: flex-start; padding-left: 15px; }
-    .task-cell { background: var(--card-bg); border-radius: 10px; padding: 8px; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.85rem; }
-    .task-img-small { width: 35px; height: 35px; object-fit: cover; flex-shrink: 0; border-radius: 6px; }
-    .check-cell { background: var(--card-bg); border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 4px; }
-    .grid-container .checkbox { width: 34px; height: 34px; border-width: 2px; border-radius: 8px; }
-    .grid-container .checkbox.state-done::after { font-size: 1.2rem; }
-
-    /* SARIAN IKUSPEGIA */
-    #rewards-screen { display: none; flex-direction: column; flex: 1; max-width: 800px; margin: 0 auto; width: 100%; gap: 20px; }
-    .rewards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-    .reward-card { background: var(--card-bg); border-radius: 16px; padding: 20px; text-align: center; border: 3px solid #E2E8F0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); position: relative; }
-    .reward-points { font-size: 1.4rem; font-weight: 900; color: var(--gold); margin: 8px 0; }
-    .reward-cooldown { font-size: 0.85rem; color: #EF4444; font-weight: bold; background: #FEE2E2; padding: 4px 8px; border-radius: 8px; margin-top: 6px; }
-    .reward-btn { padding: 8px 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin-top: 8px; background: var(--primary); color: white; }
-    .reward-btn:disabled { background: #94A3B8; cursor: not-allowed; }
-
-    /* KUDEAKETA PANTAILA (ADMIN) */
-    #admin-screen { display: none; flex-direction: column; flex: 1; max-width: 850px; margin: 0 auto; width: 100%; gap: 20px; }
-    .admin-card { background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); border: 2px solid #E2E8F0; }
-    .admin-card h2 { font-size: 1.2rem; margin-bottom: 15px; color: #334155; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; }
-    .form-group { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap; }
-    .form-input { flex: 1; padding: 8px 12px; border: 2px solid #CBD5E1; border-radius: 10px; font-size: 0.95rem; outline: none; min-width: 130px; }
-
-    .task-edit-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      background: #F8FAFC;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #E2E8F0;
-      margin-bottom: 12px;
-    }
-
-    .img-preview-box {
-      width: 60px;
-      height: 60px;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 2px dashed #CBD5E1;
-      position: relative;
-      background: #E2E8F0;
-      flex-shrink: 0;
-    }
-    .img-preview-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-    }
-
-    .task-name-input { flex: 2 1 180px; }
-    .task-cat-input { flex: 1 1 130px; }
-    .task-pts-input { width: 75px; }
-    .task-checks-input { width: 100px; }
-
-    /* MODALAK */
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.7); display: none;
-      align-items: center; justify-content: center; z-index: 2000; padding: 20px;
-    }
-    .modal-card {
-      background: white; border-radius: 20px; padding: 25px; width: 100%; max-width: 420px;
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 15px;
-    }
-    .modal-card h3 { font-size: 1.3rem; color: #1E293B; }
-
-    /* EVALUAZIO DEIA */
-    .eval-selector-box {
-      background: #F1F5F9; padding: 12px; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    }
-
-    /* BEHEKO PROGRESO TABLA */
-    #progress-footer {
-      position: fixed; bottom: 0; left: 0; right: 0; background: #FFFFFF; padding: 12px 20px;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 6px; z-index: 1000;
-      border-top-left-radius: 16px; border-top-right-radius: 16px;
-    }
-    .progress-info { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.95rem; color: #334155; }
-    .progress-bar-bg { width: 100%; height: 16px; background: #E2E8F0; border-radius: 10px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #F59E0B, #10B981); border-radius: 10px; transition: width 0.4s ease-out; }
+    .task-card { transition: all 0.2s ease; }
+    .task-card:active { transform: scale(0.98); }
   </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
 
-  <!-- PANTAILA 1: PROFILE SELEKTIONALA -->
-  <div id="profile-selection">
-    <div class="app-title-container">
-      <h1>Asteko Zereginak</h1>
-      <p style="color: #64748B; font-size: 1.1rem; margin-top: 5px;">Nor zarete gaur?</p>
+  <!-- Header -->
+  <header class="bg-indigo-600 text-white shadow-md p-4 sticky top-0 z-10 flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Zereginak</h1>
+      <p class="text-xs text-indigo-200">Etxeko txandak eta kudeaketa</p>
     </div>
-    
-    <div id="profile-buttons-container" class="profile-buttons"></div>
-
-    <button class="btn-admin-access-main" onclick="openAdminAuthModal()" title="Kudeaketa / Admin">
-      ⚙️ Kudeaketa Panela
-    </button>
-  </div>
-
-  <!-- PANTAILA 2: EGUTEGI INTERAKTIBOA -->
-  <div id="calendar-screen">
-    <header>
-      <div class="title-container">
-        <h1 id="calendar-title">Zereginak</h1>
-        <span id="child-badge" class="badge-child"></span>
-      </div>
-      <div class="header-actions">
-        <button class="btn-action btn-trophy" onclick="openRewardsView()" title="Sariak">🏆 Sariak</button>
-        <button id="btn-toggle-view" class="btn-action" onclick="toggleView()">Aste osoa ikusi</button>
-        <button class="btn-action btn-secondary" onclick="showProfiles()">← Aldatu</button>
-      </div>
-    </header>
-    <div id="view-container"></div>
-  </div>
-
-  <!-- SARIAN IKUSPEGIA -->
-  <div id="rewards-screen">
-    <header>
-      <div class="title-container">
-        <h1>🏆 Sariak eta Recompensas</h1>
-      </div>
-      <div class="header-actions">
-        <button class="btn-action btn-secondary" onclick="closeRewardsView()">← Atzera</button>
-      </div>
-    </header>
-    <div style="background: white; padding: 12px 18px; border-radius: 14px; font-weight: bold; color: #334155; display: flex; justify-content: space-between; align-items: center;">
-      <span>Metatutako Puntuak (Azken 4 asteak): <b id="total-accumulated-pts" style="color: var(--gold); font-size: 1.2rem;">0 pts</b></span>
+    <div class="flex gap-2">
+      <button onclick="toggleAdminModal()" class="bg-indigo-700 hover:bg-indigo-800 text-xs px-3 py-2 rounded-lg font-medium transition flex items-center gap-1 shadow">
+        ⚙️ Kudeaketa
+      </button>
     </div>
-    <div id="rewards-container" class="rewards-grid"></div>
-  </div>
+  </header>
 
-  <!-- PANTAILA 3: KUDEAKETA (ADMIN) -->
-  <div id="admin-screen">
-    <header style="margin-bottom: 0;">
-      <div class="title-container">
-        <h1>Kudeaketa Panela</h1>
-      </div>
-      <div class="header-actions">
-        <button class="btn-action btn-secondary" onclick="showProfiles()">← Atzera</button>
-      </div>
-    </header>
+  <main class="flex-1 max-w-3xl w-full mx-auto p-4 space-y-6">
 
-    <!-- 1. Pasahitza Aldatu -->
-    <div class="admin-card">
-      <h2>1. Kudeaketako Pasahitza</h2>
-      <div class="form-group">
-        <input type="password" id="admin-new-pass" class="form-input" placeholder="Pasahitz berria...">
-        <button class="btn-action btn-success" onclick="updateAdminPassword()">Gorde Pasahitza</button>
-      </div>
-    </div>
-
-    <!-- 2. Erabiltzaileak -->
-    <div class="admin-card">
-      <h2>2. Erabiltzaileak (Haurrak)</h2>
-      <div class="form-group">
-        <input type="text" id="new-user-input" class="form-input" placeholder="Haurraren izena...">
-        <label class="btn-action btn-secondary" style="cursor: pointer; margin: 0;">
-          Abatarra 📁 <input type="file" id="new-user-avatar-input" accept="image/*" style="display:none;" onchange="previewNewUserAvatar(this)">
-        </label>
-        <img id="new-user-avatar-preview" class="img-preview-box" style="display:none;" />
-        <button class="btn-action btn-success" onclick="addChildUser()">Gehitu</button>
-      </div>
-      <div id="admin-users-list"></div>
-    </div>
-
-    <!-- 3. Kategoriak -->
-    <div class="admin-card">
-      <h2>3. Zeregin Kategoriak</h2>
-      <div class="form-group">
-        <input type="text" id="new-cat-input" class="form-input" placeholder="Kategoria berria...">
-        <button class="btn-action btn-success" onclick="addCategory()">Gehitu Kategoria</button>
-      </div>
-      <div id="admin-categories-list" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
-    </div>
-
-    <!-- 4. Ebaluazio Eguna & Berrikuspena -->
-    <div class="admin-card">
-      <h2>4. Asteko Ebaluazioa eta Helburuak</h2>
-      <div class="eval-selector-box">
-        <label style="font-weight: bold;">Aukeratu Erabiltzailea:</label>
-        <select id="eval-user-select" class="form-input" onchange="renderEvaluationStatus()"></select>
-        <label style="font-weight: bold; margin-left: 10px;">Ebaluazio Eguna:</label>
-        <select id="eval-day-select" class="form-input" onchange="renderEvaluationStatus()"></select>
-      </div>
-      <div id="eval-results-box" style="background: white; padding: 15px; border-radius: 12px; border: 1px solid #CBD5E1;"></div>
-    </div>
-
-    <!-- 5. Zereginen Pertsonalizazioa -->
-    <div class="admin-card">
-      <h2>5. Zereginak Pertsonalizatu: <span id="admin-selected-user-label" style="color: var(--primary);"></span></h2>
-      <div class="form-group">
-        <select id="admin-user-select" class="form-input" onchange="loadAdminTasksForSelectedUser()"></select>
+    <!-- User Selector & Points summary -->
+    <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <label for="userSelect" class="font-bold text-slate-700 text-sm">Erabiltzailea:</label>
+        <select id="userSelect" onchange="changeUser(this.value)" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 p-2.5 flex-1 sm:w-48 font-semibold">
+          <!-- Dinámico -->
+        </select>
       </div>
       
-      <div id="admin-tasks-container"></div>
-
-      <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button class="btn-action btn-success" onclick="addNewTaskRow()">+ Gehitu zeregina</button>
-        <button class="btn-action" onclick="saveAdminTasks()">Aldaketak gorde</button>
+      <div id="pointsContainer" class="flex gap-3 text-right w-full sm:w-auto justify-end">
+        <div class="bg-indigo-50 border border-indigo-100 p-2.5 rounded-xl text-center">
+          <span class="block text-xs text-indigo-600 font-semibold uppercase tracking-wider">Puntuak en firme</span>
+          <span id="firmPoints" class="text-xl font-black text-indigo-700">0</span>
+        </div>
+        <div class="bg-amber-50 border border-amber-100 p-2.5 rounded-xl text-center">
+          <span class="block text-xs text-amber-600 font-semibold uppercase tracking-wider">Gaur (Zain)</span>
+          <span id="pendingPoints" class="text-xl font-black text-amber-600">0</span>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 6. Sariaren Kudeaketa -->
-    <div class="admin-card">
-      <h2>6. Sarien Katalogoa</h2>
-      <div id="admin-rewards-container"></div>
-      <div style="margin-top: 15px; display: flex; gap: 10px;">
-        <button class="btn-action btn-success" onclick="addNewRewardRow()">+ Gehitu Saria</button>
-        <button class="btn-action" onclick="saveAdminRewards()">Sariak gorde</button>
+    <!-- Daily Tasks View -->
+    <section class="space-y-3">
+      <div class="flex justify-between items-center px-1">
+        <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+          <span>📅 Gaurko Zereginak</span>
+        </h2>
+        <span id="currentDate" class="text-xs font-semibold text-slate-400"></span>
       </div>
-    </div>
-  </div>
 
-  <!-- MODAL: PASAHITZA ESKATU -->
-  <div id="auth-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h3>Kudeaketa Sarbidea</h3>
-      <p style="color: #64748B; font-size: 0.9rem;">Sartu pasahitza jarraitzeko:</p>
-      <input type="password" id="admin-pass-input" class="form-input" placeholder="Pasahitza..." onkeyup="if(event.key==='Enter') verifyAdminPassword()">
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn-action btn-secondary" onclick="closeAdminAuthModal()">Utzi</button>
-        <button class="btn-action btn-success" onclick="verifyAdminPassword()">Sartu</button>
+      <div id="taskList" class="space-y-2">
+        <!-- Renderizado dinámico -->
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- BEHEKO PROGRESO TABLA -->
-  <div id="progress-footer">
-    <div class="progress-info">
-      <span>Gaurko Puntuak: <b id="today-points" style="color:var(--gold);">0 pts</b></span>
-      <span id="streak-badge" style="color:#7C3AED; font-weight:900;">🔥 Erronka: 0 egun</span>
-    </div>
-    <div class="progress-bar-bg">
-      <div id="progress-bar-fill" class="progress-bar-fill"></div>
+  </main>
+
+  <!-- Modal Admin / Kudeaketa -->
+  <div id="adminModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+      
+      <div class="p-4 bg-indigo-600 text-white flex justify-between items-center">
+        <h3 class="font-bold text-lg">Panel de Kudeaketa</h3>
+        <button onclick="toggleAdminModal()" class="text-white hover:bg-indigo-700 p-1 rounded-lg">✕</button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
+        
+        <!-- Edición diferida admin -->
+        <div class="border-b pb-4">
+          <h4 class="font-bold text-slate-800 mb-2">Modificar Tareas Completadas (Histórico)</h4>
+          <div class="flex gap-2 mb-3">
+            <input type="date" id="adminDatePicker" class="border rounded-lg p-2 text-sm" onchange="renderAdminHistoryTasks()">
+          </div>
+          <div id="adminHistoryList" class="space-y-2 bg-slate-50 p-3 rounded-xl border max-h-40 overflow-y-auto">
+            <p class="text-xs text-slate-400">Hautatu data bat zereginak aldatzeko.</p>
+          </div>
+        </div>
+
+        <!-- Backup -->
+        <div class="border-b pb-4">
+          <h4 class="font-bold text-slate-800 mb-2">Copia de Seguridad (Backup)</h4>
+          <div class="flex gap-2">
+            <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-semibold">
+              📥 Exportar JSON
+            </button>
+            <label class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer">
+              📤 Importar JSON
+              <input type="file" id="importInput" accept=".json" class="hidden" onchange="importData(event)">
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t flex justify-end">
+        <button onclick="toggleAdminModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">Itxi</button>
+      </div>
+
     </div>
   </div>
 
   <script>
-    (function() {
-      "use strict";
-
-      const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
-
-      // ─── UTILIDADES SEGURAS ───
-      function esc(str) {
-        if (str == null) return '';
-        const div = document.createElement('div');
-        div.textContent = String(str);
-        return div.innerHTML;
-      }
-
-      function safeStorageGet(key, fallback) {
-        try {
-          const raw = localStorage.getItem(key);
-          return raw ? JSON.parse(raw) : fallback;
-        } catch (e) {
-          console.warn('Storage read error:', key, e);
-          return fallback;
-        }
-      }
-
-      function safeStorageSet(key, value) {
-        try {
-          localStorage.setItem(key, JSON.stringify(value));
-          return true;
-        } catch (e) {
-          console.warn('Storage write error:', key, e);
-          alert('⚠️ Ezin izan dira datuak gorde.');
-          return false;
-        }
-      }
-
-      function generateId(prefix) {
-        return prefix + '_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
-      }
-
-      // ─── ESTADO ───
-      let categoriesList = safeStorageGet('app_categories', ['Higiene', 'Ordena', 'Eskola', 'Extraescolar', 'Comportamiento', 'Besteak']);
-      let adminPassword = localStorage.getItem('app_admin_pass') || '1234';
-
-      const defaultTasks = [
-        { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3, isCoop: false },
-        { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1, isCoop: false },
-        { id: 'juegos_coop', name: 'Jolas eremua jaso', image: '', category: 'Ordena', points: 25, checks: 1, isCoop: true },
-        { id: 'deberes', name: 'Eskolako lanak egin', image: '', category: 'Eskola', points: 20, checks: 1, isCoop: false }
-      ];
-
-      const defaultRewards = [
-        { id: 'reward_1', name: 'Asteazkeneko postrea aukeratu', points: 50, isBigReward: false },
-        { id: 'reward_2', name: '30 minutu extra pantailan', points: 100, isBigReward: false },
-        { id: 'reward_3', name: 'Hamburgesa afaria asteburuan', points: 300, isBigReward: true }
-      ];
-
-      let rawChildren = safeStorageGet('app_children', ['Luke', 'Marty']);
-      let childrenList = Array.isArray(rawChildren) ? rawChildren.map(c => typeof c === 'string' ? { name: c, avatar: '' } : c) : [];
-      let rewardsList = safeStorageGet('app_rewards', defaultRewards);
-
-      let currentChild = '';
-      let savedData = {};
-      let currentView = safeStorageGet('app_current_view', 'daily');
-      let newUserAvatarBase64 = '';
-      let dailyViewDayIndex = getCurrentDayIndex();
-
-      function getISOWeekKey(date) {
-        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-        const dayNum = d.getUTCDay() || 7;
-        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-        return d.getUTCFullYear() + '-W' + weekNo.toString().padStart(2, '0');
-      }
-
-      function getCurrentDayIndex() {
-        return (new Date().getDay() + 6) % 7;
-      }
-
-      function cleanExpiredHistory(childName) {
-        const historyKey = 'history_data_' + childName;
-        let history = safeStorageGet(historyKey, {});
-        const keys = Object.keys(history).sort();
-        if (keys.length > 4) {
-          keys.slice(0, keys.length - 4).forEach(k => delete history[k]);
-          safeStorageSet(historyKey, history);
-        }
-      }
-
-      function getTasksForChild(childName) {
-        return safeStorageGet('tasks_config_' + childName, defaultTasks);
-      }
-
-      function getRedeemedPoints(childName) {
-        return safeStorageGet('redeemed_pts_' + childName, 0);
-      }
-
-      function addRedeemedPoints(childName, pts) {
-        const current = getRedeemedPoints(childName);
-        safeStorageSet('redeemed_pts_' + childName, current + pts);
-      }
-
-      // ─── AUDIO ───
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      let audioCtx = null;
-      function playSound(type) {
-        try {
-          if (!audioCtx) audioCtx = new AudioCtx();
-          if (audioCtx.state === 'suspended') audioCtx.resume();
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          const now = audioCtx.currentTime;
-          if (type === 'done') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(523.25, now);
-            osc.frequency.setValueAtTime(659.25, now + 0.08);
-            osc.frequency.setValueAtTime(783.99, now + 0.16);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-            osc.start(now);
-            osc.stop(now + 0.35);
-          }
-        } catch (e) { console.log('Audio no disponible:', e); }
-      }
-
-      // ─── PROFILE SELEKTIONALA ───
-      function renderProfileSelection() {
-        const container = document.getElementById('profile-buttons-container');
-        container.innerHTML = '';
-        const colors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#6C5CE7', '#00B894'];
-
-        childrenList.forEach((child, index) => {
-          const color = colors[index % colors.length];
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'btn-profile';
-          btn.style.borderColor = color;
-          btn.onclick = () => selectProfile(child.name);
-
-          if (child.avatar) {
-            const img = document.createElement('img');
-            img.src = child.avatar;
-            img.className = 'profile-avatar-img';
-            img.alt = esc(child.name);
-            btn.appendChild(img);
-          } else {
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('class', 'avatar-icon');
-            svg.setAttribute('viewBox', '0 0 100 100');
-            svg.innerHTML = '<circle cx="50" cy="50" r="45" fill="' + color + '22"/><path d="M 30 70 Q 50 85 70 70" stroke="' + color + '" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="35" cy="45" r="6" fill="#424242"/><circle cx="65" cy="45" r="6" fill="#424242"/><path d="M 20 35 Q 50 10 80 35" fill="' + color + '"/>';
-            btn.appendChild(svg);
-          }
-
-          const span = document.createElement('span');
-          span.textContent = child.name.toUpperCase();
-          btn.appendChild(span);
-          container.appendChild(btn);
-        });
-      }
-
-      function selectProfile(name) {
-        currentChild = name;
-        cleanExpiredHistory(currentChild);
-
-        document.getElementById('profile-selection').style.display = 'none';
-        document.getElementById('admin-screen').style.display = 'none';
-        document.getElementById('rewards-screen').style.display = 'none';
-        document.getElementById('calendar-screen').style.display = 'flex';
-        document.getElementById('progress-footer').style.display = 'flex';
-
-        document.getElementById('child-badge').textContent = name;
-
-        savedData = safeStorageGet('tasks_state_' + currentChild, {});
-        dailyViewDayIndex = getCurrentDayIndex();
-        renderView();
-      }
-
-      window.showProfiles = function() {
-        document.getElementById('profile-selection').style.display = 'flex';
-        document.getElementById('calendar-screen').style.display = 'none';
-        document.getElementById('admin-screen').style.display = 'none';
-        document.getElementById('rewards-screen').style.display = 'none';
-        document.getElementById('progress-footer').style.display = 'none';
-        renderProfileSelection();
-      };
-
-      window.toggleView = function() {
-        currentView = (currentView === 'daily') ? 'weekly' : 'daily';
-        safeStorageSet('app_current_view', currentView);
-        renderView();
-      };
-
-      function renderView() {
-        const toggleBtn = document.getElementById('btn-toggle-view');
-        if (currentView === 'daily') {
-          toggleBtn.textContent = 'Aste osoa ikusi';
-          renderDailyView();
-        } else {
-          toggleBtn.textContent = 'Gaurko eguna ikusi';
-          renderWeeklyView();
-        }
-        updateGamificationStats();
-      }
-
-      // ─── VISTA DIARIA CON NAVEGACIÓN ───
-      function renderDailyView() {
-        const container = document.getElementById('view-container');
-        container.innerHTML = '';
-        container.className = '';
-
-        const dayName = days[dailyViewDayIndex];
-        const tasks = getTasksForChild(currentChild);
-        const isToday = dailyViewDayIndex === getCurrentDayIndex();
-
-        const nav = document.createElement('div');
-        nav.className = 'day-nav';
-        const btnPrev = document.createElement('button');
-        btnPrev.type = 'button';
-        btnPrev.textContent = '◀';
-        btnPrev.disabled = dailyViewDayIndex === 0;
-        btnPrev.onclick = () => { dailyViewDayIndex--; renderDailyView(); updateGamificationStats(); };
-        const btnNext = document.createElement('button');
-        btnNext.type = 'button';
-        btnNext.textContent = '▶';
-        btnNext.disabled = dailyViewDayIndex === 6;
-        btnNext.onclick = () => { dailyViewDayIndex++; renderDailyView(); updateGamificationStats(); };
-        const badge = document.createElement('div');
-        badge.className = 'day-header-badge';
-        badge.textContent = isToday ? 'Gaur: ' + dayName : dayName;
-        nav.appendChild(btnPrev);
-        nav.appendChild(badge);
-        nav.appendChild(btnNext);
-        container.appendChild(nav);
-
-        const list = document.createElement('div');
-        list.className = 'daily-view-list';
-
-        const imgPlaceholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='220'%3E%3Crect width='100%25' height='100%25' fill='%23cbd5e1'/%3E%3Ctext x='50%25' y='50%25' font-size='16' fill='%23475569' text-anchor='middle' dy='.3em'%3EIrudirik gabe%3C/text%3E%3C/svg%3E";
-
-        tasks.forEach(task => {
-          const card = document.createElement('div');
-          card.className = 'daily-task-card';
-
-          const header = document.createElement('div');
-          header.className = 'task-card-header';
-
-          const title = document.createElement('div');
-          title.className = 'task-card-title';
-          title.textContent = task.name;
-          header.appendChild(title);
-
-          const badges = document.createElement('div');
-          badges.style.cssText = 'display:flex; gap:6px; flex-wrap:wrap;';
-
-          const catBadge = document.createElement('span');
-          catBadge.className = 'badge-info';
-          catBadge.textContent = '🏷️ ' + (task.category || 'Besteak');
-          badges.appendChild(catBadge);
-
-          const ptsBadge = document.createElement('span');
-          ptsBadge.className = 'badge-info';
-          ptsBadge.style.color = 'var(--gold)';
-          ptsBadge.textContent = '⭐ ' + (task.points || 10) + ' pts';
-          badges.appendChild(ptsBadge);
-
-          if (task.isCoop) {
-            const coopBadge = document.createElement('span');
-            coopBadge.className = 'badge-info badge-coop';
-            coopBadge.textContent = '🤝 Elkarrekin (+Pts)';
-            badges.appendChild(coopBadge);
-          }
-          header.appendChild(badges);
-          card.appendChild(header);
-
-          const imgContainer = document.createElement('div');
-          imgContainer.className = 'daily-task-img-container';
-          const img = document.createElement('img');
-          img.className = 'daily-task-img';
-          img.src = task.image || imgPlaceholder;
-          img.alt = esc(task.name);
-          img.onerror = function() { this.src = imgPlaceholder; };
-          imgContainer.appendChild(img);
-
-          const checksContainer = document.createElement('div');
-          checksContainer.className = 'checks-container';
-
-          const numChecks = Math.max(1, parseInt(task.checks) || 1);
-          for (let i = 1; i <= numChecks; i++) {
-            const key = task.id + '_' + dayName + '_chk' + i;
-            const isDone = savedData[key] === true;
-            const box = document.createElement('div');
-            box.className = 'checkbox' + (isDone ? ' state-done' : '');
-            box.setAttribute('role', 'checkbox');
-            box.setAttribute('aria-checked', String(isDone));
-            box.setAttribute('aria-label', esc(task.name) + ' - check ' + i);
-            box.onclick = () => toggleCheck(key, box);
-            checksContainer.appendChild(box);
-          }
-          imgContainer.appendChild(checksContainer);
-          card.appendChild(imgContainer);
-          list.appendChild(card);
-        });
-
-        container.appendChild(list);
-      }
-
-      // ─── VISTA SEMANAL ───
-      function renderWeeklyView() {
-        const container = document.getElementById('view-container');
-        container.innerHTML = '';
-        container.className = 'grid-container';
-
-        const tasks = getTasksForChild(currentChild);
-
-        const emptyHeader = document.createElement('div');
-        emptyHeader.className = 'header-cell task-header';
-        emptyHeader.textContent = 'Zeregina';
-        container.appendChild(emptyHeader);
-
-        days.forEach(day => {
-          const dayCell = document.createElement('div');
-          dayCell.className = 'header-cell';
-          dayCell.textContent = day;
-          container.appendChild(dayCell);
-        });
-
-        const imgPlaceholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='35' height='35'%3E%3Crect width='100%25' height='100%25' fill='%23cbd5e1'/%3E%3C/svg%3E";
-
-        tasks.forEach(task => {
-          const taskCell = document.createElement('div');
-          taskCell.className = 'task-cell';
-          const img = document.createElement('img');
-          img.className = 'task-img-small';
-          img.src = task.image || imgPlaceholder;
-          img.onerror = function() { this.src = imgPlaceholder; };
-          const span = document.createElement('span');
-          span.textContent = (task.isCoop ? '🤝 ' : '') + task.name;
-          taskCell.appendChild(img);
-          taskCell.appendChild(span);
-          container.appendChild(taskCell);
-
-          days.forEach(day => {
-            const checkCell = document.createElement('div');
-            checkCell.className = 'check-cell';
-            const numChecks = Math.max(1, parseInt(task.checks) || 1);
-            for (let i = 1; i <= numChecks; i++) {
-              const key = task.id + '_' + day + '_chk' + i;
-              const isDone = savedData[key] === true;
-              const box = document.createElement('div');
-              box.className = 'checkbox' + (isDone ? ' state-done' : '');
-              box.setAttribute('role', 'checkbox');
-              box.setAttribute('aria-checked', String(isDone));
-              box.onclick = () => toggleCheck(key, box);
-              checkCell.appendChild(box);
-            }
-            container.appendChild(checkCell);
-          });
-        });
-      }
-
-      function toggleCheck(key, element) {
-        const isDone = savedData[key] === true;
-        if (!isDone) {
-          savedData[key] = true;
-          element.classList.add('state-done');
-          element.setAttribute('aria-checked', 'true');
-          playSound('done');
-        } else {
-          savedData[key] = false;
-          element.classList.remove('state-done');
-          element.setAttribute('aria-checked', 'false');
-        }
-
-        safeStorageSet('tasks_state_' + currentChild, savedData);
-
-        const weekKey = getISOWeekKey(new Date());
-        const historyKey = 'history_data_' + currentChild;
-        let history = safeStorageGet(historyKey, {});
-        history[weekKey] = savedData;
-        safeStorageSet(historyKey, history);
-
-        updateGamificationStats();
-      }
-
-      function calculateAccumulatedPoints(childName) {
-        const historyKey = 'history_data_' + childName;
-        let history = safeStorageGet(historyKey, {});
-        const tasks = getTasksForChild(childName);
-
-        const keys = Object.keys(history).sort();
-        const recentKeys = keys.slice(-4);
-
-        let totalPts = 0;
-        recentKeys.forEach(wk => {
-          const weekState = history[wk];
-          if (!weekState) return;
-          tasks.forEach(t => {
-            const n = Math.max(1, parseInt(t.checks) || 1);
-            const ptsPerCheck = (parseInt(t.points) || 10) / n;
-            days.forEach(day => {
-              for (let i = 1; i <= n; i++) {
-                if (weekState[t.id + '_' + day + '_chk' + i]) {
-                  totalPts += ptsPerCheck;
-                }
-              }
-            });
-          });
-        });
-        return Math.round(totalPts);
-      }
-
-      function updateGamificationStats() {
-        const tasks = getTasksForChild(currentChild);
-        const targetDayName = days[dailyViewDayIndex];
-
-        let earnedToday = 0;
-        let totalMaxToday = 0;
-
-        tasks.forEach(task => {
-          const numChecks = Math.max(1, parseInt(task.checks) || 1);
-          const ptsPerCheck = (parseInt(task.points) || 10) / numChecks;
-          totalMaxToday += (parseInt(task.points) || 10);
-
-          for (let i = 1; i <= numChecks; i++) {
-            const key = task.id + '_' + targetDayName + '_chk' + i;
-            if (savedData[key] === true) {
-              earnedToday += ptsPerCheck;
-            }
-          }
-        });
-
-        earnedToday = Math.round(earnedToday);
-        document.getElementById('today-points').textContent = earnedToday + ' pts';
-
-        const pct = totalMaxToday > 0 ? Math.min(100, Math.round((earnedToday / totalMaxToday) * 100)) : 0;
-        document.getElementById('progress-bar-fill').style.width = pct + '%';
-
-        const todayIdx = getCurrentDayIndex();
-        let streak = 0;
-        for (let d = 0; d <= todayIdx; d++) {
-          const dayName = days[d];
-          let dayPts = 0;
-          let dayMax = 0;
-          tasks.forEach(t => {
-            const n = Math.max(1, parseInt(t.checks) || 1);
-            dayMax += (parseInt(t.points) || 10);
-            for (let i = 1; i <= n; i++) {
-              if (savedData[t.id + '_' + dayName + '_chk' + i]) {
-                dayPts += ((parseInt(t.points) || 10) / n);
-              }
-            }
-          });
-          if (dayMax > 0 && (dayPts / dayMax) >= 0.75) streak++;
-        }
-
-        document.getElementById('streak-badge').textContent = '🔥 Erronka: ' + streak + ' egun';
-      }
-
-      // ─── SARIEN IKUSPEGIA ───
-      window.openRewardsView = function() {
-        document.getElementById('calendar-screen').style.display = 'none';
-        document.getElementById('rewards-screen').style.display = 'flex';
-
-        const accPts = calculateAccumulatedPoints(currentChild);
-        const redeemedPts = getRedeemedPoints(currentChild);
-        const availablePts = Math.max(0, accPts - redeemedPts);
-
-        document.getElementById('total-accumulated-pts').textContent = availablePts + ' pts';
-
-        const lastRedeemedWeek = localStorage.getItem('last_big_reward_week_' + currentChild);
-        const currentWeek = getISOWeekKey(new Date());
-        const isBigRewardLocked = (lastRedeemedWeek === currentWeek);
-
-        const container = document.getElementById('rewards-container');
-        container.innerHTML = '';
-
-        rewardsList.forEach(r => {
-          const card = document.createElement('div');
-          card.className = 'reward-card';
-
-          const icon = document.createElement('div');
-          icon.style.fontSize = '2.5rem';
-          icon.textContent = '🎁';
-          card.appendChild(icon);
-
-          const h3 = document.createElement('h3');
-          h3.style.cssText = 'font-size:1.1rem; margin-top:5px;';
-          h3.textContent = r.name;
-          card.appendChild(h3);
-
-          const ptsDiv = document.createElement('div');
-          ptsDiv.className = 'reward-points';
-          ptsDiv.textContent = '⭐ ' + r.points + ' pts';
-          card.appendChild(ptsDiv);
-
-          const canAfford = availablePts >= r.points;
-          const isLocked = r.isBigReward && isBigRewardLocked;
-
-          if (isLocked) {
-            const cooldown = document.createElement('div');
-            cooldown.className = 'reward-cooldown';
-            cooldown.textContent = '🔒 Aste honetan jada lortua';
-            card.appendChild(cooldown);
-          }
-
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'reward-btn';
-          btn.disabled = !canAfford || isLocked;
-          btn.textContent = canAfford && !isLocked ? 'Canjear' : (isLocked ? 'Blokeatuta' : 'Faltan ' + (r.points - availablePts) + ' pts');
-          btn.onclick = () => redeemReward(r);
-          card.appendChild(btn);
-
-          container.appendChild(card);
-        });
-      };
-
-      function redeemReward(reward) {
-        const accPts = calculateAccumulatedPoints(currentChild);
-        const redeemedPts = getRedeemedPoints(currentChild);
-        const availablePts = Math.max(0, accPts - redeemedPts);
-
-        if (availablePts < reward.points) {
-          alert('❌ Ez dituzu puntu nahikorik.');
-          return;
-        }
-
-        if (!confirm('Ziur zaude "' + reward.name + '" canjeatu nahi duzula ' + reward.points + ' pts-engatik?')) return;
-
-        addRedeemedPoints(currentChild, reward.points);
-
-        if (reward.isBigReward) {
-          localStorage.setItem('last_big_reward_week_' + currentChild, getISOWeekKey(new Date()));
-        }
-
-        const redemptions = safeStorageGet('redemptions_' + currentChild, []);
-        redemptions.unshift({
-          name: reward.name,
-          points: reward.points,
-          date: new Date().toISOString()
-        });
-        safeStorageSet('redemptions_' + currentChild, redemptions);
-
-        alert('🎉 "' + reward.name + '" canjeatuta!');
-        openRewardsView();
-      }
-
-      window.closeRewardsView = function() {
-        document.getElementById('rewards-screen').style.display = 'none';
-        document.getElementById('calendar-screen').style.display = 'flex';
-      };
-
-      // ─── AUTH Y ADMIN ───
-      window.openAdminAuthModal = function() {
-        document.getElementById('admin-pass-input').value = '';
-        document.getElementById('auth-modal').style.display = 'flex';
-        setTimeout(() => document.getElementById('admin-pass-input').focus(), 50);
-      };
-      window.closeAdminAuthModal = function() {
-        document.getElementById('auth-modal').style.display = 'none';
-      };
-      window.verifyAdminPassword = function() {
-        const inputPass = document.getElementById('admin-pass-input').value;
-        if (inputPass === adminPassword) {
-          closeAdminAuthModal();
-          openAdmin();
-        } else {
-          alert('❌ Pasahitz okerra!');
-        }
-      };
-
-      document.getElementById('auth-modal').addEventListener('click', function(e) {
-        if (e.target === this) closeAdminAuthModal();
-      });
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeAdminAuthModal();
-      });
-
-      function openAdmin() {
-        document.getElementById('profile-selection').style.display = 'none';
-        document.getElementById('calendar-screen').style.display = 'none';
-        document.getElementById('rewards-screen').style.display = 'none';
-        document.getElementById('progress-footer').style.display = 'none';
-        document.getElementById('admin-screen').style.display = 'flex';
-
-        renderAdminCategories();
-        renderAdminUsersList();
-        populateAdminUserSelect();
-        populateEvalUserAndDays();
-        renderAdminRewards();
-      }
-
-      window.updateAdminPassword = function() {
-        const newP = document.getElementById('admin-new-pass').value.trim();
-        if (!newP) { alert('Sartu pasahitz baliodun bat'); return; }
-        adminPassword = newP;
-        localStorage.setItem('app_admin_pass', adminPassword);
-        document.getElementById('admin-new-pass').value = '';
-        alert('✅ Pasahitza ondo gorde da!');
-      };
-
-      // ─── KATEGORIA KUDEAKETA ───
-      window.renderAdminCategories = function() {
-        const container = document.getElementById('admin-categories-list');
-        container.innerHTML = '';
-        categoriesList.forEach((cat, idx) => {
-          const badge = document.createElement('div');
-          badge.style.cssText = 'background:#E2E8F0; padding:6px 12px; border-radius:20px; font-weight:bold; display:flex; align-items:center; gap:8px; font-size:0.9rem;';
-          const span = document.createElement('span');
-          span.textContent = cat;
-          const remove = document.createElement('span');
-          remove.style.cssText = 'cursor:pointer; color:var(--danger);';
-          remove.textContent = '✕';
-          remove.onclick = () => removeCategory(idx);
-          badge.appendChild(span);
-          badge.appendChild(remove);
-          container.appendChild(badge);
-        });
-      };
-      window.addCategory = function() {
-        const inp = document.getElementById('new-cat-input');
-        const val = inp.value.trim();
-        if (val && !categoriesList.includes(val)) {
-          categoriesList.push(val);
-          safeStorageSet('app_categories', categoriesList);
-          inp.value = '';
-          renderAdminCategories();
-          loadAdminTasksForSelectedUser();
-        }
-      };
-      window.removeCategory = function(idx) {
-        if (categoriesList.length <= 1) { alert('Gutxienez kategoria bat egon behar da'); return; }
-        if (!confirm('Ziur zaude "' + categoriesList[idx] + '" kategoria ezabatu nahi duzula?')) return;
-        categoriesList.splice(idx, 1);
-        safeStorageSet('app_categories', categoriesList);
-        renderAdminCategories();
-        loadAdminTasksForSelectedUser();
-      };
-
-      // ─── EVALUAZIO DEIA ───
-      window.populateEvalUserAndDays = function() {
-        const uSelect = document.getElementById('eval-user-select');
-        uSelect.innerHTML = '';
-        childrenList.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c.name; opt.textContent = c.name;
-          uSelect.appendChild(opt);
-        });
-        const dSelect = document.getElementById('eval-day-select');
-        dSelect.innerHTML = '';
-        days.forEach((d, idx) => {
-          const opt = document.createElement('option');
-          opt.value = idx; opt.textContent = d + ' arte (asteko ' + (idx+1) + '. eguna)';
-          if (idx === 4) opt.selected = true;
-          dSelect.appendChild(opt);
-        });
-        renderEvaluationStatus();
-      };
-
-      window.renderEvaluationStatus = function() {
-        const childName = document.getElementById('eval-user-select').value;
-        const targetDayIdx = parseInt(document.getElementById('eval-day-select').value);
-        if (!childName) return;
-        const tasks = getTasksForChild(childName);
-        const childData = safeStorageGet('tasks_state_' + childName, {});
-        let accumulatedPts = 0;
-        let targetMaxPts = 0;
-        for (let d = 0; d <= targetDayIdx; d++) {
-          const dayName = days[d];
-          tasks.forEach(t => {
-            const n = Math.max(1, parseInt(t.checks) || 1);
-            const ptsCheck = (parseInt(t.points) || 10) / n;
-            targetMaxPts += (parseInt(t.points) || 10);
-            for (let i = 1; i <= n; i++) {
-              if (childData[t.id + '_' + dayName + '_chk' + i]) accumulatedPts += ptsCheck;
-            }
-          });
-        }
-        accumulatedPts = Math.round(accumulatedPts);
-        const ratio = targetMaxPts > 0 ? (accumulatedPts / targetMaxPts) : 0;
-        const pct = Math.round(ratio * 100);
-        let statusMessage = '';
-        let statusColor = '';
-        if (ratio >= 0.80) {
-          statusMessage = '🎉 Zorionak! Asteko helburua lortuta dago egun honetarako!';
-          statusColor = 'var(--success)';
-        } else if (ratio >= 0.60) {
-          statusMessage = '⚠️ Bide onean doa, baina ahalegin pixka bat gehiago behar da.';
-          statusColor = 'var(--gold)';
-        } else {
-          statusMessage = '❌ Oraingoz ez da gutxieneko helburura iritsi.';
-          statusColor = 'var(--danger)';
-        }
-        const resultsBox = document.getElementById('eval-results-box');
-        resultsBox.innerHTML = '';
-        const msgDiv = document.createElement('div');
-        msgDiv.style.cssText = 'font-size:1.1rem; font-weight:bold; margin-bottom:8px; color:' + statusColor + ';';
-        msgDiv.textContent = statusMessage;
-        resultsBox.appendChild(msgDiv);
-        const infoDiv = document.createElement('div');
-        infoDiv.textContent = 'Lortutako Puntuak: ' + accumulatedPts + ' pts / Posible zirenak: ' + targetMaxPts + ' pts (' + pct + '%)';
-        resultsBox.appendChild(infoDiv);
-        const footDiv = document.createElement('div');
-        footDiv.style.cssText = 'font-size:0.85rem; color:#64748B; margin-top:6px;';
-        footDiv.textContent = 'Egun hautatua: ' + days[targetDayIdx] + '. (Helburua: %80 lortzea).';
-        resultsBox.appendChild(footDiv);
-      };
-
-      window.renderAdminUsersList = function() {
-        const container = document.getElementById('admin-users-list');
-        container.innerHTML = '';
-        childrenList.forEach((child) => {
-          const row = document.createElement('div');
-          row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#F8FAFC; padding:8px 12px; border-radius:10px; margin-bottom:8px;';
-          const left = document.createElement('div');
-          left.style.cssText = 'display:flex; align-items:center; gap:10px;';
-          if (child.avatar) {
-            const thumb = document.createElement('img');
-            thumb.src = child.avatar;
-            thumb.className = 'img-preview-box';
-            thumb.alt = esc(child.name);
-            left.appendChild(thumb);
-          } else {
-            const noThumb = document.createElement('span');
-            noThumb.style.cssText = 'font-size:0.8rem; color:#64748B;';
-            noThumb.textContent = 'Abatarrik gabe';
-            left.appendChild(noThumb);
-          }
-          const nameB = document.createElement('b');
-          nameB.textContent = child.name;
-          left.appendChild(nameB);
-          row.appendChild(left);
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'btn-action btn-danger';
-          btn.style.cssText = 'padding:4px 10px;';
-          btn.textContent = 'Ezabatu';
-          btn.onclick = () => removeChildUser(child.name);
-          row.appendChild(btn);
-          container.appendChild(row);
-        });
-      };
-
-      window.addChildUser = function() {
-        const input = document.getElementById('new-user-input');
-        const name = input.value.trim();
-        if (!name) { alert('Sartu izen bat'); return; }
-        if (childrenList.some(c => c.name === name)) { alert('Erabiltzaile hau jada existitzen da'); return; }
-        childrenList.push({ name: name, avatar: newUserAvatarBase64 });
-        safeStorageSet('app_children', childrenList);
-        input.value = ''; newUserAvatarBase64 = '';
-        document.getElementById('new-user-avatar-preview').style.display = 'none';
-        renderAdminUsersList(); populateAdminUserSelect(); populateEvalUserAndDays();
-        alert('✅ ' + name + ' gehituta!');
-      };
-
-      window.removeChildUser = function(name) {
-        if (childrenList.length <= 1) { alert('Gutxienez erabiltzaile 1 egon behar da'); return; }
-        if (confirm('Ziur zaude ' + name + ' ezabatu nahi duzula? Bere datu guztiak ezabatuko dira.')) {
-          childrenList = childrenList.filter(c => c.name !== name);
-          safeStorageSet('app_children', childrenList);
-          localStorage.removeItem('tasks_state_' + name);
-          localStorage.removeItem('tasks_config_' + name);
-          localStorage.removeItem('history_data_' + name);
-          localStorage.removeItem('redeemed_pts_' + name);
-          localStorage.removeItem('redemptions_' + name);
-          localStorage.removeItem('last_big_reward_week_' + name);
-          renderAdminUsersList(); populateAdminUserSelect(); populateEvalUserAndDays();
-          alert('✅ ' + name + ' ezabatuta');
-        }
-      };
-
-      window.populateAdminUserSelect = function() {
-        const select = document.getElementById('admin-user-select');
-        select.innerHTML = '';
-        childrenList.forEach(child => {
-          const opt = document.createElement('option');
-          opt.value = child.name; opt.textContent = child.name;
-          select.appendChild(opt);
-        });
-        loadAdminTasksForSelectedUser();
-      };
-
-      window.loadAdminTasksForSelectedUser = function() {
-        const selectedUser = document.getElementById('admin-user-select').value;
-        if (!selectedUser) return;
-        document.getElementById('admin-selected-user-label').textContent = selectedUser;
-        const tasks = getTasksForChild(selectedUser);
-        const container = document.getElementById('admin-tasks-container');
-        container.innerHTML = '';
-        tasks.forEach(task => appendTaskRow(task));
-      };
-
-      window.appendTaskRow = function(task) {
-        const container = document.getElementById('admin-tasks-container');
-        const row = document.createElement('div');
-        row.className = 'task-edit-grid';
-        const uniqueId = task && task.id ? task.id : generateId('task');
-        const currentImg = (task && task.image) || '';
-
-        const imgWrap = document.createElement('div');
-        imgWrap.style.cssText = 'display:flex; align-items:center; gap:8px;';
-        const previewBox = document.createElement('div');
-        previewBox.className = 'img-preview-box';
-        const previewImg = document.createElement('img');
-        previewImg.src = currentImg;
-        previewImg.className = 'task-img-preview';
-        previewImg.onerror = function() { this.style.display = 'none'; };
-        previewBox.appendChild(previewImg);
-        imgWrap.appendChild(previewBox);
-        const imgBtn = document.createElement('button');
-        imgBtn.type = 'button';
-        imgBtn.className = 'btn-action btn-secondary';
-        imgBtn.style.cssText = 'padding:6px 10px; font-size:0.8rem;';
-        imgBtn.textContent = '📷 Irudia';
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*';
-        fileInput.style.display = 'none';
-        fileInput.onchange = function() { handleTaskImageUpload(this); };
-        imgBtn.onclick = () => fileInput.click();
-        imgWrap.appendChild(imgBtn);
-        imgWrap.appendChild(fileInput);
-        row.appendChild(imgWrap);
-
-        const nameInp = document.createElement('input');
-        nameInp.type = 'text';
-        nameInp.className = 'form-input task-name-input';
-        nameInp.value = (task && task.name) || '';
-        nameInp.placeholder = 'Zereginaren izena...';
-        row.appendChild(nameInp);
-
-        const catSel = document.createElement('select');
-        catSel.className = 'form-input task-cat-input';
-        categoriesList.forEach(c => {
-          const opt = document.createElement('option');
-          opt.value = c;
-          opt.textContent = c;
-          if (task && task.category === c) opt.selected = true;
-          catSel.appendChild(opt);
-        });
-        row.appendChild(catSel);
-
-        const ptsInp = document.createElement('input');
-        ptsInp.type = 'number';
-        ptsInp.className = 'form-input task-pts-input';
-        ptsInp.value = (task && task.points) || 10;
-        ptsInp.min = '0';
-        ptsInp.placeholder = 'Pts';
-        row.appendChild(ptsInp);
-
-        const chkSel = document.createElement('select');
-        chkSel.className = 'form-input task-checks-input';
-        [1,2,3].forEach(n => {
-          const opt = document.createElement('option');
-          opt.value = n; opt.textContent = n + ' check';
-          if (task && task.checks === n) opt.selected = true;
-          chkSel.appendChild(opt);
-        });
-        row.appendChild(chkSel);
-
-        const coopLabel = document.createElement('label');
-        coopLabel.style.cssText = 'font-size:0.85rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px;';
-        const coopCb = document.createElement('input');
-        coopCb.type = 'checkbox';
-        coopCb.className = 'task-coop-input';
-        coopCb.checked = !!(task && task.isCoop);
-        coopLabel.appendChild(coopCb);
-        coopLabel.appendChild(document.createTextNode('🤝 Elkarrekin'));
-        row.appendChild(coopLabel);
-
-        const delBtn = document.createElement('button');
-        delBtn.type = 'button';
-        delBtn.className = 'btn-action btn-danger';
-        delBtn.style.cssText = 'padding:6px 12px; margin-left:auto;';
-        delBtn.textContent = '✕';
-        delBtn.onclick = () => row.remove();
-        row.appendChild(delBtn);
-
-        const imgHidden = document.createElement('input');
-        imgHidden.type = 'hidden';
-        imgHidden.className = 'task-img-input';
-        imgHidden.value = currentImg;
-        row.appendChild(imgHidden);
-
-        const idHidden = document.createElement('input');
-        idHidden.type = 'hidden';
-        idHidden.className = 'task-id-input';
-        idHidden.value = uniqueId;
-        row.appendChild(idHidden);
-
-        container.appendChild(row);
-      };
-
-      window.handleTaskImageUpload = function(fileInput) {
-        if (fileInput.files && fileInput.files[0]) {
-          if (fileInput.files[0].size > 1024 * 1024) {
-            alert('⚠️ Irudia handiegia da. Gehienez 1MB.');
-            return;
-          }
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const base64Data = e.target.result;
-            const row = fileInput.closest('.task-edit-grid');
-            row.querySelector('.task-img-input').value = base64Data;
-            const imgPreview = row.querySelector('.task-img-preview');
-            imgPreview.src = base64Data;
-            imgPreview.style.display = 'block';
-          };
-          reader.readAsDataURL(fileInput.files[0]);
-        }
-      };
-
-      window.addNewTaskRow = function() { appendTaskRow(); };
-
-      window.saveAdminTasks = function() {
-        const selectedUser = document.getElementById('admin-user-select').value;
-        if (!selectedUser) return;
-        const rows = document.querySelectorAll('#admin-tasks-container .task-edit-grid');
-        const newTasks = [];
-        rows.forEach(row => {
-          const name = row.querySelector('.task-name-input').value.trim();
-          if (name) {
-            newTasks.push({
-              id: row.querySelector('.task-id-input').value,
-              name: name,
-              image: row.querySelector('.task-img-input').value || '',
-              category: row.querySelector('.task-cat-input').value,
-              points: Math.max(0, parseInt(row.querySelector('.task-pts-input').value) || 10),
-              checks: Math.max(1, parseInt(row.querySelector('.task-checks-input').value) || 1),
-              isCoop: row.querySelector('.task-coop-input').checked
-            });
-          }
-        });
-        safeStorageSet('tasks_config_' + selectedUser, newTasks);
-        alert('✅ Zereginak ondo gorde dira!');
-      };
-
-      window.renderAdminRewards = function() {
-        const container = document.getElementById('admin-rewards-container');
-        container.innerHTML = '';
-        rewardsList.forEach(r => appendRewardRow(r.name, r.points, r.isBigReward));
-      };
-
-      window.appendRewardRow = function(name, points, isBig) {
-        const container = document.getElementById('admin-rewards-container');
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex; gap:10px; margin-bottom:8px; align-items:center; flex-wrap:wrap; background:#F8FAFC; padding:8px 12px; border-radius:10px; border:1px solid #E2E8F0;';
-        row.className = 'reward-edit-row';
-
-        const nameInp = document.createElement('input');
-        nameInp.type = 'text';
-        nameInp.className = 'form-input reward-name-input';
-        nameInp.value = name || '';
-        nameInp.placeholder = 'Sariaren izena...';
-        nameInp.style.cssText = 'flex:2 1 180px;';
-        row.appendChild(nameInp);
-
-        const ptsInp = document.createElement('input');
-        ptsInp.type = 'number';
-        ptsInp.className = 'form-input reward-pts-input';
-        ptsInp.value = points || 50;
-        ptsInp.min = '0';
-        ptsInp.style.width = '90px';
-        ptsInp.placeholder = 'Pts';
-        row.appendChild(ptsInp);
-
-        const bigLabel = document.createElement('label');
-        bigLabel.style.cssText = 'font-size:0.85rem; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px;';
-        const bigCb = document.createElement('input');
-        bigCb.type = 'checkbox';
-        bigCb.className = 'reward-big-input';
-        bigCb.checked = !!isBig;
-        bigLabel.appendChild(bigCb);
-        bigLabel.appendChild(document.createTextNode('🍔 Sari Nagusia (Mugatia)'));
-        row.appendChild(bigLabel);
-
-        const delBtn = document.createElement('button');
-        delBtn.type = 'button';
-        delBtn.className = 'btn-action btn-danger';
-        delBtn.style.cssText = 'padding:6px 10px; margin-left:auto;';
-        delBtn.textContent = '✕';
-        delBtn.onclick = () => row.remove();
-        row.appendChild(delBtn);
-
-        container.appendChild(row);
-      };
-
-      window.addNewRewardRow = function() { appendRewardRow(); };
-
-      window.saveAdminRewards = function() {
-        const rows = document.querySelectorAll('.reward-edit-row');
-        const updated = [];
-        rows.forEach(r => {
-          const name = r.querySelector('.reward-name-input').value.trim();
-          const pts = Math.max(0, parseInt(r.querySelector('.reward-pts-input').value) || 50);
-          const isBig = r.querySelector('.reward-big-input').checked;
-          if (name) updated.push({ id: generateId('rew'), name: name, points: pts, isBigReward: isBig });
-        });
-        rewardsList = updated;
-        safeStorageSet('app_rewards', rewardsList);
-        alert('✅ Sariak ondo gorde dira!');
-      };
-
-      window.previewNewUserAvatar = function(input) {
-        if (input.files && input.files[0]) {
-          if (input.files[0].size > 1024 * 1024) {
-            alert('⚠️ Irudia handiegia da. Gehienez 1MB.');
-            return;
-          }
-          const reader = new FileReader();
-          reader.onload = e => {
-            newUserAvatarBase64 = e.target.result;
-            const p = document.getElementById('new-user-avatar-preview');
-            p.src = newUserAvatarBase64; p.style.display = 'block';
-          };
-          reader.readAsDataURL(input.files[0]);
-        }
-      };
-
-      renderProfileSelection();
-
+    // Configuración base / inicial
+    const DEFAULT_DATA = {
+      users: [
+        { id: 'u1', name: 'Ane' },
+        { id: 'u2', name: 'Jon' }
+      ],
+      tasks: [
+        { id: 't1', title: 'Ohea egin', points: 10 },
+        { id: 't2', title: 'Mahai gaina garbitu', points: 15 },
+        { id: 't3', title: 'Txakurra atera', points: 20 }
+      ],
+      // Estructura: logs['YYYY-MM-DD']['userId']['taskId'] = true/false
+      logs: {}
+    };
+
+    let state = JSON.parse(localStorage.getItem('zereginak_db')) || DEFAULT_DATA;
+    let currentUser = state.users[0]?.id || '';
+
+    // Utilidades de Fechas
+    const getFormattedDate = (dateObj) => dateObj.toISOString().split('T')[0];
+    const todayStr = getFormattedDate(new Date());
+
+    function saveState() {
+      localStorage.setItem('zereginak_db', JSON.stringify(state));
+      render();
+    }
+
+    function init() {
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(err => console.error(err));
+        navigator.serviceWorker.register('./sw.js').catch(console.error);
+      }
+      document.getElementById('currentDate').textContent = todayStr;
+      document.getElementById('adminDatePicker').value = todayStr;
+      
+      renderUsers();
+      render();
+    }
+
+    function renderUsers() {
+      const select = document.getElementById('userSelect');
+      select.innerHTML = state.users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+      if (currentUser) select.value = currentUser;
+    }
+
+    function changeUser(val) {
+      currentUser = val;
+      render();
+    }
+
+    function calculatePoints(userId) {
+      let firmPoints = 0;
+      let pendingPoints = 0;
+
+      // Calcular últimos 6 días (excluyendo hoy)
+      for (let i = 1; i <= 6; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateKey = getFormattedDate(d);
+        
+        const dayLogs = state.logs[dateKey]?.[userId] || {};
+        Object.keys(dayLogs).forEach(taskId => {
+          if (dayLogs[taskId]) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) firmPoints += task.points;
+          }
         });
       }
-    })();
+
+      // Puntos del día en curso (pendientes)
+      const todayLogs = state.logs[todayStr]?.[userId] || {};
+      Object.keys(todayLogs).forEach(taskId => {
+        if (todayLogs[taskId]) {
+          const task = state.tasks.find(t => t.id === taskId);
+          if (task) pendingPoints += task.points;
+        }
+      });
+
+      return { firmPoints, pendingPoints };
+    }
+
+    function toggleTask(taskId, dateKey = todayStr) {
+      if (!state.logs[dateKey]) state.logs[dateKey] = {};
+      if (!state.logs[dateKey][currentUser]) state.logs[dateKey][currentUser] = {};
+
+      state.logs[dateKey][currentUser][taskId] = !state.logs[dateKey][currentUser][taskId];
+      saveState();
+    }
+
+    function render() {
+      // 1. Puntos
+      const { firmPoints, pendingPoints } = calculatePoints(currentUser);
+      document.getElementById('firmPoints').textContent = firmPoints;
+      document.getElementById('pendingPoints').textContent = pendingPoints;
+
+      // 2. Tareas del día (para el usuario actual)
+      const container = document.getElementById('taskList');
+      const todayUserLogs = state.logs[todayStr]?.[currentUser] || {};
+
+      container.innerHTML = state.tasks.map(task => {
+        const isDone = !!todayUserLogs[task.id];
+        return `
+          <div onclick="toggleTask('${task.id}')" class="task-card bg-white p-4 rounded-xl border ${isDone ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-200'} flex items-center justify-between cursor-pointer shadow-sm select-none">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" ${isDone ? 'checked' : ''} readonly class="w-5 h-5 accent-indigo-600 rounded">
+              <span class="font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-700'}">${task.title}</span>
+            </div>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full ${isDone ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}">
+              +${task.points} pt
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- Panel de Administración & Edición Diferida ---
+    function toggleAdminModal() {
+      const modal = document.getElementById('adminModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        renderAdminHistoryTasks();
+      }
+    }
+
+    function renderAdminHistoryTasks() {
+      const selectedDate = document.getElementById('adminDatePicker').value;
+      const container = document.getElementById('adminHistoryList');
+      if (!selectedDate) return;
+
+      const dayLogs = state.logs[selectedDate]?.[currentUser] || {};
+
+      container.innerHTML = state.tasks.map(task => {
+        const isDone = !!dayLogs[task.id];
+        return `
+          <div class="flex items-center justify-between bg-white p-2 rounded border">
+            <span class="text-xs font-medium text-slate-700">${task.title}</span>
+            <button onclick="adminToggleTask('${task.id}', '${selectedDate}')" class="text-xs px-2 py-1 rounded font-bold ${isDone ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'}">
+              ${isDone ? 'Eginda' : 'Egin gabe'}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function adminToggleTask(taskId, dateKey) {
+      if (!state.logs[dateKey]) state.logs[dateKey] = {};
+      if (!state.logs[dateKey][currentUser]) state.logs[dateKey][currentUser] = {};
+
+      state.logs[dateKey][currentUser][taskId] = !state.logs[dateKey][currentUser][taskId];
+      saveState();
+      renderAdminHistoryTasks();
+    }
+
+    // --- Copia de Seguridad JSON ---
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `zereginak_backup_${todayStr}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.users && imported.tasks && imported.logs) {
+            state = imported;
+            saveState();
+            renderUsers();
+            alert('Datuak ondo inportatu dira!');
+          } else {
+            alert('Fitxategiaren formatua ez da baliozkoa.');
+          }
+        } catch (err) {
+          alert('Errorea fitxategia irakurtzean.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    window.onload = init;
   </script>
 </body>
 </html>
