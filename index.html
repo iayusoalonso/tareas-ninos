@@ -607,11 +607,19 @@
           renderProfileSelection();
         }
       } else {
+        // Asignar al input oculto y actualizar miniatura en el modal
         document.getElementById('t-image-result').value = compressedDataUrl;
         let thumb = document.getElementById('t-preview-thumb');
         thumb.src = compressedDataUrl;
         thumb.style.display = 'block';
-        alert('Irudia gorde da!');
+
+        // Si estamos editando una tarea existente, guardarla al instante automáticamente
+        let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+        if (editingTaskIndex >= 0 && tasks[editingTaskIndex]) {
+          tasks[editingTaskIndex].image = compressedDataUrl;
+          localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
+          renderAdminTasks();
+        }
       }
       closeCropModal();
     }
@@ -679,7 +687,6 @@
       const tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
       let html = '';
       tasks.forEach((task, index) => {
-        // Miniatura de depuración a la izquierda de cada tarea en el panel de admin
         const thumbHtml = task.image && task.image.trim() !== '' ? 
           `<img src="${task.image}" style="width: 45px; height: 35px; border-radius: 6px; object-fit: cover; border: 1px solid #CBD5E1; flex-shrink: 0;">` :
           `<div style="width: 45px; height: 35px; border-radius: 6px; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #64748B; flex-shrink: 0;">Ez</div>`;
