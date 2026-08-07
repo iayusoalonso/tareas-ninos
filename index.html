@@ -679,13 +679,21 @@
       const tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
       let html = '';
       tasks.forEach((task, index) => {
+        // Miniatura de depuración a la izquierda de cada tarea en el panel de admin
+        const thumbHtml = task.image && task.image.trim() !== '' ? 
+          `<img src="${task.image}" style="width: 45px; height: 35px; border-radius: 6px; object-fit: cover; border: 1px solid #CBD5E1; flex-shrink: 0;">` :
+          `<div style="width: 45px; height: 35px; border-radius: 6px; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #64748B; flex-shrink: 0;">Ez</div>`;
+
         html += `
           <div class="task-admin-row">
-            <div>
-              <b>${task.name}</b><br>
-              <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | Checks: ${task.checks || 1} | 🏷️ ${task.category || 'Gabe'}</span>
+            <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+              ${thumbHtml}
+              <div>
+                <b>${task.name}</b><br>
+                <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | Checks: ${task.checks || 1} | 🏷️ ${task.category || 'Gabe'}</span>
+              </div>
             </div>
-            <div style="display:flex; gap:5px;">
+            <div style="display:flex; gap:5px; flex-shrink: 0;">
               <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.9rem;" onclick="openTaskEditor(${index})">Editatu</button>
               <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.9rem;" onclick="deleteTask(${index})">Ezabatu</button>
             </div>
