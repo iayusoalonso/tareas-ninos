@@ -32,6 +32,7 @@
       font-size: 1.5rem; font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.05);
       display: flex; align-items: center; gap: 20px; width: 100%; max-width: 320px;
     }
+    .profile-avatar-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
     .btn-admin-access { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.8rem; cursor: pointer; opacity: 0.6; }
 
     .app-title { font-size: 1.8rem; font-weight: 900; color: var(--dark); margin-bottom: 15px; padding-left: 5px; }
@@ -54,91 +55,44 @@
     }
 
     /* --- TARJETAS GRANDES APILADAS --- */
-    #view-container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
+    #view-container { display: flex; flex-direction: column; gap: 20px; }
 
     .daily-task-card-large {
-      position: relative;
-      width: 100%;
-      min-height: 260px;
-      border-radius: 24px;
-      overflow: hidden;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-      background-color: #CBD5E1;
-      display: flex;
-      flex-direction: column;
+      position: relative; width: 100%; min-height: 260px; border-radius: 24px;
+      overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.1); background-color: #CBD5E1;
+      display: flex; flex-direction: column;
     }
     
-    .daily-task-img-bg {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      z-index: 1;
-    }
+    .daily-task-img-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
     
     .daily-task-overlay {
-      position: relative;
-      z-index: 2;
-      padding: 20px;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
+      position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex;
+      flex-direction: column; justify-content: space-between;
       background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 35%, rgba(0,0,0,0.2) 100%);
     }
 
     .badges-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    
     .badge-dark {
-      background: #1E293B;
-      color: white;
-      padding: 6px 14px;
-      border-radius: 14px;
-      font-size: 0.9rem;
-      font-weight: 800;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      background: #1E293B; color: white; padding: 6px 14px; border-radius: 14px;
+      font-size: 0.9rem; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .star-icon { color: var(--warning); }
 
     .task-title-large {
-      font-size: 2.3rem;
-      font-weight: 900;
-      color: #000;
-      text-transform: uppercase;
-      margin-top: 10px;
-      line-height: 1.1;
-      letter-spacing: -1px;
+      font-size: 2.3rem; font-weight: 900; color: #000; text-transform: uppercase;
+      margin-top: 10px; line-height: 1.1; letter-spacing: -1px;
       text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0px 3px 0 #fff;
     }
 
-    .checks-container {
-      margin-top: 20px;
-      align-self: flex-end;
-      display: flex;
-      gap: 10px;
-    }
-
+    .checks-container { margin-top: 20px; align-self: flex-end; display: flex; gap: 10px; }
     .checkbox-large {
-      width: 60px; height: 60px;
-      background: #FFFFFF;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      transition: transform 0.1s;
+      width: 60px; height: 60px; background: #FFFFFF; border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: transform 0.1s;
     }
     .checkbox-large:active { transform: scale(0.9); }
     .checkbox-large.state-done { background: var(--success); }
-    .checkbox-large.state-done::after {
-      content: '✓';
-      color: white;
-      font-size: 2.8rem;
-      font-weight: 900;
-    }
+    .checkbox-large.state-done::after { content: '✓'; color: white; font-size: 2.8rem; font-weight: 900; }
 
     /* --- VISTA SEMANAL --- */
     .weekly-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
@@ -159,18 +113,21 @@
     .progress-bar-fill { height: 100%; width: 0%; background: var(--warning); border-radius: 10px; transition: width 0.3s; }
 
     /* --- MODALES Y ADMIN --- */
-    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
-    .modal-card { background: white; border-radius: 24px; padding: 25px; width: 100%; max-width: 350px; display: flex; flex-direction: column; gap: 15px; text-align: center; }
+    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; overflow-y: auto; }
+    .modal-card { background: white; border-radius: 24px; padding: 25px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; text-align: center; max-height: 90vh; overflow-y: auto; }
     .form-input { padding: 12px; border: 2px solid #CBD5E1; border-radius: 12px; font-size: 1.1rem; outline: none; width: 100%; }
     .btn-action { padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; width: 100%; }
     .btn-green { background: #10B981; }
     .btn-red { background: var(--danger); }
     .admin-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .admin-card h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; color: var(--dark); }
-    .task-admin-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F1F5F9; gap: 10px; }
+    .task-admin-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F1F5F9; gap: 10px; text-align: left; }
     .child-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
     .child-tab { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--primary); text-align: center; }
     .child-tab.active { background: var(--primary); color: white; }
+
+    /* Recortador Canvas */
+    #crop-canvas { max-width: 100%; border-radius: 12px; cursor: crosshair; background: #000; margin: 0 auto; }
   </style>
 </head>
 <body>
@@ -213,20 +170,24 @@
     
     <!-- Selector de hijo en Admin -->
     <div class="admin-card">
-      <h2>Aukeratu Haurra Kudeatzeko</h2>
+      <h2>Haurrak eta Avatarrak</h2>
       <div class="child-tabs" id="admin-child-tabs"></div>
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button class="btn-action" style="background: var(--primary); font-size:0.9rem;" onclick="editCurrentChildAvatar()">📷 Aldatu Avatarra</button>
+        <button class="btn-action btn-green" style="font-size:0.9rem;" onclick="addNewChild()">+ Haur berria</button>
+      </div>
     </div>
 
     <div class="admin-card">
-      <h2>Zereginak (Puntuak, Checks eta Irudiak)</h2>
+      <h2>Zereginak Kudeatu</h2>
       <div id="admin-task-list"></div>
-      <button class="btn-action btn-green" style="margin-top: 15px;" onclick="addNewTask()">+ Gehitu zeregina berria</button>
+      <button class="btn-action btn-green" style="margin-top: 15px;" onclick="openTaskEditor()">+ Gehitu zeregina berria</button>
     </div>
 
     <div class="admin-card">
       <h2>📅 Egutegi eta Historial Kudeaketa</h2>
-      <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Ikusi eta markatu edo desmarkatu zereginak edozein egunetakotik.</p>
-      <button class="btn-action" style="background: var(--primary);" onclick="openAdminWeeklyView()">Ikusi aste osoa eta egun zaharrak</button>
+      <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Markatu edo desmarkatu zereginak edozein egunetakotik.</p>
+      <button class="btn-action" style="background: var(--primary);" onclick="openAdminWeeklyView()">Ikusi eta editatu aste osoa</button>
     </div>
 
     <div class="admin-card">
@@ -248,6 +209,46 @@
     </div>
   </div>
 
+  <!-- MODAL RECORTADOR / COMPRESOR DE IMÁGENES -->
+  <div id="crop-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 450px;">
+      <h3 id="crop-modal-title" style="color: var(--dark);">Irudia egokitu eta moztu</h3>
+      <p style="font-size:0.85rem; color: var(--secondary);">Arrastratu eta hautatu eremua edo doitu irudia.</p>
+      <div style="position: relative; overflow: hidden; width: 100%; display: flex; justify-content: center;">
+        <canvas id="crop-canvas"></canvas>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="btn-action" style="background: var(--secondary);" onclick="closeCropModal()">Utzi</button>
+        <button class="btn-action btn-green" onclick="confirmCropImage()">Gorde eta Konprimitu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITOR DE TAREA -->
+  <div id="task-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 id="task-modal-title" style="color: var(--dark);">Zeregina</h3>
+      <input type="text" id="t-name" class="form-input" placeholder="Zereginaren izena...">
+      <input type="number" id="t-points" class="form-input" placeholder="Puntu totalak..." value="10">
+      <input type="text" id="t-category" class="form-input" placeholder="Kategoria (adib. Higiene)..." value="Ordena">
+      <input type="number" id="t-checks" class="form-input" placeholder="Check kopurua (adib. 3)..." value="1" min="1" max="10">
+      
+      <div style="text-align: left;">
+        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Zereginaren Irudia:</label>
+        <input type="file" id="t-file-input" accept="image/*" class="form-input" style="padding: 8px; margin-top: 5px;" onchange="prepareImageForCrop(this, 'task')">
+      </div>
+      <input type="hidden" id="t-image-result">
+
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="btn-action" style="background: var(--secondary);" onclick="closeTaskModal()">Utzi</button>
+        <button class="btn-action btn-green" onclick="saveTaskFromModal()">Gorde zeregina</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUT OCULTO PARA AVATAR -->
+  <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="prepareImageForCrop(this, 'avatar')">
+
   <!-- FOOTER PROGRESO -->
   <div id="progress-footer">
     <div class="progress-info">
@@ -262,18 +263,30 @@
   <script>
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
     let adminPassword = localStorage.getItem('app_admin_pass') || '1234';
-    let childrenList = JSON.parse(localStorage.getItem('app_children')) || [{name: 'Luke'}, {name: 'Marty'}];
+    let childrenList = JSON.parse(localStorage.getItem('app_children')) || [
+      { name: 'Luke', avatar: '' },
+      { name: 'Marty', avatar: '' }
+    ];
     
     const defaultTasks = [
-      { id: 'dientes', name: 'Hortzak garbitu', image: 'https://img.freepik.com/vector-gratis/nino-lindo-cepillando-dientes-ilustracion-icono-vector-dibujos-animados-personas-salud-icono-concepto-aislado_138676-4767.jpg', category: 'Higiene', points: 10, checks: 3 },
-      { id: 'habitacion', name: 'Gela jaso', image: 'https://img.freepik.com/vector-gratis/nino-recogiendo-juguetes-habitacion_1308-41517.jpg', category: 'Ordena', points: 15, checks: 1 },
-      { id: 'juegos', name: 'Jolas eremua jaso', image: '', category: 'Ordena', points: 25, checks: 1 }
+      { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3 },
+      { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1 }
     ];
 
     let currentChild = childrenList[0].name;
     let adminSelectedChild = childrenList[0].name;
     let savedData = {};
     let currentView = 'daily';
+    let editingTaskIndex = -1;
+
+    // Variables para el recorte y compresión por Canvas
+    let cropTargetType = ''; // 'avatar' o 'task'
+    let cropImageObj = new Image();
+    let canvasCrop = document.getElementById('crop-canvas');
+    let ctxCrop = canvasCrop.getContext('2d');
+    let cropSelection = { x: 0, y: 0, size: 200 };
+    let isDraggingCrop = false;
+    let dragStartX = 0, dragStartY = 0;
 
     function getCurrentDayIndex() {
       return (new Date().getDay() + 6) % 7;
@@ -292,8 +305,11 @@
         btn.className = 'btn-profile';
         btn.onclick = () => selectProfile(child.name);
         
-        let avatarSvg = `<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#E2E8F0"/><circle cx="50" cy="40" r="20" fill="#94A3B8"/><path d="M 20 85 Q 50 50 80 85" fill="#94A3B8"/></svg>`;
-        btn.innerHTML = `${avatarSvg}<span>${child.name.toUpperCase()}</span>`;
+        let avatarHtml = child.avatar ? 
+          `<img class="profile-avatar-img" src="${child.avatar}" alt="avatar">` : 
+          `<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#E2E8F0"/><circle cx="50" cy="40" r="20" fill="#94A3B8"/><path d="M 20 85 Q 50 50 80 85" fill="#94A3B8"/></svg>`;
+        
+        btn.innerHTML = `${avatarHtml}<span>${child.name.toUpperCase()}</span>`;
         container.appendChild(btn);
       });
     }
@@ -452,6 +468,139 @@
       document.getElementById('progress-bar-fill').style.width = `${pct}%`;
     }
 
+    // --- SISTEMA DE RECORTE Y COMPRESIÓN DE IMÁGENES POR CANVAS ---
+    function prepareImageForCrop(input, targetType) {
+      if (input.files && input.files[0]) {
+        cropTargetType = targetType;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          cropImageObj.onload = function() {
+            openCropModal();
+          };
+          cropImageObj.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function openCropModal() {
+      document.getElementById('crop-modal').style.display = 'flex';
+      let maxWidth = 350;
+      let scale = maxWidth / cropImageObj.width;
+      canvasCrop.width = maxWidth;
+      canvasCrop.height = cropImageObj.height * scale;
+      
+      cropSelection = {
+        x: 0,
+        y: 0,
+        width: canvasCrop.width,
+        height: cropTargetType === 'avatar' ? canvasCrop.width : Math.round(canvasCrop.width * 0.55)
+      };
+      redrawCropCanvas();
+    }
+
+    function redrawCropCanvas() {
+      ctxCrop.clearRect(0, 0, canvasCrop.width, canvasCrop.height);
+      ctxCrop.drawImage(cropImageObj, 0, 0, canvasCrop.width, canvasCrop.height);
+      
+      // Dibujar sombra exterior y marco de recorte
+      ctxCrop.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctxCrop.fillRect(0, 0, canvasCrop.width, canvasCrop.height);
+      
+      ctxCrop.save();
+      ctxCrop.beginPath();
+      if (cropTargetType === 'avatar') {
+        let radius = cropSelection.width / 2;
+        ctxCrop.arc(cropSelection.x + radius, cropSelection.y + radius, radius, 0, Math.PI * 2);
+      } else {
+        ctxCrop.rect(cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height);
+      }
+      ctxCrop.clip();
+      ctxCrop.clearRect(0, 0, canvasCrop.width, canvasCrop.height);
+      ctxCrop.drawImage(cropImageObj, 0, 0, canvasCrop.width, canvasCrop.height);
+      ctxCrop.restore();
+
+      // Marco guía
+      ctxCrop.strokeStyle = '#3B82F6';
+      ctxCrop.lineWidth = 3;
+      if (cropTargetType === 'avatar') {
+        let radius = cropSelection.width / 2;
+        ctxCrop.beginPath();
+        ctxCrop.arc(cropSelection.x + radius, cropSelection.y + radius, radius, 0, Math.PI * 2);
+        ctxCrop.stroke();
+      } else {
+        ctxCrop.strokeRect(cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height);
+      }
+    }
+
+    // Interactividad táctil/ratón para mover el marco de recorte
+    canvasCrop.onmousedown = canvasCrop.ontartstart = function(e) {
+      isDraggingCrop = true;
+      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      dragStartX = clientX - cropSelection.x;
+      dragStartY = clientY - cropSelection.y;
+    };
+
+    window.onmousemove = window.ontouchmove = function(e) {
+      if (!isDraggingCrop) return;
+      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      
+      cropSelection.x = Math.max(0, Math.min(canvasCrop.width - cropSelection.width, clientX - dragStartX));
+      cropSelection.y = Math.max(0, Math.min(canvasCrop.height - cropSelection.height, clientY - dragStartY));
+      redrawCropCanvas();
+    };
+
+    window.onmouseup = window.ontouchend = function() {
+      isDraggingCrop = false;
+    };
+
+    function closeCropModal() {
+      document.getElementById('crop-modal').style.display = 'none';
+    }
+
+    function confirmCropImage() {
+      // Crear canvas final con compresión y recorte exacto
+      let finalCanvas = document.createElement('canvas');
+      let finalCtx = finalCanvas.getContext('2d');
+      
+      let outputW = cropTargetType === 'avatar' ? 200 : 600;
+      let outputH = cropTargetType === 'avatar' ? 200 : 330;
+      finalCanvas.width = outputW;
+      finalCanvas.height = outputH;
+
+      let scaleFactorX = cropImageObj.width / canvasCrop.width;
+      let scaleFactorY = cropImageObj.height / canvasCrop.height;
+
+      finalCtx.drawImage(
+        cropImageObj,
+        cropSelection.x * scaleFactorX,
+        cropSelection.y * scaleFactorY,
+        cropSelection.width * scaleFactorX,
+        cropSelection.height * scaleFactorY,
+        0, 0, outputW, outputH
+      );
+
+      // Compresión óptima a JPEG con calidad 0.7 para que ocupe muy poco en localStorage
+      let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.7);
+
+      if (cropTargetType === 'avatar') {
+        let childObj = childrenList.find(c => c.name === adminSelectedChild);
+        if (childObj) {
+          childObj.avatar = compressedDataUrl;
+          localStorage.setItem('app_children', JSON.stringify(childrenList));
+          renderAdminPanel();
+          renderProfileSelection();
+        }
+      } else {
+        document.getElementById('t-image-result').value = compressedDataUrl;
+        alert('Irudia moztu eta konprimitu da ondo!');
+      }
+      closeCropModal();
+    }
+
+    // --- ADMIN Y GESTIÓN DE TAREAS ---
     function openAuthModal() {
       document.getElementById('admin-pass-input').value = '';
       document.getElementById('auth-modal').style.display = 'flex';
@@ -495,6 +644,20 @@
       renderAdminPanel();
     }
 
+    function editCurrentChildAvatar() {
+      document.getElementById('avatar-file-input').click();
+    }
+
+    function addNewChild() {
+      const name = prompt('Haurraren izena:');
+      if (!name) return;
+      childrenList.push({ name, avatar: '' });
+      localStorage.setItem('app_children', JSON.stringify(childrenList));
+      adminSelectedChild = name;
+      renderAdminPanel();
+      renderProfileSelection();
+    }
+
     function renderAdminTasks() {
       const listContainer = document.getElementById('admin-task-list');
       const tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
@@ -507,7 +670,7 @@
               <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | Checks: ${task.checks || 1} | 🏷️ ${task.category || 'Gabe'}</span>
             </div>
             <div style="display:flex; gap:5px;">
-              <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.9rem;" onclick="editTask(${index})">Editatu</button>
+              <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.9rem;" onclick="openTaskEditor(${index})">Editatu</button>
               <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.9rem;" onclick="deleteTask(${index})">Ezabatu</button>
             </div>
           </div>
@@ -516,33 +679,52 @@
       listContainer.innerHTML = html;
     }
 
-    function addNewTask() {
-      const name = prompt('Zereginaren izena (adib. Hortzak garbitu):');
-      if (!name) return;
-      const points = parseInt(prompt('Puntu totalak:', '10')) || 10;
-      const category = prompt('Kategoria (adib. Higiene, Ordena):', 'Ordena') || 'Ordena';
-      const image = prompt('Argazkiaren URL esteka (utzi hutsik gabe):', '') || '';
-      const checks = parseInt(prompt('Koadro / Check kopurua (adib. 3 hortzetako):', '1')) || 1;
-
-      let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
-      tasks.push({ id: 't_' + Date.now(), name, points, category, image, checks });
-      localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
-      renderAdminTasks();
+    function openTaskEditor(index = -1) {
+      editingTaskIndex = index;
+      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+      
+      if (index >= 0) {
+        let t = tasks[index];
+        document.getElementById('task-modal-title').innerText = 'Zeregina Editatu';
+        document.getElementById('t-name').value = t.name;
+        document.getElementById('t-points').value = t.points;
+        document.getElementById('t-category').value = t.category || 'Ordena';
+        document.getElementById('t-checks').value = t.checks || 1;
+        document.getElementById('t-image-result').value = t.image || '';
+      } else {
+        document.getElementById('task-modal-title').innerText = 'Zeregin Berria Gehitu';
+        document.getElementById('t-name').value = '';
+        document.getElementById('t-points').value = '10';
+        document.getElementById('t-category').value = 'Ordena';
+        document.getElementById('t-checks').value = '1';
+        document.getElementById('t-image-result').value = '';
+      }
+      document.getElementById('t-file-input').value = '';
+      document.getElementById('task-modal').style.display = 'flex';
     }
 
-    function editTask(index) {
+    function closeTaskModal() {
+      document.getElementById('task-modal').style.display = 'none';
+    }
+
+    function saveTaskFromModal() {
+      const name = document.getElementById('t-name').value;
+      if (!name) return alert('Idatzi zereginaren izena');
+      const points = parseInt(document.getElementById('t-points').value) || 10;
+      const category = document.getElementById('t-category').value || 'Ordena';
+      const checks = parseInt(document.getElementById('t-checks').value) || 1;
+      const image = document.getElementById('t-image-result').value;
+
       let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
-      let t = tasks[index];
 
-      const name = prompt('Zereginaren izena:', t.name);
-      if (!name) return;
-      const points = parseInt(prompt('Puntu totalak:', t.points)) || 10;
-      const category = prompt('Kategoria:', t.category || 'Ordena') || 'Ordena';
-      const image = prompt('Argazkiaren URL esteka:', t.image || '') || '';
-      const checks = parseInt(prompt('Koadro / Check kopurua:', t.checks || 1)) || 1;
+      if (editingTaskIndex >= 0) {
+        tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, image };
+      } else {
+        tasks.push({ id: 't_' + Date.now(), name, points, category, checks, image });
+      }
 
-      tasks[index] = { ...t, name, points, category, image, checks };
       localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
+      closeTaskModal();
       renderAdminTasks();
     }
 
