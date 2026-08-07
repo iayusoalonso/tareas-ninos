@@ -1,466 +1,492 @@
 <!DOCTYPE html>
 <html lang="eu">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zereginak</title>
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#4f46e5">
-  <link rel="apple-touch-icon" href="./icon-192.png">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Cropper.js CSS & JS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-  <style>
-    .task-card { transition: all 0.2s ease; }
-    .task-card:active { transform: scale(0.98); }
-  </style>
-</head>
-<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteko Zereginak</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #388E3C;
+            --accent: #FFC107;
+            --bg: #F4F7F6;
+            --card-bg: #FFFFFF;
+            --text: #333333;
+            --border-radius: 16px;
+        }
 
-  <!-- Header -->
-  <header class="bg-indigo-600 text-white shadow-md p-4 sticky top-0 z-10 flex justify-between items-center">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight">Zereginak</h1>
-      <p class="text-xs text-indigo-200">Etxeko txandak eta kudeaketa</p>
-    </div>
-    <div class="flex gap-2">
-      <button onclick="toggleAdminModal()" class="bg-indigo-700 hover:bg-indigo-800 text-xs px-3 py-2 rounded-lg font-medium transition flex items-center gap-1 shadow">
-        ⚙️ Kudeaketa
-      </button>
-    </div>
-  </header>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+        }
 
-  <main class="flex-1 max-w-3xl w-full mx-auto p-4 space-y-6">
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
 
-    <!-- User Selector & Points summary -->
-    <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-      <div class="flex items-center gap-3 w-full sm:w-auto">
-        <div id="userAvatarContainer" class="w-12 h-12 rounded-full overflow-hidden bg-indigo-100 border-2 border-indigo-500 flex items-center justify-center shrink-0">
-          <!-- Avatar dinámico -->
-        </div>
-        <div>
-          <label for="userSelect" class="font-bold text-slate-700 text-xs uppercase tracking-wider block">Erabiltzailea</label>
-          <select id="userSelect" onchange="changeUser(this.value)" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 p-2 font-semibold">
-            <!-- Dinámico -->
-          </select>
-        </div>
-      </div>
-      
-      <div id="pointsContainer" class="flex gap-3 text-right w-full sm:w-auto justify-end">
-        <div class="bg-indigo-50 border border-indigo-100 p-2.5 rounded-xl text-center">
-          <span class="block text-xs text-indigo-600 font-semibold uppercase tracking-wider">En firme</span>
-          <span id="firmPoints" class="text-xl font-black text-indigo-700">0</span>
-        </div>
-        <div class="bg-amber-50 border border-amber-100 p-2.5 rounded-xl text-center">
-          <span class="block text-xs text-amber-600 font-semibold uppercase tracking-wider">Gaur (Zain)</span>
-          <span id="pendingPoints" class="text-xl font-black text-amber-600">0</span>
-        </div>
-      </div>
-    </section>
+        .hidden { display: none !important; }
 
-    <!-- Daily Tasks View -->
-    <section class="space-y-3">
-      <div class="flex justify-between items-center px-1">
-        <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">
-          <span>📅 Gaurko Zereginak</span>
-        </h2>
-        <span id="currentDate" class="text-xs font-semibold text-slate-400"></span>
-      </div>
+        /* --- PANTALLA SELECCIÓN PERFIL --- */
+        .profile-selector {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .profile-list {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+        .profile-card {
+            background: #f8f9fa;
+            border: 3px solid #e9ecef;
+            border-radius: 20px;
+            padding: 15px;
+            width: 140px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .profile-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+        .profile-card img {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
 
-      <div id="taskList" class="space-y-3">
-        <!-- Renderizado dinámico -->
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Modal Admin / Kudeaketa -->
-  <div id="adminModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-40 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
-      
-      <div class="p-4 bg-indigo-600 text-white flex justify-between items-center">
-        <h3 class="font-bold text-lg">Panel de Kudeaketa</h3>
-        <button onclick="toggleAdminModal()" class="text-white hover:bg-indigo-700 p-1 rounded-lg">✕</button>
-      </div>
-
-      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
+        /* --- CABECERA Y NAVEGACIÓN --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-info img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
         
-        <!-- Gestión de Usuarios y Avatares -->
-        <div class="border-b pb-4">
-          <h4 class="font-bold text-slate-800 mb-2">Erabiltzaileen Avatarrak</h4>
-          <div id="adminUsersList" class="space-y-2">
-            <!-- Dinámico -->
-          </div>
-        </div>
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: #e9ecef;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
 
-        <!-- Gestión de Imágenes de Tareas -->
-        <div class="border-b pb-4">
-          <h4 class="font-bold text-slate-800 mb-2">Zereginen Argazkiak (16:9)</h4>
-          <div id="adminTasksList" class="space-y-2">
-            <!-- Dinámico -->
-          </div>
-        </div>
+        /* --- ESTILO VISUAL ANTERIOR DE TAREAS (DIARIO) --- */
+        .day-navigator {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #e8f5e9;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
 
-        <!-- Edición diferida admin -->
-        <div class="border-b pb-4">
-          <h4 class="font-bold text-slate-800 mb-2">Modificar Tareas Completadas (Histórico)</h4>
-          <div class="flex gap-2 mb-3">
-            <input type="date" id="adminDatePicker" class="border rounded-lg p-2 text-sm" onchange="renderAdminHistoryTasks()">
-          </div>
-          <div id="adminHistoryList" class="space-y-2 bg-slate-50 p-3 rounded-xl border max-h-40 overflow-y-auto">
-            <p class="text-xs text-slate-400">Hautatu data bat zereginak aldatzeko.</p>
-          </div>
-        </div>
+        .task-card-visual {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+        }
 
-        <!-- Backup -->
-        <div>
-          <h4 class="font-bold text-slate-800 mb-2">Copia de Seguridad (Backup)</h4>
-          <div class="flex gap-2">
-            <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-semibold">
-              📥 Exportar JSON
-            </button>
-            <label class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer">
-              📤 Importar JSON
-              <input type="file" id="importInput" accept=".json" class="hidden" onchange="importData(event)">
-            </label>
-          </div>
-        </div>
+        .task-img-container {
+            width: 90px;
+            height: 90px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+        .task-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-      </div>
+        .task-details {
+            flex-grow: 1;
+        }
+        .task-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .task-badge {
+            display: inline-block;
+            background: #fff3cd;
+            color: #856404;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
 
-      <div class="p-4 bg-slate-50 border-t flex justify-end">
-        <button onclick="toggleAdminModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">Itxi</button>
-      </div>
+        /* --- CASILLAS / TICKS ESTILO ANTERIOR --- */
+        .checkbox-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .custom-check {
+            width: 38px;
+            height: 38px;
+            border: 3px solid var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.4rem;
+            font-weight: bold;
+            user-select: none;
+            background: #fff;
+            transition: all 0.1s ease;
+        }
+        .custom-check.checked {
+            background: var(--primary);
+            color: white;
+        }
 
+        /* --- VISTA SEMANAL TABLA --- */
+        .weekly-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .weekly-table th, .weekly-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .weekly-table th { background: #f2f2f2; }
+        .weekly-img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+
+        /* --- BOTONES Y GENERAL --- */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-admin { background: #6c757d; }
+        .btn-danger { background: #dc3545; }
+        .btn-sec { background: #e9ecef; color: #333; }
+
+        .progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            background: var(--primary);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 1. PANTALLA SELECCIÓN DE PERFIL (ÚNICO LUGAR CON BOTÓN KUDEAKETA) -->
+    <div id="view-profile-select" class="profile-selector">
+        <h2>Nor zara?</h2>
+        <div id="profiles-container" class="profile-list"></div>
+        <button class="btn btn-admin" onclick="openAdminModal()">⚙️ Kudeaketa (Admin)</button>
     </div>
-  </div>
 
-  <!-- Modal de Recorte de Imagen (Cropper) -->
-  <div id="cropModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-4 flex flex-col space-y-4">
-      <h3 id="cropModalTitle" class="font-bold text-slate-800 text-base">Ajustar e irudia encuadrar</h3>
-      
-      <div class="w-full max-h-[60vh] overflow-hidden rounded-xl bg-slate-900 flex justify-center items-center">
-        <img id="imageToCrop" class="max-w-full block">
-      </div>
+    <!-- 2. VISTA PRINCIPAL (DIARIA / SEMANAL / SARIAGAK) -->
+    <div id="view-main" class="hidden">
+        <header>
+            <div class="user-info">
+                <img id="current-user-avatar" src="" alt="Avatar">
+                <div>
+                    <h3 id="current-user-name" style="margin:0;"></h3>
+                    <small>Puntuak (4 aste): <strong id="user-points">0</strong> PT</small>
+                </div>
+            </div>
+            <button class="btn btn-sec" onclick="logout()">Sartu berriro</button>
+        </header>
 
-      <div class="flex gap-2 justify-end">
-        <button onclick="cancelCrop()" class="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Ezeztatu</button>
-        <button onclick="saveCroppedImage()" class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl">Gorde Argazkia</button>
-      </div>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('daily')">Egunero</button>
+            <button class="tab-btn" onclick="switchTab('weekly')">Astea</button>
+            <button class="tab-btn" onclick="switchTab('rewards')">Sariak</button>
+        </div>
+
+        <!-- TAB: EGUNERO (Diseño de tarjetas e imágenes recuperado) -->
+        <div id="tab-daily">
+            <div class="day-navigator">
+                <button class="btn btn-sec" onclick="changeDay(-1)">◀</button>
+                <span id="current-day-text">Astelehena</span>
+                <button class="btn btn-sec" onclick="changeDay(1)">▶</button>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="daily-progress" class="progress-bar"></div>
+            </div>
+
+            <div id="daily-tasks-list"></div>
+        </div>
+
+        <!-- TAB: ASTEA (Tabla semanal previa) -->
+        <div id="tab-weekly" class="hidden">
+            <table class="weekly-table">
+                <thead>
+                    <tr>
+                        <th>Zeregina</th>
+                        <th>Al</th><th>Ar</th><th>Az</th><th>Og</th><th>Or</th><th>La</th><th>Ig</th>
+                    </tr>
+                </thead>
+                <tbody id="weekly-tasks-body"></tbody>
+            </table>
+        </div>
+
+        <!-- TAB: SARIAK -->
+        <div id="tab-rewards" class="hidden">
+            <h3>Eskuragarri dauden sariak</h3>
+            <div id="rewards-list"></div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    // Configuración base / inicial
-    const DEFAULT_DATA = {
-      users: [
-        { id: 'u1', name: 'Ane', avatar: null },
-        { id: 'u2', name: 'Jon', avatar: null }
-      ],
-      tasks: [
-        { id: 't1', title: 'Ohea egin', points: 10, image: null },
-        { id: 't2', title: 'Mahai gaina garbitu', points: 15, image: null },
-        { id: 't3', title: 'Txakurra atera', points: 20, image: null }
-      ],
-      logs: {}
+</div>
+
+<script>
+    // --- ESTADO Y DATOS BASE ---
+    const DAYS = ['Astelehena', 'Asteartea', 'Asteazkena', 'Oseguna', 'Ostirala', 'Larunbata', 'Igandea'];
+    let currentDayIdx = 0;
+    let currentUser = null;
+
+    let appData = JSON.parse(localStorage.getItem('asteko_data')) || {
+        users: [
+            { id: '1', name: 'Luke', avatar: 'https://via.placeholder.com/90/4CAF50/ffffff?text=Luke' },
+            { id: '2', name: 'Marty', avatar: 'https://via.placeholder.com/90/FFC107/ffffff?text=Marty' }
+        ],
+        tasks: [
+            { id: 't1', title: 'Ohea egin', img: 'https://via.placeholder.com/90/e0e0e0/888888?text=Ohea', checks: 1, points: 5, userId: '1' },
+            { id: 't2', title: 'Mahaia jarri', img: 'https://via.placeholder.com/90/e0e0e0/888888?text=Mahaia', checks: 2, points: 10, userId: '1', team: true }
+        ],
+        logs: {} // Estructura: logs[userId][taskId][dayIdx] = countChecks
     };
 
-    let state = JSON.parse(localStorage.getItem('zereginak_db')) || DEFAULT_DATA;
-    let currentUser = state.users[0]?.id || '';
-
-    // Variables de Recorte (Cropper)
-    let cropper = null;
-    let cropType = null; // 'user' o 'task'
-    let cropTargetId = null;
-
-    const getFormattedDate = (dateObj) => dateObj.toISOString().split('T')[0];
-    const todayStr = getFormattedDate(new Date());
-
-    function saveState() {
-      localStorage.setItem('zereginak_db', JSON.stringify(state));
-      render();
+    function saveData() {
+        localStorage.setItem('asteko_data', JSON.stringify(appData));
     }
 
+    // --- INICIALIZACIÓN ---
     function init() {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(console.error);
-      }
-      document.getElementById('currentDate').textContent = todayStr;
-      document.getElementById('adminDatePicker').value = todayStr;
-      
-      renderUsersSelect();
-      render();
+        renderProfileSelection();
+        // Obtener el día de la semana actual (0: Astelehena)
+        let d = new Date().getDay();
+        currentDayIdx = d === 0 ? 6 : d - 1; 
     }
 
-    function renderUsersSelect() {
-      const select = document.getElementById('userSelect');
-      select.innerHTML = state.users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
-      if (currentUser) select.value = currentUser;
+    function renderProfileSelection() {
+        const container = document.getElementById('profiles-container');
+        container.innerHTML = '';
+        appData.users.forEach(u => {
+            container.innerHTML += `
+                <div class="profile-card" onclick="selectProfile('${u.id}')">
+                    <img src="${u.avatar}" alt="${u.name}">
+                    <h4>${u.name}</h4>
+                </div>
+            `;
+        });
     }
 
-    function changeUser(val) {
-      currentUser = val;
-      render();
-    }
-
-    function calculatePoints(userId) {
-      let firmPoints = 0;
-      let pendingPoints = 0;
-
-      for (let i = 1; i <= 6; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateKey = getFormattedDate(d);
+    function selectProfile(id) {
+        currentUser = appData.users.find(u => u.id === id);
+        document.getElementById('current-user-avatar').src = currentUser.avatar;
+        document.getElementById('current-user-name').innerText = currentUser.name;
         
-        const dayLogs = state.logs[dateKey]?.[userId] || {};
-        Object.keys(dayLogs).forEach(taskId => {
-          if (dayLogs[taskId]) {
-            const task = state.tasks.find(t => t.id === taskId);
-            if (task) firmPoints += task.points;
-          }
-        });
-      }
+        document.getElementById('view-profile-select').classList.add('hidden');
+        document.getElementById('view-main').classList.remove('hidden');
+        
+        renderDailyView();
+    }
 
-      const todayLogs = state.logs[todayStr]?.[userId] || {};
-      Object.keys(todayLogs).forEach(taskId => {
-        if (todayLogs[taskId]) {
-          const task = state.tasks.find(t => t.id === taskId);
-          if (task) pendingPoints += task.points;
+    function logout() {
+        currentUser = null;
+        document.getElementById('view-main').classList.add('hidden');
+        document.getElementById('view-profile-select').classList.remove('hidden');
+    }
+
+    // --- NAVEGACIÓN Y VISTAS ---
+    function switchTab(tab) {
+        document.querySelectorAll('.nav-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.getElementById('tab-daily').classList.add('hidden');
+        document.getElementById('tab-weekly').classList.add('hidden');
+        document.getElementById('tab-rewards').classList.add('hidden');
+
+        if(tab === 'daily') {
+            document.getElementById('tab-daily').classList.remove('hidden');
+            renderDailyView();
+        } else if(tab === 'weekly') {
+            document.getElementById('tab-weekly').classList.remove('hidden');
+            renderWeeklyView();
+        } else if(tab === 'rewards') {
+            document.getElementById('tab-rewards').classList.remove('hidden');
         }
-      });
-
-      return { firmPoints, pendingPoints };
     }
 
-    function toggleTask(taskId, dateKey = todayStr) {
-      if (!state.logs[dateKey]) state.logs[dateKey] = {};
-      if (!state.logs[dateKey][currentUser]) state.logs[dateKey][currentUser] = {};
-
-      state.logs[dateKey][currentUser][taskId] = !state.logs[dateKey][currentUser][taskId];
-      saveState();
+    function changeDay(dir) {
+        currentDayIdx = (currentDayIdx + dir + 7) % 7;
+        renderDailyView();
     }
 
-    function render() {
-      // 1. Avatar actual y Puntos
-      const activeUser = state.users.find(u => u.id === currentUser);
-      const avatarContainer = document.getElementById('userAvatarContainer');
-      
-      if (activeUser && activeUser.avatar) {
-        avatarContainer.innerHTML = `<img src="${activeUser.avatar}" class="w-full h-full object-cover">`;
-      } else {
-        avatarContainer.innerHTML = `<span class="text-indigo-600 font-bold text-lg">${activeUser ? activeUser.name.charAt(0) : '?'}</span>`;
-      }
+    // --- RENDER DÍARIO (CON MOLDES VISUALES ORIGINALES) ---
+    function renderDailyView() {
+        document.getElementById('current-day-text').innerText = DAYS[currentDayIdx];
+        const container = document.getElementById('daily-tasks-list');
+        container.innerHTML = '';
 
-      const { firmPoints, pendingPoints } = calculatePoints(currentUser);
-      document.getElementById('firmPoints').textContent = firmPoints;
-      document.getElementById('pendingPoints').textContent = pendingPoints;
+        const userTasks = appData.tasks.filter(t => t.userId === currentUser.id);
 
-      // 2. Lista de Tareas
-      const container = document.getElementById('taskList');
-      const todayUserLogs = state.logs[todayStr]?.[currentUser] || {};
+        userTasks.forEach(task => {
+            const currentChecks = getChecks(task.id, currentDayIdx);
+            
+            let checksHtml = '';
+            for(let i = 0; i < task.checks; i++) {
+                const isChecked = i < currentChecks;
+                checksHtml += `
+                    <div class="custom-check ${isChecked ? 'checked' : ''}" 
+                         onclick="toggleCheck('${task.id}', ${i})">
+                        ${isChecked ? '✓' : ''}
+                    </div>
+                `;
+            }
 
-      container.innerHTML = state.tasks.map(task => {
-        const isDone = !!todayUserLogs[task.id];
-        return `
-          <div onclick="toggleTask('${task.id}')" class="task-card bg-white rounded-2xl border ${isDone ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200'} overflow-hidden shadow-sm cursor-pointer select-none flex flex-col sm:flex-row">
-            ${task.image ? `
-              <div class="sm:w-32 h-28 sm:h-auto shrink-0 bg-slate-100">
-                <img src="${task.image}" class="w-full h-full object-cover ${isDone ? 'opacity-60 grayscale-[30%]' : ''}">
-              </div>
-            ` : ''}
-            <div class="p-4 flex-1 flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3">
-                <input type="checkbox" ${isDone ? 'checked' : ''} readonly class="w-5 h-5 accent-indigo-600 rounded">
-                <span class="font-bold text-base ${isDone ? 'line-through text-slate-400' : 'text-slate-800'}">${task.title}</span>
-              </div>
-              <span class="text-xs font-black px-3 py-1.5 rounded-full ${isDone ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}">
-                +${task.points} pt
-              </span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // --- Panel de Administración ---
-    function toggleAdminModal() {
-      const modal = document.getElementById('adminModal');
-      modal.classList.toggle('hidden');
-      if (!modal.classList.contains('hidden')) {
-        renderAdminLists();
-        renderAdminHistoryTasks();
-      }
-    }
-
-    function renderAdminLists() {
-      // Lista de usuarios con input para avatar
-      const usersContainer = document.getElementById('adminUsersList');
-      usersContainer.innerHTML = state.users.map(u => `
-        <div class="flex items-center justify-between bg-slate-50 p-2 rounded-xl border">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center font-bold text-indigo-600 text-xs">
-              ${u.avatar ? `<img src="${u.avatar}" class="w-full h-full object-cover">` : u.name.charAt(0)}
-            </div>
-            <span class="font-semibold text-slate-700">${u.name}</span>
-          </div>
-          <label class="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg font-bold cursor-pointer">
-            📷 Cambiar Foto
-            <input type="file" accept="image/*" class="hidden" onchange="startCrop(event, 'user', '${u.id}')">
-          </label>
-        </div>
-      `).join('');
-
-      // Lista de tareas con input para imagen 16:9
-      const tasksContainer = document.getElementById('adminTasksList');
-      tasksContainer.innerHTML = state.tasks.map(t => `
-        <div class="flex items-center justify-between bg-slate-50 p-2 rounded-xl border">
-          <div class="flex items-center gap-2">
-            <div class="w-10 h-7 rounded bg-slate-200 overflow-hidden flex items-center justify-center text-[10px] text-slate-500 font-bold">
-              ${t.image ? `<img src="${t.image}" class="w-full h-full object-cover">` : '16:9'}
-            </div>
-            <span class="font-semibold text-slate-700 text-xs">${t.title}</span>
-          </div>
-          <label class="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg font-bold cursor-pointer">
-            🖼️ Cambiar Imagen
-            <input type="file" accept="image/*" class="hidden" onchange="startCrop(event, 'task', '${t.id}')">
-          </label>
-        </div>
-      `).join('');
-    }
-
-    function renderAdminHistoryTasks() {
-      const selectedDate = document.getElementById('adminDatePicker').value;
-      const container = document.getElementById('adminHistoryList');
-      if (!selectedDate) return;
-
-      const dayLogs = state.logs[selectedDate]?.[currentUser] || {};
-
-      container.innerHTML = state.tasks.map(task => {
-        const isDone = !!dayLogs[task.id];
-        return `
-          <div class="flex items-center justify-between bg-white p-2 rounded border">
-            <span class="text-xs font-medium text-slate-700">${task.title}</span>
-            <button onclick="adminToggleTask('${task.id}', '${selectedDate}')" class="text-xs px-2 py-1 rounded font-bold ${isDone ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'}">
-              ${isDone ? 'Eginda' : 'Egin gabe'}
-            </button>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function adminToggleTask(taskId, dateKey) {
-      if (!state.logs[dateKey]) state.logs[dateKey] = {};
-      if (!state.logs[dateKey][currentUser]) state.logs[dateKey][currentUser] = {};
-
-      state.logs[dateKey][currentUser][taskId] = !state.logs[dateKey][currentUser][taskId];
-      saveState();
-      renderAdminHistoryTasks();
-    }
-
-    // --- Funciones Cropper.js (Avatares y Tareas) ---
-    function startCrop(event, type, id) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      cropType = type;
-      cropTargetId = id;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const imgElement = document.getElementById('imageToCrop');
-        imgElement.src = e.target.result;
-
-        document.getElementById('cropModalTitle').textContent = type === 'user' 
-          ? 'Ajustar Avatar de Usuario (1:1)' 
-          : 'Ajustar Imagen de Tarea (16:9)';
-
-        document.getElementById('cropModal').classList.remove('hidden');
-
-        if (cropper) cropper.destroy();
-
-        // Configuración de aspecto según tipo
-        const aspectRatio = type === 'user' ? 1 : (16 / 9);
-
-        cropper = new Cropper(imgElement, {
-          aspectRatio: aspectRatio,
-          viewMode: 1,
-          autoCropArea: 0.9,
-          responsive: true
+            container.innerHTML += `
+                <div class="task-card-visual">
+                    <div class="task-img-container">
+                        <img src="${task.img}" alt="${task.title}">
+                    </div>
+                    <div class="task-details">
+                        ${task.team ? '<span class="task-badge">🤝 Elkarrekin</span>' : ''}
+                        <div class="task-title">${task.title}</div>
+                        <small>+${task.points} PT</small>
+                        <div class="checkbox-group">
+                            ${checksHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
         });
-      };
-      reader.readAsDataURL(file);
+
+        updateProgress();
     }
 
-    function cancelCrop() {
-      document.getElementById('cropModal').classList.add('hidden');
-      if (cropper) {
-        cropper.destroy();
-        cropper = null;
-      }
+    // --- RENDER SEMANAL (ESTILO TABLA) ---
+    function renderWeeklyView() {
+        const body = document.getElementById('weekly-tasks-body');
+        body.innerHTML = '';
+        const userTasks = appData.tasks.filter(t => t.userId === currentUser.id);
+
+        userTasks.forEach(task => {
+            let rowHtml = `<tr>
+                <td style="display:flex; align-items:center; gap:8px;">
+                    <img class="weekly-img" src="${task.img}">
+                    <span>${task.title}</span>
+                </td>`;
+            
+            for(let d = 0; d < 7; d++) {
+                const done = getChecks(task.id, d) >= task.checks;
+                rowHtml += `<td>${done ? '✅' : '❌'}</td>`;
+            }
+            rowHtml += `</tr>`;
+            body.innerHTML += rowHtml;
+        });
     }
 
-    function saveCroppedImage() {
-      if (!cropper) return;
-
-      // Dimensiones de salida optimizadas
-      const outputDimensions = cropType === 'user' 
-        ? { width: 256, height: 256 } 
-        : { width: 800, height: 450 };
-
-      const canvas = cropper.getCroppedCanvas(outputDimensions);
-      const base64Image = canvas.toDataURL('image/jpeg', 0.8);
-
-      if (cropType === 'user') {
-        const user = state.users.find(u => u.id === cropTargetId);
-        if (user) user.avatar = base64Image;
-      } else if (cropType === 'task') {
-        const task = state.tasks.find(t => t.id === cropTargetId);
-        if (task) task.image = base64Image;
-      }
-
-      saveState();
-      renderAdminLists();
-      cancelCrop();
+    // --- ACCIONES DE CHECKS Y LOGS ---
+    function getChecks(taskId, dayIdx) {
+        return appData.logs?.[currentUser.id]?.[taskId]?.[dayIdx] || 0;
     }
 
-    // --- Backup JSON ---
-    function exportData() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `zereginak_backup_${todayStr}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
+    function toggleCheck(taskId, checkIndex) {
+        if(!appData.logs[currentUser.id]) appData.logs[currentUser.id] = {};
+        if(!appData.logs[currentUser.id][taskId]) appData.logs[currentUser.id][taskId] = {};
+
+        let current = getChecks(taskId, currentDayIdx);
+        // Si pulsas la casilla activa, la desmarcas; si no, subes de nivel.
+        let updated = (checkIndex + 1 === current) ? checkIndex : checkIndex + 1;
+        
+        appData.logs[currentUser.id][taskId][currentDayIdx] = updated;
+        saveData();
+        renderDailyView();
     }
 
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    function updateProgress() {
+        const userTasks = appData.tasks.filter(t => t.userId === currentUser.id);
+        let total = 0;
+        let completed = 0;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (imported.users && imported.tasks && imported.logs) {
-            state = imported;
-            saveState();
-            renderUsersSelect();
-            renderAdminLists();
-            alert('Datuak ondo inportatu dira!');
-          } else {
-            alert('Fitxategiaren formatua ez da baliozkoa.');
-          }
-        } catch (err) {
-          alert('Errorea fitxategia irakurtzean.');
+        userTasks.forEach(t => {
+            total += t.checks;
+            completed += getChecks(t.id, currentDayIdx);
+        });
+
+        const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
+        document.getElementById('daily-progress').style.width = pct + '%';
+    }
+
+    function openAdminModal() {
+        const pass = prompt("Sartu pasahitza (Admin):");
+        if(pass === "1234") {
+            alert("Sarbidea baimenduta. Kudeaketa panela zabaltzen...");
+            // Aquí se integraría el desplegable/modal completo de administración
+        } else if(pass !== null) {
+            alert("Pasahitz okerra!");
         }
-      };
-      reader.readAsText(file);
     }
 
-    window.onload = init;
-  </script>
+    // Inicializar al cargar
+    init();
+</script>
 </body>
 </html>
