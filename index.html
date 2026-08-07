@@ -20,7 +20,7 @@
     
     body { background-color: var(--bg); color: #333; padding-bottom: 90px; }
 
-    #profile-selection, #calendar-screen, #rewards-screen, #admin-screen {
+    #profile-selection, #calendar-screen, #admin-screen {
       display: none; padding: 15px; max-width: 600px; margin: 0 auto;
     }
 
@@ -88,7 +88,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      background: linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.3) 35%, rgba(0,0,0,0.15) 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 35%, rgba(0,0,0,0.2) 100%);
     }
 
     .badges-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -144,14 +144,14 @@
     .weekly-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .weekly-table th, .weekly-table td { border: 1px solid #E2E8F0; padding: 10px; text-align: center; }
     .weekly-table th { background: var(--primary); color: white; font-size: 0.9rem; }
-    .chk-weekly { width: 30px; height: 30px; border-radius: 8px; background: #F1F5F9; margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 2px solid #CBD5E1; }
+    .chk-weekly { width: 32px; height: 32px; border-radius: 8px; background: #F1F5F9; margin: 4px auto; display: flex; align-items: center; justify-content: center; border: 2px solid #CBD5E1; cursor: pointer; }
     .chk-weekly.done { background: var(--success); border-color: var(--success); color: white; font-weight: bold; }
-    .chk-weekly.done::after { content: '✓'; }
+    .chk-weekly.done::after { content: '✓'; font-size: 1.2rem; }
 
     /* --- FOOTER --- */
     #progress-footer {
       position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 20px;
-      box-shadow: -4px 20px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 8px; z-index: 1000;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 8px; z-index: 1000;
       border-top-left-radius: 20px; border-top-right-radius: 20px; max-width: 600px; margin: 0 auto;
     }
     .progress-info { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.05rem; color: var(--dark); }
@@ -168,6 +168,9 @@
     .admin-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .admin-card h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; color: var(--dark); }
     .task-admin-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F1F5F9; gap: 10px; }
+    .child-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    .child-tab { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--primary); text-align: center; }
+    .child-tab.active { background: var(--primary); color: white; }
   </style>
 </head>
 <body>
@@ -205,19 +208,31 @@
   <div id="admin-screen">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h1>Kudeaketa Panela</h1>
-      <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">← Atzera</button>
+      <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">← Hasiera</button>
     </div>
     
+    <!-- Selector de hijo en Admin -->
     <div class="admin-card">
-      <h2>Zereginak Kudeatu (${currentChild || 'Orokorra'})</h2>
+      <h2>Aukeratu Haurra Kudeatzeko</h2>
+      <div class="child-tabs" id="admin-child-tabs"></div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Zereginak (Puntuak, Checks eta Irudiak)</h2>
       <div id="admin-task-list"></div>
-      <button class="btn-action btn-green" style="margin-top: 15px;" onclick="addNewTaskPrompt()">+ Gehitu zeregina</button>
+      <button class="btn-action btn-green" style="margin-top: 15px;" onclick="addNewTask()">+ Gehitu zeregina berria</button>
+    </div>
+
+    <div class="admin-card">
+      <h2>📅 Egutegi eta Historial Kudeaketa</h2>
+      <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Ikusi eta markatu edo desmarkatu zereginak edozein egunetakotik.</p>
+      <button class="btn-action" style="background: var(--primary);" onclick="openAdminWeeklyView()">Ikusi aste osoa eta egun zaharrak</button>
     </div>
 
     <div class="admin-card">
       <h2>Pasahitza Aldatu</h2>
       <input type="password" id="new-admin-pass" class="form-input" placeholder="Pasahitz berria..." style="margin-bottom: 10px;">
-      <button class="btn-action" style="background: var(--primary);" onclick="updatePassword()">Gorde pasahitza</button>
+      <button class="btn-action" style="background: var(--dark);" onclick="updatePassword()">Gorde pasahitza</button>
     </div>
   </div>
 
@@ -255,7 +270,8 @@
       { id: 'juegos', name: 'Jolas eremua jaso', image: '', category: 'Ordena', points: 25, checks: 1 }
     ];
 
-    let currentChild = '';
+    let currentChild = childrenList[0].name;
+    let adminSelectedChild = childrenList[0].name;
     let savedData = {};
     let currentView = 'daily';
 
@@ -316,7 +332,7 @@
         renderDailyView(container);
       } else {
         toggleBtn.innerHTML = 'Gaurko eguna<br>ikusi';
-        renderWeeklyView(container);
+        renderWeeklyView(container, currentChild);
       }
       updateFooter();
     }
@@ -338,7 +354,7 @@
         for (let i = 1; i <= numChecks; i++) {
           const key = `${task.id}_${currentDayName}_chk${i}`;
           const isDone = savedData[key] === true;
-          checksHtml += `<div class="checkbox-large ${isDone ? 'state-done' : ''}" onclick="toggleCheck('${key}', this)"></div>`;
+          checksHtml += `<div class="checkbox-large ${isDone ? 'state-done' : ''}" onclick="toggleCheck('${currentChild}', '${key}', this)"></div>`;
         }
 
         const imgSrc = task.image && task.image.trim() !== '' ? task.image : '';
@@ -352,6 +368,7 @@
                 <div class="badges-row">
                   <div class="badge-dark">🏷️ ${task.category || 'Zeregina'}</div>
                   <div class="badge-dark"><span class="star-icon">⭐</span> ${task.points} pts</div>
+                  ${numChecks > 1 ? `<div class="badge-dark">Checks: ${numChecks}</div>` : ''}
                 </div>
                 <div class="task-title-large">${task.name}</div>
               </div>
@@ -365,21 +382,24 @@
       container.innerHTML = html;
     }
 
-    function renderWeeklyView(container) {
-      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${currentChild}`)) || defaultTasks;
-      let html = `<table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>`;
-      days.forEach(d => html += `<th>${d.substring(0,2)}</th>`);
+    function renderWeeklyView(container, childName) {
+      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${childName}`)) || defaultTasks;
+      const childState = JSON.parse(localStorage.getItem(`tasks_state_${childName}`)) || {};
+
+      let html = `<h3 style="margin-bottom: 10px; color: var(--dark);">${childName} - Astearen kudeaketa</h3>`;
+      html += `<table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>`;
+      days.forEach(d => html += `<th>${d.substring(0,3)}</th>`);
       html += `</tr></thead><tbody>`;
 
       tasks.forEach(task => {
-        html += `<tr><td style="font-weight:bold; text-align:left;">${task.name}</td>`;
+        html += `<tr><td style="font-weight:bold; text-align:left; font-size: 0.9rem;">${task.name}<br><span style="font-size:0.75rem; color:var(--secondary);">${task.points}pts</span></td>`;
         days.forEach(day => {
           html += `<td>`;
           const numChecks = task.checks || 1;
           for (let i = 1; i <= numChecks; i++) {
             const key = `${task.id}_${day}_chk${i}`;
-            const isDone = savedData[key] === true;
-            html += `<div class="chk-weekly ${isDone ? 'done' : ''}" onclick="toggleCheck('${key}', this)"></div>`;
+            const isDone = childState[key] === true;
+            html += `<div class="chk-weekly ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}', this)"></div>`;
           }
           html += `</td>`;
         });
@@ -389,14 +409,28 @@
       container.innerHTML = html;
     }
 
-    function toggleCheck(key, el) {
-      const isDone = savedData[key] === true;
-      savedData[key] = !isDone;
-      if (!isDone) el.classList.add('state-done', 'done');
-      else el.classList.remove('state-done', 'done');
-      
-      localStorage.setItem(`tasks_state_${currentChild}`, JSON.stringify(savedData));
+    function toggleCheck(child, key, el) {
+      const stored = localStorage.getItem(`tasks_state_${child}`);
+      let state = stored ? JSON.parse(stored) : {};
+      const isDone = state[key] === true;
+      state[key] = !isDone;
+      localStorage.setItem(`tasks_state_${child}`, JSON.stringify(state));
+      savedData = state;
+
+      if (!isDone) el.classList.add('state-done');
+      else el.classList.remove('state-done');
       updateFooter();
+    }
+
+    function toggleWeeklyCheckFromAdmin(childName, key, el) {
+      const stored = localStorage.getItem(`tasks_state_${childName}`);
+      let state = stored ? JSON.parse(stored) : {};
+      const isDone = state[key] === true;
+      state[key] = !isDone;
+      localStorage.setItem(`tasks_state_${childName}`, JSON.stringify(state));
+      
+      if (!isDone) el.classList.add('done');
+      else el.classList.remove('done');
     }
 
     function updateFooter() {
@@ -434,46 +468,95 @@
         document.getElementById('calendar-screen').style.display = 'none';
         document.getElementById('progress-footer').style.display = 'none';
         document.getElementById('admin-screen').style.display = 'block';
-        renderAdminTasks();
+        adminSelectedChild = childrenList[0].name;
+        renderAdminPanel();
       } else {
         alert('Pasahitz okerra');
       }
     }
 
+    function renderAdminPanel() {
+      renderAdminChildTabs();
+      renderAdminTasks();
+    }
+
+    function renderAdminChildTabs() {
+      const tabsContainer = document.getElementById('admin-child-tabs');
+      let html = '';
+      childrenList.forEach(child => {
+        const activeClass = adminSelectedChild === child.name ? 'active' : '';
+        html += `<div class="child-tab ${activeClass}" onclick="selectAdminChild('${child.name}')">${child.name}</div>`;
+      });
+      tabsContainer.innerHTML = html;
+    }
+
+    function selectAdminChild(name) {
+      adminSelectedChild = name;
+      renderAdminPanel();
+    }
+
     function renderAdminTasks() {
       const listContainer = document.getElementById('admin-task-list');
-      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${currentChild}`)) || defaultTasks;
+      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
       let html = '';
       tasks.forEach((task, index) => {
         html += `
           <div class="task-admin-row">
-            <span><b>${task.name}</b> (${task.points} pts)</span>
-            <button class="btn-action btn-red" style="padding: 6px 12px; width: auto;" onclick="deleteTask(${index})">Ezabatu</button>
+            <div>
+              <b>${task.name}</b><br>
+              <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | Checks: ${task.checks || 1} | 🏷️ ${task.category || 'Gabe'}</span>
+            </div>
+            <div style="display:flex; gap:5px;">
+              <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.9rem;" onclick="editTask(${index})">Editatu</button>
+              <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.9rem;" onclick="deleteTask(${index})">Ezabatu</button>
+            </div>
           </div>
         `;
       });
       listContainer.innerHTML = html;
     }
 
-    function deleteTask(index) {
-      let tasks = JSON.parse(localStorage.getItem(`tasks_config_${currentChild}`)) || defaultTasks;
-      tasks.splice(index, 1);
-      localStorage.setItem(`tasks_config_${currentChild}`, JSON.stringify(tasks));
+    function addNewTask() {
+      const name = prompt('Zereginaren izena (adib. Hortzak garbitu):');
+      if (!name) return;
+      const points = parseInt(prompt('Puntu totalak:', '10')) || 10;
+      const category = prompt('Kategoria (adib. Higiene, Ordena):', 'Ordena') || 'Ordena';
+      const image = prompt('Argazkiaren URL esteka (utzi hutsik gabe):', '') || '';
+      const checks = parseInt(prompt('Koadro / Check kopurua (adib. 3 hortzetako):', '1')) || 1;
+
+      let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+      tasks.push({ id: 't_' + Date.now(), name, points, category, image, checks });
+      localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
       renderAdminTasks();
     }
 
-    function addNewTaskPrompt() {
-      const name = prompt('Zereginaren izena:');
-      if (!name) return;
-      const points = parseInt(prompt('Puntuak:', '10')) || 10;
-      const category = prompt('Kategoria (adib. Ordena, Higiene):', 'Ordena') || 'Ordena';
-      const image = prompt('Argazkiaren URL esteka:', '') || '';
-      const checks = parseInt(prompt('Koadro kopurua:', '1')) || 1;
+    function editTask(index) {
+      let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+      let t = tasks[index];
 
-      let tasks = JSON.parse(localStorage.getItem(`tasks_config_${currentChild}`)) || defaultTasks;
-      tasks.push({ id: 't_' + Date.now(), name, points, category, image, checks });
-      localStorage.setItem(`tasks_config_${currentChild}`, JSON.stringify(tasks));
+      const name = prompt('Zereginaren izena:', t.name);
+      if (!name) return;
+      const points = parseInt(prompt('Puntu totalak:', t.points)) || 10;
+      const category = prompt('Kategoria:', t.category || 'Ordena') || 'Ordena';
+      const image = prompt('Argazkiaren URL esteka:', t.image || '') || '';
+      const checks = parseInt(prompt('Koadro / Check kopurua:', t.checks || 1)) || 1;
+
+      tasks[index] = { ...t, name, points, category, image, checks };
+      localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
       renderAdminTasks();
+    }
+
+    function deleteTask(index) {
+      if (!confirm('Ziur zeregin hau ezabatu nahi duzula?')) return;
+      let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+      tasks.splice(index, 1);
+      localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
+      renderAdminTasks();
+    }
+
+    function openAdminWeeklyView() {
+      const container = document.getElementById('admin-task-list');
+      renderWeeklyView(container, adminSelectedChild);
     }
 
     function updatePassword() {
