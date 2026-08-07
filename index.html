@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Zereginak eta Sariak</title>
 
+  <!-- FIREBASE SDKs (CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
   <style>
     :root {
       --primary: #3B82F6;
@@ -175,9 +179,16 @@
     #crop-canvas:active { cursor: grabbing; }
     .zoom-controls { display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 5px; }
     .btn-zoom { background: var(--dark); color: white; border: none; width: 40px; height: 40px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+    
+    #loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999; font-weight: bold; font-size: 1.2rem; color: var(--dark); gap: 15px; }
   </style>
 </head>
 <body>
+
+  <!-- LOADING INICIAL -->
+  <div id="loading-overlay">
+    <div>🔄 Hodeiarekin konektatzen...</div>
+  </div>
 
   <!-- ELEMENTO POPUP EMOJI GAMIFICACIÓN -->
   <div id="emoji-popup">🎉</div>
@@ -370,13 +381,35 @@
   </div>
 
   <script>
+    // --- CONFIGURACIÓN DE FIREBASE ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCRiEwn8tzFTjtp19ExECeUgd6lsrOVa28",
+      authDomain: "zereginak.firebaseapp.com",
+      projectId: "zereginak",
+      storageBucket: "zereginak.firebasestorage.app",
+      messagingSenderId: "754897581210",
+      appId: "1:754897581210:web:eb53e3bfa2de888b679b23",
+      measurementId: "G-MTQ517BD4Z"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
-    let adminPassword = localStorage.getItem('app_admin_pass') || '1234';
-    let childrenList = JSON.parse(localStorage.getItem('app_children')) || [
-      { name: 'Luke', avatar: '' },
-      { name: 'Marty', avatar: '' }
-    ];
     
+    // Estado global en memoria sincronizado con Firestore
+    let cloudData = {
+      adminPassword: '1234',
+      children: [
+        { name: 'Luke', avatar: '' },
+        { name: 'Marty', avatar: '' }
+      ],
+      tasksConfig: {},
+      rewardsConfig: {},
+      rewardsSpent: {},
+      tasksState: {}
+    };
+
     const defaultTasks = [
       { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3, shared: false },
       { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1, shared: false }
@@ -387,8 +420,8 @@
       { id: 'r2', name: 'Txutxe bat', points: 80, image: '' }
     ];
 
-    let currentChild = childrenList[0].name;
-    let adminSelectedChild = childrenList[0].name;
+    let currentChild = '';
+    let adminSelectedChild = '';
     let currentView = 'daily';
     let editingTaskIndex = -1;
     let editingRewardIndex = -1;
@@ -433,27 +466,66 @@
       return weeks;
     }
 
-    function getChildState(childName) {
-      let raw = localStorage.getItem(`tasks_state_${childName}`);
-      if (!raw) return {};
-      let parsed = JSON.parse(raw);
-      let currentWeek = getCurrentWeekStamp();
-      if (!parsed[currentWeek] && Object.keys(parsed).some(k => k.includes('_'))) {
-        let migrated = {};
-        migrated[currentWeek] = parsed;
-        localStorage.setItem(`tasks_state_${childName}`, JSON.stringify(migrated));
-        return migrated;
-      }
-      return parsed;
+    // --- SINCRONIZACIÓN FIRESTORE EN TIEMPO REAL ---
+    function initFirestoreSync() {
+      db.collection("familia").doc("app_state").onSnapshot((doc) => {
+        if (doc.exists) {
+          cloudData = doc.data();
+        } else {
+          cloudData = {
+            adminPassword: '1234',
+            children: [{ name: 'Luke', avatar: '' }, { name: 'Marty', avatar: '' }],
+            tasksConfig: {},
+            rewardsConfig: {},
+            rewardsSpent: {},
+            tasksState: {}
+          };
+          db.collection("familia").doc("app_state").set(cloudData);
+        }
+
+        document.getElementById('loading-overlay').style.display = 'none';
+        
+        if (!currentChild && getChildrenList().length > 0) {
+          initApp();
+        } else {
+          refreshCurrentView();
+        }
+      }, (error) => {
+        console.error("Errorea datuak kargatzean:", error);
+        document.getElementById('loading-overlay').innerHTML = `<div style="color:var(--danger)">Ezin izan da hodeiarekin konektatu. Egiaztatu konfigurazioa.</div>`;
+      });
     }
 
-    function saveChildState(childName, stateObj) {
+    function saveCloudData() {
+      db.collection("familia").doc("app_state").set(cloudData).catch((err) => {
+        console.error("Errorea gordetzean:", err);
+      });
+    }
+
+    function getChildrenList() { return cloudData.children || []; }
+    function getAdminPass() { return cloudData.adminPassword || '1234'; }
+
+    function getChildTasks(childName) {
+      return (cloudData.tasksConfig && cloudData.tasksConfig[childName]) || defaultTasks;
+    }
+
+    function getChildRewards(childName) {
+      return (cloudData.rewardsConfig && cloudData.rewardsConfig[childName]) || defaultRewards;
+    }
+
+    function getChildState(childName) {
+      return (cloudData.tasksState && cloudData.tasksState[childName]) || {};
+    }
+
+    function saveChildStateToCloud(childName, stateObj) {
       let recent = getRecentWeeks();
       let cleaned = {};
       recent.forEach(w => {
         if (stateObj[w]) cleaned[w] = stateObj[w];
       });
-      localStorage.setItem(`tasks_state_${childName}`, JSON.stringify(cleaned));
+      if (!cloudData.tasksState) cloudData.tasksState = {};
+      cloudData.tasksState[childName] = cleaned;
+      saveCloudData();
     }
 
     // --- EFECTOS DE GAMIFICACIÓN ---
@@ -463,8 +535,8 @@
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12); // A5
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12); 
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9);
         osc.connect(gain);
@@ -475,13 +547,10 @@
     }
 
     function triggerGamificationEffect() {
-      // 1. Vibración si el dispositivo lo soporta
       if (navigator.vibrate) {
         try { navigator.vibrate(150); } catch (e) {}
       }
-      // 2. Sonido tipo campana
       playBellSound();
-      // 3. Emoji feliz aleatorio en pantalla durante 1 segundo
       const happyEmojis = ['🎉', '🥳', '😄', '🌟', '🚀', '✨', '🏆', '🙌', '🔥', '💪', '⭐', '😃'];
       const randomEmoji = happyEmojis[Math.floor(Math.random() * happyEmojis.length)];
       const popup = document.getElementById('emoji-popup');
@@ -493,6 +562,11 @@
     }
 
     function initApp() {
+      const kids = getChildrenList();
+      if (kids.length > 0 && !currentChild) {
+        currentChild = kids[0].name;
+        adminSelectedChild = kids[0].name;
+      }
       document.getElementById('profile-selection').style.display = 'block';
       renderProfileSelection();
     }
@@ -500,7 +574,7 @@
     function renderProfileSelection() {
       const container = document.getElementById('profile-buttons-container');
       container.innerHTML = '';
-      childrenList.forEach(child => {
+      getChildrenList().forEach(child => {
         const btn = document.createElement('button');
         btn.className = 'btn-profile';
         btn.onclick = () => selectProfile(child.name);
@@ -531,6 +605,7 @@
       document.getElementById('admin-screen').style.display = 'none';
       document.getElementById('progress-footer').style.display = 'none';
       document.getElementById('profile-selection').style.display = 'block';
+      renderProfileSelection();
     }
 
     function showCalendarScreen() {
@@ -552,6 +627,18 @@
       renderView();
     }
 
+    function refreshCurrentView() {
+      if (document.getElementById('calendar-screen').style.display === 'block') {
+        renderView();
+      } else if (document.getElementById('rewards-screen').style.display === 'block') {
+        renderRewardsView();
+      } else if (document.getElementById('admin-screen').style.display === 'block') {
+        renderAdminPanel();
+      } else if (document.getElementById('profile-selection').style.display === 'block') {
+        renderProfileSelection();
+      }
+    }
+
     function renderView() {
       const container = document.getElementById('view-container');
       const toggleBtn = document.getElementById('btn-toggle-view');
@@ -569,7 +656,7 @@
     function renderDailyView(container) {
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
-      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${currentChild}`)) || defaultTasks;
+      const tasks = getChildTasks(currentChild);
       const stateObj = getChildState(currentChild);
       const currentWeek = getCurrentWeekStamp();
       const weekState = stateObj[currentWeek] || {};
@@ -586,7 +673,7 @@
         for (let i = 1; i <= numChecks; i++) {
           const key = `${task.id}_${currentDayName}_chk${i}`;
           const isDone = weekState[key] === true;
-          checksHtml += `<div class="checkbox-large ${isDone ? 'state-done' : ''}" onclick="toggleCheck('${currentChild}', '${key}', this)"></div>`;
+          checksHtml += `<div class="checkbox-large ${isDone ? 'state-done' : ''}" onclick="toggleCheck('${currentChild}', '${key}')"></div>`;
         }
 
         const imgSrc = task.image && task.image.trim() !== '' ? task.image : '';
@@ -616,7 +703,7 @@
     }
 
     function renderWeeklyView(container, childName, isEditable = false) {
-      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${childName}`)) || defaultTasks;
+      const tasks = getChildTasks(childName);
       const stateObj = getChildState(childName);
       const currentWeek = getCurrentWeekStamp();
       const weekState = stateObj[currentWeek] || {};
@@ -635,7 +722,7 @@
             const key = `${task.id}_${day}_chk${i}`;
             const isDone = weekState[key] === true;
             if (isEditable) {
-              html += `<div class="chk-weekly editable ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}', this)"></div>`;
+              html += `<div class="chk-weekly editable ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}')"></div>`;
             } else {
               html += `<div class="chk-weekly ${isDone ? 'done' : ''}"></div>`;
             }
@@ -656,7 +743,7 @@
 
       recentWeeks.forEach(week => {
         let weekState = stateObj[week] || {};
-        let tasks = JSON.parse(localStorage.getItem(`tasks_config_${childName}`)) || defaultTasks;
+        let tasks = getChildTasks(childName);
 
         tasks.forEach(task => {
           const numChecks = task.checks || 1;
@@ -676,8 +763,8 @@
 
               if (task.shared) {
                 let allKidsCompleted = true;
-                childrenList.forEach(otherChild => {
-                  let otherTasks = JSON.parse(localStorage.getItem(`tasks_config_${otherChild.name}`)) || defaultTasks;
+                getChildrenList().forEach(otherChild => {
+                  let otherTasks = getChildTasks(otherChild.name);
                   let matchingTask = otherTasks.find(ot => ot.name === task.name);
                   if (matchingTask) {
                     let otherState = getChildState(otherChild.name);
@@ -693,9 +780,7 @@
                   if (!allKidsCompleted) return;
                 });
 
-                if (allKidsCompleted) {
-                  multiplier = 2;
-                }
+                if (allKidsCompleted) multiplier = 2;
               }
 
               let earnedForThis = basePts * multiplier;
@@ -708,7 +793,8 @@
         });
       });
 
-      const spent = JSON.parse(localStorage.getItem(`rewards_spent_${childName}`)) || 0;
+      let spentMap = cloudData.rewardsSpent || {};
+      const spent = spentMap[childName] || 0;
       return {
         available: Math.max(0, Math.round(totalEarned - spent)),
         bonus: Math.round(totalBonus)
@@ -720,7 +806,7 @@
       document.getElementById('rewards-available-points').innerText = `${pointsData.available} pts`;
 
       const container = document.getElementById('rewards-grid-container');
-      const rewards = JSON.parse(localStorage.getItem(`rewards_config_${currentChild}`)) || defaultRewards;
+      const rewards = getChildRewards(currentChild);
 
       let html = '';
       rewards.forEach(reward => {
@@ -755,14 +841,16 @@
 
     function redeemReward(rewardId, cost, rewardName) {
       if (!confirm(`Ziur "${rewardName}" saria trukatu nahi duzula ${cost} puntugatik?`)) return;
-      let spent = JSON.parse(localStorage.getItem(`rewards_spent_${currentChild}`)) || 0;
+      if (!cloudData.rewardsSpent) cloudData.rewardsSpent = {};
+      let spent = cloudData.rewardsSpent[currentChild] || 0;
       spent += cost;
-      localStorage.setItem(`rewards_spent_${currentChild}`, JSON.stringify(spent));
+      cloudData.rewardsSpent[currentChild] = spent;
+      saveCloudData();
       alert(`Zorionak! Saria lortu duzu: ${rewardName}`);
       renderRewardsView();
     }
 
-    function toggleCheck(child, key, el) {
+    function toggleCheck(child, key) {
       let stateObj = getChildState(child);
       let currentWeek = getCurrentWeekStamp();
       if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
@@ -770,34 +858,27 @@
       const isDone = stateObj[currentWeek][key] === true;
       const newState = !isDone;
       stateObj[currentWeek][key] = newState;
-      saveChildState(child, stateObj);
+      saveChildStateToCloud(child, stateObj);
 
       if (newState) {
-        el.classList.add('state-done');
-        triggerGamificationEffect(); // Disparar efectos al completar
-      } else {
-        el.classList.remove('state-done');
+        triggerGamificationEffect();
       }
-      updateFooter();
     }
 
-    function toggleWeeklyCheckFromAdmin(childName, key, el) {
+    function toggleWeeklyCheckFromAdmin(childName, key) {
       let stateObj = getChildState(childName);
       let currentWeek = getCurrentWeekStamp();
       if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
 
       const isDone = stateObj[currentWeek][key] === true;
       stateObj[currentWeek][key] = !isDone;
-      saveChildState(childName, stateObj);
-      
-      if (!isDone) el.classList.add('done');
-      else el.classList.remove('done');
+      saveChildStateToCloud(childName, stateObj);
     }
 
     function updateFooter() {
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
-      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${currentChild}`)) || defaultTasks;
+      const tasks = getChildTasks(currentChild);
       const stateObj = getChildState(currentChild);
       const currentWeek = getCurrentWeekStamp();
       const weekState = stateObj[currentWeek] || {};
@@ -933,12 +1014,12 @@
       let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.8);
 
       if (cropTargetType === 'avatar') {
-        let childObj = childrenList.find(c => c.name === adminSelectedChild);
+        let kids = getChildrenList();
+        let childObj = kids.find(c => c.name === adminSelectedChild);
         if (childObj) {
           childObj.avatar = compressedDataUrl;
-          localStorage.setItem('app_children', JSON.stringify(childrenList));
-          renderAdminPanel();
-          renderProfileSelection();
+          cloudData.children = kids;
+          saveCloudData();
         }
       } else if (cropTargetType === 'task') {
         document.getElementById('t-image-result').value = compressedDataUrl;
@@ -946,11 +1027,12 @@
         thumb.src = compressedDataUrl;
         thumb.style.display = 'block';
 
-        let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+        let tasks = getChildTasks(adminSelectedChild);
         if (editingTaskIndex >= 0 && tasks[editingTaskIndex]) {
           tasks[editingTaskIndex].image = compressedDataUrl;
-          localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
-          renderAdminTasks();
+          if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
+          cloudData.tasksConfig[adminSelectedChild] = tasks;
+          saveCloudData();
         }
       } else if (cropTargetType === 'reward') {
         document.getElementById('r-image-result').value = compressedDataUrl;
@@ -958,11 +1040,12 @@
         thumb.src = compressedDataUrl;
         thumb.style.display = 'block';
 
-        let rewards = JSON.parse(localStorage.getItem(`rewards_config_${adminSelectedChild}`)) || defaultRewards;
+        let rewards = getChildRewards(adminSelectedChild);
         if (editingRewardIndex >= 0 && rewards[editingRewardIndex]) {
           rewards[editingRewardIndex].image = compressedDataUrl;
-          localStorage.setItem(`rewards_config_${adminSelectedChild}`, JSON.stringify(rewards));
-          renderAdminRewards();
+          if (!cloudData.rewardsConfig) cloudData.rewardsConfig = {};
+          cloudData.rewardsConfig[adminSelectedChild] = rewards;
+          saveCloudData();
         }
       }
       closeCropModal();
@@ -979,14 +1062,15 @@
     }
     
     function verifyAdminPassword() {
-      if (document.getElementById('admin-pass-input').value === adminPassword) {
+      if (document.getElementById('admin-pass-input').value === getAdminPass()) {
         closeAuthModal();
         document.getElementById('profile-selection').style.display = 'none';
         document.getElementById('calendar-screen').style.display = 'none';
         document.getElementById('rewards-screen').style.display = 'none';
         document.getElementById('progress-footer').style.display = 'none';
         document.getElementById('admin-screen').style.display = 'block';
-        adminSelectedChild = childrenList[0].name;
+        const kids = getChildrenList();
+        adminSelectedChild = kids.length > 0 ? kids[0].name : '';
         renderAdminPanel();
       } else {
         alert('Pasahitz okerra');
@@ -1002,7 +1086,7 @@
     function renderAdminChildTabs() {
       const tabsContainer = document.getElementById('admin-child-tabs');
       let html = '';
-      childrenList.forEach(child => {
+      getChildrenList().forEach(child => {
         const activeClass = adminSelectedChild === child.name ? 'active' : '';
         html += `<div class="child-tab ${activeClass}" onclick="selectAdminChild('${child.name}')">${child.name}</div>`;
       });
@@ -1021,16 +1105,17 @@
     function addNewChild() {
       const name = prompt('Haurraren izena:');
       if (!name) return;
-      childrenList.push({ name, avatar: '' });
-      localStorage.setItem('app_children', JSON.stringify(childrenList));
+      let kids = getChildrenList();
+      kids.push({ name, avatar: '' });
+      cloudData.children = kids;
+      saveCloudData();
       adminSelectedChild = name;
       renderAdminPanel();
-      renderProfileSelection();
     }
 
     function renderAdminTasks() {
       const listContainer = document.getElementById('admin-task-list');
-      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+      const tasks = getChildTasks(adminSelectedChild);
       let html = '';
       tasks.forEach((task, index) => {
         const thumbHtml = task.image && task.image.trim() !== '' ? 
@@ -1058,7 +1143,7 @@
 
     function renderAdminRewards() {
       const listContainer = document.getElementById('admin-reward-list');
-      const rewards = JSON.parse(localStorage.getItem(`rewards_config_${adminSelectedChild}`)) || defaultRewards;
+      const rewards = getChildRewards(adminSelectedChild);
       let html = '';
       rewards.forEach((reward, index) => {
         const thumbHtml = reward.image && reward.image.trim() !== '' ? 
@@ -1086,7 +1171,7 @@
 
     function openTaskEditor(index = -1) {
       editingTaskIndex = index;
-      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+      const tasks = getChildTasks(adminSelectedChild);
       let thumb = document.getElementById('t-preview-thumb');
       
       if (index >= 0) {
@@ -1131,7 +1216,7 @@
       const shared = document.getElementById('t-shared').checked;
       const image = document.getElementById('t-image-result').value;
 
-      let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+      let tasks = getChildTasks(adminSelectedChild);
 
       if (editingTaskIndex >= 0) {
         tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, shared, image };
@@ -1139,22 +1224,25 @@
         tasks.push({ id: 't_' + Date.now(), name, points, category, checks, shared, image });
       }
 
-      localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
+      if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
+      cloudData.tasksConfig[adminSelectedChild] = tasks;
+      saveCloudData();
       closeTaskModal();
       renderAdminTasks();
     }
 
     function deleteTask(index) {
       if (!confirm('Ziur zeregin hau ezabatu nahi duzula?')) return;
-      let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+      let tasks = getChildTasks(adminSelectedChild);
       tasks.splice(index, 1);
-      localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
+      cloudData.tasksConfig[adminSelectedChild] = tasks;
+      saveCloudData();
       renderAdminTasks();
     }
 
     function openRewardEditor(index = -1) {
       editingRewardIndex = index;
-      const rewards = JSON.parse(localStorage.getItem(`rewards_config_${adminSelectedChild}`)) || defaultRewards;
+      const rewards = getChildRewards(adminSelectedChild);
       let thumb = document.getElementById('r-preview-thumb');
       
       if (index >= 0) {
@@ -1190,7 +1278,7 @@
       const points = parseInt(document.getElementById('r-points').value) || 50;
       const image = document.getElementById('r-image-result').value;
 
-      let rewards = JSON.parse(localStorage.getItem(`rewards_config_${adminSelectedChild}`)) || defaultRewards;
+      let rewards = getChildRewards(adminSelectedChild);
 
       if (editingRewardIndex >= 0) {
         rewards[editingRewardIndex] = { ...rewards[editingRewardIndex], name, points, image };
@@ -1198,16 +1286,19 @@
         rewards.push({ id: 'r_' + Date.now(), name, points, image });
       }
 
-      localStorage.setItem(`rewards_config_${adminSelectedChild}`, JSON.stringify(rewards));
+      if (!cloudData.rewardsConfig) cloudData.rewardsConfig = {};
+      cloudData.rewardsConfig[adminSelectedChild] = rewards;
+      saveCloudData();
       closeRewardModal();
       renderAdminRewards();
     }
 
     function deleteReward(index) {
       if (!confirm('Ziur saria ezabatu nahi duzula?')) return;
-      let rewards = JSON.parse(localStorage.getItem(`rewards_config_${adminSelectedChild}`)) || defaultRewards;
+      let rewards = getChildRewards(adminSelectedChild);
       rewards.splice(index, 1);
-      localStorage.setItem(`rewards_config_${adminSelectedChild}`, JSON.stringify(rewards));
+      cloudData.rewardsConfig[adminSelectedChild] = rewards;
+      saveCloudData();
       renderAdminRewards();
     }
 
@@ -1219,13 +1310,14 @@
     function updatePassword() {
       const newPass = document.getElementById('new-admin-pass').value;
       if (!newPass) return alert('Idatzi pasahitz bat');
-      adminPassword = newPass;
-      localStorage.setItem('app_admin_pass', adminPassword);
+      cloudData.adminPassword = newPass;
+      saveCloudData();
       alert('Pasahitza gorde da!');
       document.getElementById('new-admin-pass').value = '';
     }
 
-    initApp();
+    // Inicializar conexión
+    initFirestoreSync();
   </script>
 </body>
 </html>
