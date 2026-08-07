@@ -68,7 +68,7 @@
     .daily-task-overlay {
       position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex;
       flex-direction: column; justify-content: space-between;
-      background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 35%, rgba(0,0,0,0.2) 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 40%, rgba(0,0,0,0.25) 100%);
     }
 
     .badges-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -126,8 +126,12 @@
     .child-tab { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--primary); text-align: center; }
     .child-tab.active { background: var(--primary); color: white; }
 
-    /* Recortador Canvas */
-    #crop-canvas { max-width: 100%; border-radius: 12px; cursor: crosshair; background: #000; margin: 0 auto; }
+    /* Recortador y Zoom */
+    #crop-canvas-container { position: relative; width: 100%; height: 260px; overflow: hidden; background: #000; border-radius: 12px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
+    #crop-canvas { cursor: grab; touch-action: none; }
+    #crop-canvas:active { cursor: grabbing; }
+    .zoom-controls { display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 5px; }
+    .btn-zoom { background: var(--dark); color: white; border: none; width: 40px; height: 40px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -168,7 +172,6 @@
       <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">← Hasiera</button>
     </div>
     
-    <!-- Selector de hijo en Admin -->
     <div class="admin-card">
       <h2>Haurrak eta Avatarrak</h2>
       <div class="child-tabs" id="admin-child-tabs"></div>
@@ -209,14 +212,22 @@
     </div>
   </div>
 
-  <!-- MODAL RECORTADOR / COMPRESOR DE IMÁGENES -->
+  <!-- MODAL RECORTADOR Y ZOOM -->
   <div id="crop-modal" class="modal-overlay">
     <div class="modal-card" style="max-width: 450px;">
-      <h3 id="crop-modal-title" style="color: var(--dark);">Irudia egokitu eta moztu</h3>
-      <p style="font-size:0.85rem; color: var(--secondary);">Arrastratu eta hautatu eremua edo doitu irudia.</p>
-      <div style="position: relative; overflow: hidden; width: 100%; display: flex; justify-content: center;">
+      <h3 id="crop-modal-title" style="color: var(--dark);">Irudia egokitu, mugitu eta zoom</h3>
+      <p style="font-size:0.85rem; color: var(--secondary);">Arrastratu irudia kokatzeko eta erabili botoiak zoometzeko.</p>
+      
+      <div id="crop-canvas-container">
         <canvas id="crop-canvas"></canvas>
       </div>
+
+      <div class="zoom-controls">
+        <button class="btn-zoom" onclick="adjustZoom(-0.1)">-</button>
+        <span style="font-weight: bold; font-size: 0.9rem; color: var(--secondary);">Zoom</span>
+        <button class="btn-zoom" onclick="adjustZoom(0.1)">+</button>
+      </div>
+
       <div style="display: flex; gap: 10px; margin-top: 10px;">
         <button class="btn-action" style="background: var(--secondary);" onclick="closeCropModal()">Utzi</button>
         <button class="btn-action btn-green" onclick="confirmCropImage()">Gorde eta Konprimitu</button>
@@ -233,9 +244,12 @@
       <input type="text" id="t-category" class="form-input" placeholder="Kategoria (adib. Higiene)..." value="Ordena">
       <input type="number" id="t-checks" class="form-input" placeholder="Check kopurua (adib. 3)..." value="1" min="1" max="10">
       
-      <div style="text-align: left;">
+      <div style="text-align: left; display:flex; flex-direction:column; gap:5px;">
         <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Zereginaren Irudia:</label>
-        <input type="file" id="t-file-input" accept="image/*" class="form-input" style="padding: 8px; margin-top: 5px;" onchange="prepareImageForCrop(this, 'task')">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="file" id="t-file-input" accept="image/*" class="form-input" style="padding: 8px; flex:1;" onchange="prepareImageForCrop(this, 'task')">
+          <img id="t-preview-thumb" src="" alt="" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #CBD5E1;">
+        </div>
       </div>
       <input type="hidden" id="t-image-result">
 
@@ -279,14 +293,16 @@
     let currentView = 'daily';
     let editingTaskIndex = -1;
 
-    // Variables para el recorte y compresión por Canvas
-    let cropTargetType = ''; // 'avatar' o 'task'
+    // Recorte y Zoom con Canvas
+    let cropTargetType = ''; 
     let cropImageObj = new Image();
     let canvasCrop = document.getElementById('crop-canvas');
     let ctxCrop = canvasCrop.getContext('2d');
-    let cropSelection = { x: 0, y: 0, size: 200 };
-    let isDraggingCrop = false;
-    let dragStartX = 0, dragStartY = 0;
+    
+    let imgPosX = 0, imgPosY = 0;
+    let imgScale = 1;
+    let isDragging = false;
+    let startX = 0, startY = 0;
 
     function getCurrentDayIndex() {
       return (new Date().getDay() + 6) % 7;
@@ -468,7 +484,7 @@
       document.getElementById('progress-bar-fill').style.width = `${pct}%`;
     }
 
-    // --- SISTEMA DE RECORTE Y COMPRESIÓN DE IMÁGENES POR CANVAS ---
+    // --- SISTEMA DE RECORTE Y ZOOM ---
     function prepareImageForCrop(input, targetType) {
       if (input.files && input.files[0]) {
         cropTargetType = targetType;
@@ -485,75 +501,79 @@
 
     function openCropModal() {
       document.getElementById('crop-modal').style.display = 'flex';
-      let maxWidth = 350;
-      let scale = maxWidth / cropImageObj.width;
-      canvasCrop.width = maxWidth;
-      canvasCrop.height = cropImageObj.height * scale;
       
-      cropSelection = {
-        x: 0,
-        y: 0,
-        width: canvasCrop.width,
-        height: cropTargetType === 'avatar' ? canvasCrop.width : Math.round(canvasCrop.width * 0.55)
-      };
+      // Dimensiones fijas del visor de recorte
+      canvasCrop.width = 320;
+      canvasCrop.height = cropTargetType === 'avatar' ? 320 : 180;
+
+      // Calcular escala inicial para ajustar la imagen al canvas
+      let hRatio = canvasCrop.width / cropImageObj.width;
+      let vRatio = canvasCrop.height / cropImageObj.height;
+      imgScale = Math.max(hRatio, vRatio);
+      
+      // Centrar imagen
+      imgPosX = (canvasCrop.width - cropImageObj.width * imgScale) / 2;
+      imgPosY = (canvasCrop.height - cropImageObj.height * imgScale) / 2;
+
       redrawCropCanvas();
     }
 
     function redrawCropCanvas() {
       ctxCrop.clearRect(0, 0, canvasCrop.width, canvasCrop.height);
-      ctxCrop.drawImage(cropImageObj, 0, 0, canvasCrop.width, canvasCrop.height);
-      
-      // Dibujar sombra exterior y marco de recorte
-      ctxCrop.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      ctxCrop.fillRect(0, 0, canvasCrop.width, canvasCrop.height);
-      
       ctxCrop.save();
-      ctxCrop.beginPath();
-      if (cropTargetType === 'avatar') {
-        let radius = cropSelection.width / 2;
-        ctxCrop.arc(cropSelection.x + radius, cropSelection.y + radius, radius, 0, Math.PI * 2);
-      } else {
-        ctxCrop.rect(cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height);
-      }
-      ctxCrop.clip();
-      ctxCrop.clearRect(0, 0, canvasCrop.width, canvasCrop.height);
-      ctxCrop.drawImage(cropImageObj, 0, 0, canvasCrop.width, canvasCrop.height);
+      ctxCrop.translate(imgPosX, imgPosY);
+      ctxCrop.scale(imgScale, imgScale);
+      ctxCrop.drawImage(cropImageObj, 0, 0);
       ctxCrop.restore();
 
-      // Marco guía
-      ctxCrop.strokeStyle = '#3B82F6';
-      ctxCrop.lineWidth = 3;
+      // Máscara opaca alrededor de la zona de recorte
+      ctxCrop.fillStyle = 'rgba(0, 0, 0, 0.5)';
       if (cropTargetType === 'avatar') {
-        let radius = cropSelection.width / 2;
         ctxCrop.beginPath();
-        ctxCrop.arc(cropSelection.x + radius, cropSelection.y + radius, radius, 0, Math.PI * 2);
+        ctxCrop.rect(0, 0, canvasCrop.width, canvasCrop.height);
+        let radius = canvasCrop.width / 2;
+        ctxCrop.arc(radius, radius, radius, 0, Math.PI * 2, true);
+        ctxCrop.fill();
+
+        ctxCrop.strokeStyle = '#3B82F6';
+        ctxCrop.lineWidth = 3;
+        ctxCrop.beginPath();
+        ctxCrop.arc(radius, radius, radius, 0, Math.PI * 2);
         ctxCrop.stroke();
       } else {
-        ctxCrop.strokeRect(cropSelection.x, cropSelection.y, cropSelection.width, cropSelection.height);
+        ctxCrop.strokeStyle = '#3B82F6';
+        ctxCrop.lineWidth = 3;
+        ctxCrop.strokeRect(0, 0, canvasCrop.width, canvasCrop.height);
       }
     }
 
-    // Interactividad táctil/ratón para mover el marco de recorte
-    canvasCrop.onmousedown = canvasCrop.ontartstart = function(e) {
-      isDraggingCrop = true;
+    function adjustZoom(delta) {
+      imgScale = Math.max(0.2, imgScale + delta);
+      redrawCropCanvas();
+    }
+
+    // Eventos de arrastre (Ratón y Táctil corregidos)
+    canvasCrop.onmousedown = canvasCrop.ontouchstart = function(e) {
+      isDragging = true;
       let clientX = e.touches ? e.touches[0].clientX : e.clientX;
       let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      dragStartX = clientX - cropSelection.x;
-      dragStartY = clientY - cropSelection.y;
+      startX = clientX - imgPosX;
+      startY = clientY - imgPosY;
+      if (e.type === 'touchstart') e.preventDefault();
     };
 
     window.onmousemove = window.ontouchmove = function(e) {
-      if (!isDraggingCrop) return;
+      if (!isDragging) return;
       let clientX = e.touches ? e.touches[0].clientX : e.clientX;
       let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      
-      cropSelection.x = Math.max(0, Math.min(canvasCrop.width - cropSelection.width, clientX - dragStartX));
-      cropSelection.y = Math.max(0, Math.min(canvasCrop.height - cropSelection.height, clientY - dragStartY));
+      imgPosX = clientX - startX;
+      imgPosY = clientY - startY;
       redrawCropCanvas();
+      if (e.type === 'touchmove') e.preventDefault();
     };
 
     window.onmouseup = window.ontouchend = function() {
-      isDraggingCrop = false;
+      isDragging = false;
     };
 
     function closeCropModal() {
@@ -561,29 +581,24 @@
     }
 
     function confirmCropImage() {
-      // Crear canvas final con compresión y recorte exacto
       let finalCanvas = document.createElement('canvas');
       let finalCtx = finalCanvas.getContext('2d');
       
       let outputW = cropTargetType === 'avatar' ? 200 : 600;
-      let outputH = cropTargetType === 'avatar' ? 200 : 330;
+      let outputH = cropTargetType === 'avatar' ? 200 : 338;
       finalCanvas.width = outputW;
       finalCanvas.height = outputH;
 
-      let scaleFactorX = cropImageObj.width / canvasCrop.width;
-      let scaleFactorY = cropImageObj.height / canvasCrop.height;
+      finalCtx.fillStyle = '#FFFFFF';
+      finalCtx.fillRect(0, 0, outputW, outputH);
 
-      finalCtx.drawImage(
-        cropImageObj,
-        cropSelection.x * scaleFactorX,
-        cropSelection.y * scaleFactorY,
-        cropSelection.width * scaleFactorX,
-        cropSelection.height * scaleFactorY,
-        0, 0, outputW, outputH
-      );
+      finalCtx.save();
+      finalCtx.translate(imgPosX * (outputW / canvasCrop.width), imgPosY * (outputH / canvasCrop.height));
+      finalCtx.scale(imgScale * (outputW / canvasCrop.width), imgScale * (outputH / canvasCrop.height));
+      finalCtx.drawImage(cropImageObj, 0, 0);
+      finalCtx.restore();
 
-      // Compresión óptima a JPEG con calidad 0.7 para que ocupe muy poco en localStorage
-      let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.7);
+      let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.8);
 
       if (cropTargetType === 'avatar') {
         let childObj = childrenList.find(c => c.name === adminSelectedChild);
@@ -595,7 +610,10 @@
         }
       } else {
         document.getElementById('t-image-result').value = compressedDataUrl;
-        alert('Irudia moztu eta konprimitu da ondo!');
+        let thumb = document.getElementById('t-preview-thumb');
+        thumb.src = compressedDataUrl;
+        thumb.style.display = 'block';
+        alert('Irudia gorde da!');
       }
       closeCropModal();
     }
@@ -682,6 +700,7 @@
     function openTaskEditor(index = -1) {
       editingTaskIndex = index;
       const tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
+      let thumb = document.getElementById('t-preview-thumb');
       
       if (index >= 0) {
         let t = tasks[index];
@@ -691,6 +710,12 @@
         document.getElementById('t-category').value = t.category || 'Ordena';
         document.getElementById('t-checks').value = t.checks || 1;
         document.getElementById('t-image-result').value = t.image || '';
+        if (t.image) {
+          thumb.src = t.image;
+          thumb.style.display = 'block';
+        } else {
+          thumb.style.display = 'none';
+        }
       } else {
         document.getElementById('task-modal-title').innerText = 'Zeregin Berria Gehitu';
         document.getElementById('t-name').value = '';
@@ -698,6 +723,7 @@
         document.getElementById('t-category').value = 'Ordena';
         document.getElementById('t-checks').value = '1';
         document.getElementById('t-image-result').value = '';
+        thumb.style.display = 'none';
       }
       document.getElementById('t-file-input').value = '';
       document.getElementById('task-modal').style.display = 'flex';
