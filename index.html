@@ -94,6 +94,18 @@
     .checkbox-large.state-done { background: var(--success); }
     .checkbox-large.state-done::after { content: '✓'; color: white; font-size: 2.8rem; font-weight: 900; }
 
+    /* --- POPUP EMOJI GAMIFICACIÓN --- */
+    #emoji-popup {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+      font-size: 7rem; z-index: 9999; pointer-events: none;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+      opacity: 0; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+    }
+    #emoji-popup.show {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
     /* --- VISTA DE PREMIOS --- */
     .rewards-grid { display: flex; flex-direction: column; gap: 20px; }
     .reward-card {
@@ -166,6 +178,9 @@
   </style>
 </head>
 <body>
+
+  <!-- ELEMENTO POPUP EMOJI GAMIFICACIÓN -->
+  <div id="emoji-popup">🎉</div>
 
   <!-- PANTALLA 1: PERFILES -->
   <div id="profile-selection">
@@ -441,6 +456,42 @@
       localStorage.setItem(`tasks_state_${childName}`, JSON.stringify(cleaned));
     }
 
+    // --- EFECTOS DE GAMIFICACIÓN ---
+    function playBellSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12); // A5
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.9);
+      } catch (e) {}
+    }
+
+    function triggerGamificationEffect() {
+      // 1. Vibración si el dispositivo lo soporta
+      if (navigator.vibrate) {
+        try { navigator.vibrate(150); } catch (e) {}
+      }
+      // 2. Sonido tipo campana
+      playBellSound();
+      // 3. Emoji feliz aleatorio en pantalla durante 1 segundo
+      const happyEmojis = ['🎉', '🥳', '😄', '🌟', '🚀', '✨', '🏆', '🙌', '🔥', '💪', '⭐', '😃'];
+      const randomEmoji = happyEmojis[Math.floor(Math.random() * happyEmojis.length)];
+      const popup = document.getElementById('emoji-popup');
+      popup.innerText = randomEmoji;
+      popup.classList.add('show');
+      setTimeout(() => {
+        popup.classList.remove('show');
+      }, 1000);
+    }
+
     function initApp() {
       document.getElementById('profile-selection').style.display = 'block';
       renderProfileSelection();
@@ -510,7 +561,7 @@
         renderDailyView(container);
       } else {
         toggleBtn.innerHTML = 'Gaurko eguna<br>ikusi';
-        renderWeeklyView(container, currentChild, false); // Niño: solo consulta (isEditable = false)
+        renderWeeklyView(container, currentChild, false); 
       }
       updateFooter();
     }
@@ -597,7 +648,6 @@
       container.innerHTML = html;
     }
 
-    // Cálculo avanzado con soporte para ventana de 4 semanas y multiplicador compartido x2
     function calculateChildPointsDetails(childName) {
       let stateObj = getChildState(childName);
       let recentWeeks = getRecentWeeks();
@@ -610,7 +660,6 @@
 
         tasks.forEach(task => {
           const numChecks = task.checks || 1;
-          const ptsPerCheck = task.points / numChecks;
 
           days.forEach(day => {
             let allChecksDone = true;
@@ -625,7 +674,6 @@
               let basePts = task.points;
               let multiplier = 1;
 
-              // Comprobación de tarea compartida: x2 si TODOS los niños que la tienen asignada la completan ese día en esa semana
               if (task.shared) {
                 let allKidsCompleted = true;
                 childrenList.forEach(otherChild => {
@@ -720,11 +768,16 @@
       if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
 
       const isDone = stateObj[currentWeek][key] === true;
-      stateObj[currentWeek][key] = !isDone;
+      const newState = !isDone;
+      stateObj[currentWeek][key] = newState;
       saveChildState(child, stateObj);
 
-      if (!isDone) el.classList.add('state-done');
-      else el.classList.remove('state-done');
+      if (newState) {
+        el.classList.add('state-done');
+        triggerGamificationEffect(); // Disparar efectos al completar
+      } else {
+        el.classList.remove('state-done');
+      }
       updateFooter();
     }
 
@@ -1160,7 +1213,7 @@
 
     function openAdminWeeklyView() {
       const container = document.getElementById('admin-task-list');
-      renderWeeklyView(container, adminSelectedChild, true); // Admin: editable = true
+      renderWeeklyView(container, adminSelectedChild, true); 
     }
 
     function updatePassword() {
