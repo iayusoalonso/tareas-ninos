@@ -502,16 +502,13 @@
     function openCropModal() {
       document.getElementById('crop-modal').style.display = 'flex';
       
-      // Dimensiones fijas del visor de recorte
       canvasCrop.width = 320;
       canvasCrop.height = cropTargetType === 'avatar' ? 320 : 180;
 
-      // Calcular escala inicial para ajustar la imagen al canvas
       let hRatio = canvasCrop.width / cropImageObj.width;
       let vRatio = canvasCrop.height / cropImageObj.height;
       imgScale = Math.max(hRatio, vRatio);
       
-      // Centrar imagen
       imgPosX = (canvasCrop.width - cropImageObj.width * imgScale) / 2;
       imgPosY = (canvasCrop.height - cropImageObj.height * imgScale) / 2;
 
@@ -526,7 +523,6 @@
       ctxCrop.drawImage(cropImageObj, 0, 0);
       ctxCrop.restore();
 
-      // Máscara opaca alrededor de la zona de recorte
       ctxCrop.fillStyle = 'rgba(0, 0, 0, 0.5)';
       if (cropTargetType === 'avatar') {
         ctxCrop.beginPath();
@@ -552,7 +548,6 @@
       redrawCropCanvas();
     }
 
-    // Eventos de arrastre (Ratón y Táctil corregidos)
     canvasCrop.onmousedown = canvasCrop.ontouchstart = function(e) {
       isDragging = true;
       let clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -585,16 +580,19 @@
       let finalCtx = finalCanvas.getContext('2d');
       
       let outputW = cropTargetType === 'avatar' ? 200 : 600;
-      let outputH = cropTargetType === 'avatar' ? 200 : 338;
+      let outputH = Math.round(outputW * (canvasCrop.height / canvasCrop.width));
+      
       finalCanvas.width = outputW;
       finalCanvas.height = outputH;
 
       finalCtx.fillStyle = '#FFFFFF';
       finalCtx.fillRect(0, 0, outputW, outputH);
 
+      let ratio = outputW / canvasCrop.width;
+
       finalCtx.save();
-      finalCtx.translate(imgPosX * (outputW / canvasCrop.width), imgPosY * (outputH / canvasCrop.height));
-      finalCtx.scale(imgScale * (outputW / canvasCrop.width), imgScale * (outputH / canvasCrop.height));
+      finalCtx.translate(imgPosX * ratio, imgPosY * ratio);
+      finalCtx.scale(imgScale * ratio, imgScale * ratio);
       finalCtx.drawImage(cropImageObj, 0, 0);
       finalCtx.restore();
 
