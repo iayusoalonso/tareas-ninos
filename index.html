@@ -54,7 +54,6 @@
       letter-spacing: 1px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
 
-    /* --- TARJETAS GRANDES APILADAS --- */
     #view-container { display: flex; flex-direction: column; gap: 20px; }
 
     .daily-task-card-large {
@@ -76,6 +75,7 @@
       background: #1E293B; color: white; padding: 6px 14px; border-radius: 14px;
       font-size: 0.9rem; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
+    .badge-shared { background: #8B5CF6; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; }
     .star-icon { color: var(--warning); }
 
     .task-title-large {
@@ -94,7 +94,7 @@
     .checkbox-large.state-done { background: var(--success); }
     .checkbox-large.state-done::after { content: '✓'; color: white; font-size: 2.8rem; font-weight: 900; }
 
-    /* --- VISTA DE PREMIOS (SARIAK) --- */
+    /* --- VISTA DE PREMIOS --- */
     .rewards-grid { display: flex; flex-direction: column; gap: 20px; }
     .reward-card {
       position: relative; width: 100%; min-height: 220px; border-radius: 24px;
@@ -129,7 +129,8 @@
     .weekly-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .weekly-table th, .weekly-table td { border: 1px solid #E2E8F0; padding: 10px; text-align: center; }
     .weekly-table th { background: var(--primary); color: white; font-size: 0.9rem; }
-    .chk-weekly { width: 32px; height: 32px; border-radius: 8px; background: #F1F5F9; margin: 4px auto; display: flex; align-items: center; justify-content: center; border: 2px solid #CBD5E1; cursor: pointer; }
+    .chk-weekly { width: 32px; height: 32px; border-radius: 8px; background: #F1F5F9; margin: 4px auto; display: flex; align-items: center; justify-content: center; border: 2px solid #CBD5E1; }
+    .chk-weekly.editable { cursor: pointer; }
     .chk-weekly.done { background: var(--success); border-color: var(--success); color: white; font-weight: bold; }
     .chk-weekly.done::after { content: '✓'; font-size: 1.2rem; }
 
@@ -157,7 +158,6 @@
     .child-tab { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--primary); text-align: center; }
     .child-tab.active { background: var(--primary); color: white; }
 
-    /* Recortador y Zoom */
     #crop-canvas-container { position: relative; width: 100%; height: 260px; overflow: hidden; background: #000; border-radius: 12px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
     #crop-canvas { cursor: grab; touch-action: none; }
     #crop-canvas:active { cursor: grabbing; }
@@ -196,7 +196,7 @@
     <div id="view-container"></div>
   </div>
 
-  <!-- PANTALLA DE PREMIOS (SARIAK) -->
+  <!-- PANTALLA DE PREMIOS -->
   <div id="rewards-screen">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h1 style="color: var(--dark);">🏆 Sariak</h1>
@@ -241,7 +241,7 @@
 
     <div class="admin-card">
       <h2>📅 Egutegi eta Historial Kudeaketa</h2>
-      <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Markatu edo desmarkatu zereginak edozein egunetakotik.</p>
+      <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Markatu edo desmarkatu zereginak edozein egunetakotik (azken 4 asteak).</p>
       <button class="btn-action" style="background: var(--primary);" onclick="openAdminWeeklyView()">Ikusi eta editatu aste osoa</button>
     </div>
 
@@ -296,6 +296,11 @@
       <input type="text" id="t-category" class="form-input" placeholder="Kategoria (adib. Higiene)..." value="Ordena">
       <input type="number" id="t-checks" class="form-input" placeholder="Check kopurua (adib. 3)..." value="1" min="1" max="10">
       
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px; text-align: left;">
+        <input type="checkbox" id="t-shared" style="width: 22px; height: 22px; cursor: pointer;">
+        <label for="t-shared" style="font-size: 0.95rem; font-weight: bold; color: var(--dark); cursor: pointer;">Tarea partekatua (x2 puntu denek egitean)</label>
+      </div>
+
       <div style="text-align: left; display:flex; flex-direction:column; gap:5px;">
         <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Zereginaren Irudia:</label>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -342,7 +347,7 @@
   <div id="progress-footer">
     <div class="progress-info">
       <span>Gaurko Puntuak: <span id="today-points" style="color: var(--warning);">0 pts</span></span>
-      <span style="color: var(--success);">🔥 Racha: 0 días</span>
+      <span style="color: var(--success);">⚡ Bonus: <span id="bonus-points">0 pts</span></span>
     </div>
     <div class="progress-bar-bg">
       <div id="progress-bar-fill" class="progress-bar-fill"></div>
@@ -358,8 +363,8 @@
     ];
     
     const defaultTasks = [
-      { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3 },
-      { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1 }
+      { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3, shared: false },
+      { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1, shared: false }
     ];
 
     const defaultRewards = [
@@ -369,12 +374,11 @@
 
     let currentChild = childrenList[0].name;
     let adminSelectedChild = childrenList[0].name;
-    let savedData = {};
     let currentView = 'daily';
     let editingTaskIndex = -1;
     let editingRewardIndex = -1;
 
-    // Recorte y Zoom con Canvas
+    // Recorte y Zoom
     let cropTargetType = ''; 
     let cropImageObj = new Image();
     let canvasCrop = document.getElementById('crop-canvas');
@@ -387,6 +391,54 @@
 
     function getCurrentDayIndex() {
       return (new Date().getDay() + 6) % 7;
+    }
+
+    function getCurrentWeekStamp() {
+      let d = new Date();
+      let date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      let dayNum = date.getUTCDay() || 7;
+      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+      let yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+      let weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+      return `${date.getUTCFullYear()}-W${weekNo}`;
+    }
+
+    function getRecentWeeks() {
+      let weeks = [];
+      let d = new Date();
+      for (let i = 0; i < 4; i++) {
+        let date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        let dayNum = date.getUTCDay() || 7;
+        date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+        let yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+        let weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+        weeks.push(`${date.getUTCFullYear()}-W${weekNo}`);
+        d.setDate(d.getDate() - 7);
+      }
+      return weeks;
+    }
+
+    function getChildState(childName) {
+      let raw = localStorage.getItem(`tasks_state_${childName}`);
+      if (!raw) return {};
+      let parsed = JSON.parse(raw);
+      let currentWeek = getCurrentWeekStamp();
+      if (!parsed[currentWeek] && Object.keys(parsed).some(k => k.includes('_'))) {
+        let migrated = {};
+        migrated[currentWeek] = parsed;
+        localStorage.setItem(`tasks_state_${childName}`, JSON.stringify(migrated));
+        return migrated;
+      }
+      return parsed;
+    }
+
+    function saveChildState(childName, stateObj) {
+      let recent = getRecentWeeks();
+      let cleaned = {};
+      recent.forEach(w => {
+        if (stateObj[w]) cleaned[w] = stateObj[w];
+      });
+      localStorage.setItem(`tasks_state_${childName}`, JSON.stringify(cleaned));
     }
 
     function initApp() {
@@ -418,9 +470,6 @@
       document.getElementById('rewards-screen').style.display = 'none';
       document.getElementById('progress-footer').style.display = 'flex';
       document.getElementById('app-subtitle').innerText = `Zereginak - ${currentChild}`;
-      
-      const stored = localStorage.getItem(`tasks_state_${currentChild}`);
-      savedData = stored ? JSON.parse(stored) : {};
       currentView = 'daily';
       renderView();
     }
@@ -461,7 +510,7 @@
         renderDailyView(container);
       } else {
         toggleBtn.innerHTML = 'Gaurko eguna<br>ikusi';
-        renderWeeklyView(container, currentChild);
+        renderWeeklyView(container, currentChild, false); // Niño: solo consulta (isEditable = false)
       }
       updateFooter();
     }
@@ -470,6 +519,9 @@
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
       const tasks = JSON.parse(localStorage.getItem(`tasks_config_${currentChild}`)) || defaultTasks;
+      const stateObj = getChildState(currentChild);
+      const currentWeek = getCurrentWeekStamp();
+      const weekState = stateObj[currentWeek] || {};
 
       let html = `
         <div class="day-badge-wrap">
@@ -482,7 +534,7 @@
         let checksHtml = '';
         for (let i = 1; i <= numChecks; i++) {
           const key = `${task.id}_${currentDayName}_chk${i}`;
-          const isDone = savedData[key] === true;
+          const isDone = weekState[key] === true;
           checksHtml += `<div class="checkbox-large ${isDone ? 'state-done' : ''}" onclick="toggleCheck('${currentChild}', '${key}', this)"></div>`;
         }
 
@@ -497,6 +549,7 @@
                 <div class="badges-row">
                   <div class="badge-dark">🏷️ ${task.category || 'Zeregina'}</div>
                   <div class="badge-dark"><span class="star-icon">⭐</span> ${task.points} pts</div>
+                  ${task.shared ? `<div class="badge-shared">👥 Partekatua (x2)</div>` : ''}
                   ${numChecks > 1 ? `<div class="badge-dark">Checks: ${numChecks}</div>` : ''}
                 </div>
                 <div class="task-title-large">${task.name}</div>
@@ -511,24 +564,30 @@
       container.innerHTML = html;
     }
 
-    function renderWeeklyView(container, childName) {
+    function renderWeeklyView(container, childName, isEditable = false) {
       const tasks = JSON.parse(localStorage.getItem(`tasks_config_${childName}`)) || defaultTasks;
-      const childState = JSON.parse(localStorage.getItem(`tasks_state_${childName}`)) || {};
+      const stateObj = getChildState(childName);
+      const currentWeek = getCurrentWeekStamp();
+      const weekState = stateObj[currentWeek] || {};
 
-      let html = `<h3 style="margin-bottom: 10px; color: var(--dark);">${childName} - Astearen kudeaketa</h3>`;
+      let html = `<h3 style="margin-bottom: 10px; color: var(--dark);">${childName} - Astearen kudeaketa ${isEditable ? '(Admin)' : '(Kontsulta)'}</h3>`;
       html += `<table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>`;
       days.forEach(d => html += `<th>${d.substring(0,3)}</th>`);
       html += `</tr></thead><tbody>`;
 
       tasks.forEach(task => {
-        html += `<tr><td style="font-weight:bold; text-align:left; font-size: 0.9rem;">${task.name}<br><span style="font-size:0.75rem; color:var(--secondary);">${task.points}pts</span></td>`;
+        html += `<tr><td style="font-weight:bold; text-align:left; font-size: 0.9rem;">${task.name}<br><span style="font-size:0.75rem; color:var(--secondary);">${task.points}pts ${task.shared ? '👥' : ''}</span></td>`;
         days.forEach(day => {
           html += `<td>`;
           const numChecks = task.checks || 1;
           for (let i = 1; i <= numChecks; i++) {
             const key = `${task.id}_${day}_chk${i}`;
-            const isDone = childState[key] === true;
-            html += `<div class="chk-weekly ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}', this)"></div>`;
+            const isDone = weekState[key] === true;
+            if (isEditable) {
+              html += `<div class="chk-weekly editable ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}', this)"></div>`;
+            } else {
+              html += `<div class="chk-weekly ${isDone ? 'done' : ''}"></div>`;
+            }
           }
           html += `</td>`;
         });
@@ -538,33 +597,87 @@
       container.innerHTML = html;
     }
 
-    function calculateTotalAvailablePoints(childName) {
-      const tasks = JSON.parse(localStorage.getItem(`tasks_config_${childName}`)) || defaultTasks;
-      const state = JSON.parse(localStorage.getItem(`tasks_state_${childName}`)) || {};
-      let earned = 0;
-      tasks.forEach(task => {
-        const ptsPerCheck = task.points / (task.checks || 1);
-        Object.keys(state).forEach(key => {
-          if (key.startsWith(task.id + '_') && state[key] === true) {
-            earned += ptsPerCheck;
-          }
+    // Cálculo avanzado con soporte para ventana de 4 semanas y multiplicador compartido x2
+    function calculateChildPointsDetails(childName) {
+      let stateObj = getChildState(childName);
+      let recentWeeks = getRecentWeeks();
+      let totalEarned = 0;
+      let totalBonus = 0;
+
+      recentWeeks.forEach(week => {
+        let weekState = stateObj[week] || {};
+        let tasks = JSON.parse(localStorage.getItem(`tasks_config_${childName}`)) || defaultTasks;
+
+        tasks.forEach(task => {
+          const numChecks = task.checks || 1;
+          const ptsPerCheck = task.points / numChecks;
+
+          days.forEach(day => {
+            let allChecksDone = true;
+            for (let i = 1; i <= numChecks; i++) {
+              if (!weekState[`${task.id}_${day}_chk${i}`]) {
+                allChecksDone = false;
+                break;
+              }
+            }
+
+            if (allChecksDone && numChecks > 0) {
+              let basePts = task.points;
+              let multiplier = 1;
+
+              // Comprobación de tarea compartida: x2 si TODOS los niños que la tienen asignada la completan ese día en esa semana
+              if (task.shared) {
+                let allKidsCompleted = true;
+                childrenList.forEach(otherChild => {
+                  let otherTasks = JSON.parse(localStorage.getItem(`tasks_config_${otherChild.name}`)) || defaultTasks;
+                  let matchingTask = otherTasks.find(ot => ot.name === task.name);
+                  if (matchingTask) {
+                    let otherState = getChildState(otherChild.name);
+                    let otherWeekState = otherState[week] || {};
+                    let otherNumChecks = matchingTask.checks || 1;
+                    for (let i = 1; i <= otherNumChecks; i++) {
+                      if (!otherWeekState[`${matchingTask.id}_${day}_chk${i}`]) {
+                        allKidsCompleted = false;
+                        break;
+                      }
+                    }
+                  }
+                  if (!allKidsCompleted) return;
+                });
+
+                if (allKidsCompleted) {
+                  multiplier = 2;
+                }
+              }
+
+              let earnedForThis = basePts * multiplier;
+              totalEarned += earnedForThis;
+              if (multiplier > 1) {
+                totalBonus += basePts * (multiplier - 1);
+              }
+            }
+          });
         });
       });
+
       const spent = JSON.parse(localStorage.getItem(`rewards_spent_${childName}`)) || 0;
-      return Math.max(0, Math.round(earned - spent));
+      return {
+        available: Math.max(0, Math.round(totalEarned - spent)),
+        bonus: Math.round(totalBonus)
+      };
     }
 
     function renderRewardsView() {
-      const availablePts = calculateTotalAvailablePoints(currentChild);
-      document.getElementById('rewards-available-points').innerText = `${availablePts} pts`;
+      const pointsData = calculateChildPointsDetails(currentChild);
+      document.getElementById('rewards-available-points').innerText = `${pointsData.available} pts`;
 
       const container = document.getElementById('rewards-grid-container');
       const rewards = JSON.parse(localStorage.getItem(`rewards_config_${currentChild}`)) || defaultRewards;
 
       let html = '';
       rewards.forEach(reward => {
-        const canAfford = availablePts >= reward.points;
-        const missing = reward.points - availablePts;
+        const canAfford = pointsData.available >= reward.points;
+        const missing = reward.points - pointsData.available;
         const imgSrc = reward.image && reward.image.trim() !== '' ? reward.image : '';
         const imgTag = imgSrc ? `<img class="reward-img-bg" src="${imgSrc}" alt="reward" onerror="this.style.display='none'">` : '';
 
@@ -602,12 +715,13 @@
     }
 
     function toggleCheck(child, key, el) {
-      const stored = localStorage.getItem(`tasks_state_${child}`);
-      let state = stored ? JSON.parse(stored) : {};
-      const isDone = state[key] === true;
-      state[key] = !isDone;
-      localStorage.setItem(`tasks_state_${child}`, JSON.stringify(state));
-      savedData = state;
+      let stateObj = getChildState(child);
+      let currentWeek = getCurrentWeekStamp();
+      if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
+
+      const isDone = stateObj[currentWeek][key] === true;
+      stateObj[currentWeek][key] = !isDone;
+      saveChildState(child, stateObj);
 
       if (!isDone) el.classList.add('state-done');
       else el.classList.remove('state-done');
@@ -615,11 +729,13 @@
     }
 
     function toggleWeeklyCheckFromAdmin(childName, key, el) {
-      const stored = localStorage.getItem(`tasks_state_${childName}`);
-      let state = stored ? JSON.parse(stored) : {};
-      const isDone = state[key] === true;
-      state[key] = !isDone;
-      localStorage.setItem(`tasks_state_${childName}`, JSON.stringify(state));
+      let stateObj = getChildState(childName);
+      let currentWeek = getCurrentWeekStamp();
+      if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
+
+      const isDone = stateObj[currentWeek][key] === true;
+      stateObj[currentWeek][key] = !isDone;
+      saveChildState(childName, stateObj);
       
       if (!isDone) el.classList.add('done');
       else el.classList.remove('done');
@@ -629,22 +745,28 @@
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
       const tasks = JSON.parse(localStorage.getItem(`tasks_config_${currentChild}`)) || defaultTasks;
+      const stateObj = getChildState(currentChild);
+      const currentWeek = getCurrentWeekStamp();
+      const weekState = stateObj[currentWeek] || {};
       
-      let earned = 0; let total = 0;
+      let earnedToday = 0; let totalToday = 0;
       tasks.forEach(task => {
-        total += task.points;
+        totalToday += task.points;
         const ptsPerCheck = task.points / (task.checks || 1);
         for (let i = 1; i <= (task.checks || 1); i++) {
-          if (savedData[`${task.id}_${currentDayName}_chk${i}`]) earned += ptsPerCheck;
+          if (weekState[`${task.id}_${currentDayName}_chk${i}`]) earnedToday += ptsPerCheck;
         }
       });
       
-      document.getElementById('today-points').innerText = `${Math.round(earned)} pts`;
-      const pct = total > 0 ? (earned / total) * 100 : 0;
+      document.getElementById('today-points').innerText = `${Math.round(earnedToday)} pts`;
+      const pct = totalToday > 0 ? (earnedToday / totalToday) * 100 : 0;
       document.getElementById('progress-bar-fill').style.width = `${pct}%`;
+
+      const pointsData = calculateChildPointsDetails(currentChild);
+      document.getElementById('bonus-points').innerText = `${pointsData.bonus} pts`;
     }
 
-    // --- SISTEMA DE RECORTE Y ZOOM ---
+    // Recorte y Zoom
     function prepareImageForCrop(input, targetType) {
       if (input.files && input.files[0]) {
         cropTargetType = targetType;
@@ -661,7 +783,6 @@
 
     function openCropModal() {
       document.getElementById('crop-modal').style.display = 'flex';
-      
       canvasCrop.width = 320;
       canvasCrop.height = cropTargetType === 'avatar' ? 320 : 180;
 
@@ -794,7 +915,7 @@
       closeCropModal();
     }
 
-    // --- ADMIN Y GESTIÓN GENERAL ---
+    // --- ADMIN Y GESTIÓN ---
     function openAuthModal() {
       document.getElementById('admin-pass-input').value = '';
       document.getElementById('auth-modal').style.display = 'flex';
@@ -868,7 +989,7 @@
             <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
               ${thumbHtml}
               <div>
-                <b>${task.name}</b><br>
+                <b>${task.name}</b> ${task.shared ? '👥 (Partekatua)' : ''}<br>
                 <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | Checks: ${task.checks || 1} | 🏷️ ${task.category || 'Gabe'}</span>
               </div>
             </div>
@@ -922,6 +1043,7 @@
         document.getElementById('t-points').value = t.points;
         document.getElementById('t-category').value = t.category || 'Ordena';
         document.getElementById('t-checks').value = t.checks || 1;
+        document.getElementById('t-shared').checked = !!t.shared;
         document.getElementById('t-image-result').value = t.image || '';
         if (t.image) {
           thumb.src = t.image;
@@ -935,6 +1057,7 @@
         document.getElementById('t-points').value = '10';
         document.getElementById('t-category').value = 'Ordena';
         document.getElementById('t-checks').value = '1';
+        document.getElementById('t-shared').checked = false;
         document.getElementById('t-image-result').value = '';
         thumb.style.display = 'none';
       }
@@ -952,14 +1075,15 @@
       const points = parseInt(document.getElementById('t-points').value) || 10;
       const category = document.getElementById('t-category').value || 'Ordena';
       const checks = parseInt(document.getElementById('t-checks').value) || 1;
+      const shared = document.getElementById('t-shared').checked;
       const image = document.getElementById('t-image-result').value;
 
       let tasks = JSON.parse(localStorage.getItem(`tasks_config_${adminSelectedChild}`)) || defaultTasks;
 
       if (editingTaskIndex >= 0) {
-        tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, image };
+        tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, shared, image };
       } else {
-        tasks.push({ id: 't_' + Date.now(), name, points, category, checks, image });
+        tasks.push({ id: 't_' + Date.now(), name, points, category, checks, shared, image });
       }
 
       localStorage.setItem(`tasks_config_${adminSelectedChild}`, JSON.stringify(tasks));
@@ -1036,7 +1160,7 @@
 
     function openAdminWeeklyView() {
       const container = document.getElementById('admin-task-list');
-      renderWeeklyView(container, adminSelectedChild);
+      renderWeeklyView(container, adminSelectedChild, true); // Admin: editable = true
     }
 
     function updatePassword() {
