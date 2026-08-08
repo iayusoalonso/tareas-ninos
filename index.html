@@ -246,7 +246,6 @@
     <div class="admin-card">
       <h2>Haurrak eta Avatarrak</h2>
       <div class="child-tabs" id="admin-child-tabs"></div>
-      <div id="child-shortcut-container" style="margin-bottom: 15px;"></div>
       <div style="display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;">
         <button class="btn-action" style="background: var(--primary); font-size:0.9rem; flex:1;" onclick="editCurrentChildAvatar()">📷 Aldatu Avatarra</button>
         <button class="btn-action btn-red" style="font-size:0.9rem; flex:1;" onclick="deleteCurrentChild()">🗑️ Ezabatu Haurra</button>
@@ -499,8 +498,15 @@
       return (cloudData.tasksConfig && cloudData.tasksConfig[childName]) || defaultTasks;
     }
 
+    // ORDENACIÓN AUTOMÁTICA DE PREMIOS POR PUNTOS Y ALFABÉTICAMENTE
     function getChildRewards(childName) {
-      return (cloudData.rewardsConfig && cloudData.rewardsConfig[childName]) || defaultRewards;
+      let rawList = (cloudData.rewardsConfig && cloudData.rewardsConfig[childName]) || defaultRewards;
+      return [...rawList].sort((a, b) => {
+        if (a.points !== b.points) {
+          return a.points - b.points;
+        }
+        return a.name.localeCompare(b.name);
+      });
     }
 
     function getChildState(childName) {
@@ -551,7 +557,6 @@
       }, 1000);
     }
 
-    // MEJORA 1: Protección del acceso al Panel de Administración mediante contraseña
     function showAdminScreen() {
       const pass = prompt("Sartu Kudeaketa Panelaren pasahitza:");
       if (pass === null) return;
@@ -1060,22 +1065,12 @@
 
     function renderAdminChildTabs() {
       const tabsContainer = document.getElementById('admin-child-tabs');
-      const shortcutContainer = document.getElementById('child-shortcut-container');
       let html = '';
       getChildrenList().forEach(child => {
         const activeClass = adminSelectedChild === child.name ? 'active' : '';
         html += `<div class="child-tab ${activeClass}" onclick="selectAdminChild('${child.name}')">${child.name}</div>`;
       });
       tabsContainer.innerHTML = html;
-
-      if (adminSelectedChild) {
-        shortcutContainer.innerHTML = `
-          <button class="btn-action" style="background: var(--success); font-size: 0.95rem;" onclick="selectProfile('${adminSelectedChild}')">
-            ▶️ Ireki ${adminSelectedChild}-(r)en ikuspegia
-          </button>`;
-      } else {
-        shortcutContainer.innerHTML = '';
-      }
     }
 
     function selectAdminChild(name) {
@@ -1098,7 +1093,6 @@
       renderAdminPanel();
     }
 
-    // MEJORA 2: Función para eliminar el perfil de un niño seleccionado con limpieza de sus datos
     function deleteCurrentChild() {
       let kids = getChildrenList();
       if (kids.length <= 1) {
@@ -1124,6 +1118,22 @@
       renderAdminPanel();
     }
 
+    // REORDENACIÓN DE TAREAS (Mover arriba / abajo)
+    function moveTask(index, direction) {
+      let tasks = getChildTasks(adminSelectedChild);
+      let targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= tasks.length) return;
+      
+      let temp = tasks[index];
+      tasks[index] = tasks[targetIndex];
+      tasks[targetIndex] = temp;
+      
+      if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
+      cloudData.tasksConfig[adminSelectedChild] = tasks;
+      saveCloudData();
+      renderAdminPanel();
+    }
+
     function renderAdminTasks() {
       const listContainer = document.getElementById('admin-task-list');
       const tasks = getChildTasks(adminSelectedChild);
@@ -1132,6 +1142,9 @@
         const thumbHtml = task.image && task.image.trim() !== '' ? 
           `<img src="${task.image}" style="width: 45px; height: 35px; border-radius: 6px; object-fit: cover; border: 1px solid #CBD5E1; flex-shrink: 0;">` :
           `<div style="width: 45px; height: 35px; border-radius: 6px; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #64748B; flex-shrink: 0;">Ez</div>`;
+
+        const isFirst = index === 0;
+        const isLast = index === tasks.length - 1;
 
         html += `
           <div class="task-admin-row">
@@ -1142,7 +1155,9 @@
                 <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | Checks: ${task.checks || 1} | 🏷️ ${task.category || 'Gabe'}</span>
               </div>
             </div>
-            <div style="display:flex; gap:5px; flex-shrink: 0;">
+            <div style="display:flex; gap:4px; flex-shrink: 0;">
+              <button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isFirst ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isFirst ? '' : `moveTask(${index}, -1)`}">⬆️</button>
+              <button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isLast ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isLast ? '' : `moveTask(${index}, 1)`}">⬇️</button>
               <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.9rem;" onclick="openTaskEditor(${index})">Editatu</button>
               <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.9rem;" onclick="deleteTask(${index})">Ezabatu</button>
             </div>
