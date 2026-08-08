@@ -21,7 +21,7 @@
       --bg: #F0F4F8;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; touch-action: manipulation; }
     
     body { background-color: var(--bg); color: #333; padding-bottom: 90px; }
 
@@ -164,7 +164,7 @@
     /* MODALES Y ADMIN */
     .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; overflow-y: auto; }
     .modal-card { background: white; border-radius: 24px; padding: 25px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; text-align: center; max-height: 90vh; overflow-y: auto; }
-    .form-input { padding: 12px; border: 2px solid #CBD5E1; border-radius: 12px; font-size: 1.1rem; outline: none; width: 100%; }
+    .form-input { padding: 12px; border: 2px solid #CBD5E1; border-radius: 12px; font-size: 1.1rem; outline: none; width: 100%; user-select: text; }
     .btn-action { padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; width: 100%; }
     .btn-green { background: #10B981; }
     .btn-red { background: var(--danger); }
@@ -462,6 +462,10 @@
     let isDragging = false;
     let startX = 0, startY = 0;
 
+    function lockScroll(lock) {
+      document.body.style.overflow = lock ? 'hidden' : '';
+    }
+
     function getCurrentDayIndex() {
       return (new Date().getDay() + 6) % 7;
     }
@@ -551,11 +555,14 @@
     function getAdminPass() { return cloudData.adminPassword || '1234'; }
 
     function getChildTasks(childName) {
-      return (cloudData.tasksConfig && cloudData.tasksConfig[childName]) || defaultTasks;
+      if (cloudData.tasksConfig && cloudData.tasksConfig[childName]) {
+        return cloudData.tasksConfig[childName];
+      }
+      return JSON.parse(JSON.stringify(defaultTasks));
     }
 
     function getChildRewards(childName) {
-      let rawList = (cloudData.rewardsConfig && cloudData.rewardsConfig[childName]) || defaultRewards;
+      let rawList = (cloudData.rewardsConfig && cloudData.rewardsConfig[childName]) || JSON.parse(JSON.stringify(defaultRewards));
       return [...rawList].sort((a, b) => {
         if (a.points !== b.points) {
           return a.points - b.points;
@@ -821,6 +828,7 @@
       let recentWeeks = getRecentWeeks();
       let totalEarned = 0;
       let totalBonus = 0;
+      let kidsList = getChildrenList();
 
       recentWeeks.forEach(week => {
         let weekState = stateObj[week] || {};
@@ -844,21 +852,27 @@
 
               if (task.shared) {
                 let allKidsCompleted = true;
-                getChildrenList().forEach(otherChild => {
-                  let otherTasks = getChildTasks(otherChild.name);
-                  let matchingTask = otherTasks.find(ot => ot.name === task.name);
-                  if (matchingTask) {
-                    let otherState = getChildState(otherChild.name);
-                    let otherWeekState = otherState[week] || {};
-                    let otherNumChecks = matchingTask.checks || 1;
-                    for (let i = 1; i <= otherNumChecks; i++) {
-                      if (!otherWeekState[`${matchingTask.id}_${day}_chk${i}`]) {
-                        allKidsCompleted = false;
-                        break;
+                if (kidsList.length <= 1) {
+                  allKidsCompleted = false;
+                } else {
+                  kidsList.forEach(otherChild => {
+                    let otherTasks = getChildTasks(otherChild.name);
+                    let matchingTask = otherTasks.find(ot => ot.name === task.name);
+                    if (!matchingTask) {
+                      allKidsCompleted = false;
+                    } else {
+                      let otherState = getChildState(otherChild.name);
+                      let otherWeekState = otherState[week] || {};
+                      let otherNumChecks = matchingTask.checks || 1;
+                      for (let i = 1; i <= otherNumChecks; i++) {
+                        if (!otherWeekState[`${matchingTask.id}_${day}_chk${i}`]) {
+                          allKidsCompleted = false;
+                          break;
+                        }
                       }
                     }
-                  }
-                });
+                  });
+                }
 
                 if (allKidsCompleted) multiplier = 2;
               }
@@ -999,6 +1013,7 @@
     }
 
     function openCropModal() {
+      lockScroll(true);
       document.getElementById('crop-modal').style.display = 'flex';
       canvasCrop.width = 320;
       canvasCrop.height = cropTargetType === 'avatar' ? 320 : 180;
@@ -1070,6 +1085,7 @@
     };
 
     function closeCropModal() {
+      lockScroll(false);
       document.getElementById('crop-modal').style.display = 'none';
     }
 
@@ -1077,7 +1093,7 @@
       let finalCanvas = document.createElement('canvas');
       let finalCtx = finalCanvas.getContext('2d');
       
-      let outputW = cropTargetType === 'avatar' ? 200 : 600;
+      let outputW = cropTargetType === 'avatar' ? 200 : 450;
       let outputH = Math.round(outputW * (canvasCrop.height / canvasCrop.width));
       
       finalCanvas.width = outputW;
@@ -1094,7 +1110,8 @@
       finalCtx.drawImage(cropImageObj, 0, 0);
       finalCtx.restore();
 
-      let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.8);
+      // Compresión ligera para optimizar consumo en Firestore y evitar rebasar 1MB por documento
+      let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.65);
 
       if (cropTargetType === 'avatar') {
         let kids = getChildrenList();
@@ -1136,7 +1153,6 @@
 
     // --- ADMIN Y GESTIÓN ---
     function renderAdminPanel() {
-      // Estado del día especial
       const isSpec = !!cloudData.isSpecialDayActive;
       const btnSpec = document.getElementById('btn-toggle-special-day');
       btnSpec.innerText = isSpec ? '🎉 Aktibatuta (Desaktibatu)' : '⚪ Desaktibatuta (Aktibatu)';
@@ -1290,6 +1306,7 @@
     }
 
     function openTaskEditor(index = -1) {
+      lockScroll(true);
       editingTaskIndex = index;
       const tasks = getChildTasks(adminSelectedChild);
       let thumb = document.getElementById('t-preview-thumb');
@@ -1326,6 +1343,7 @@
     }
 
     function closeTaskModal() {
+      lockScroll(false);
       document.getElementById('task-modal').style.display = 'none';
     }
 
@@ -1364,6 +1382,7 @@
     }
 
     function openRewardEditor(index = -1) {
+      lockScroll(true);
       editingRewardIndex = index;
       const rewards = getChildRewards(adminSelectedChild);
       let thumb = document.getElementById('r-preview-thumb');
@@ -1392,6 +1411,7 @@
     }
 
     function closeRewardModal() {
+      lockScroll(false);
       document.getElementById('reward-modal').style.display = 'none';
     }
 
