@@ -1,4 +1,5 @@
-!DOCTYPE html><html lang="eu">
+<!DOCTYPE html>
+<html lang="eu">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -36,7 +37,6 @@
       display: flex; align-items: center; gap: 20px; width: 100%; max-width: 320px;
     }
     .profile-avatar-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
-    .btn-admin-access { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.8rem; cursor: pointer; opacity: 0.6; }
 
     .app-title { font-size: 1.8rem; font-weight: 900; color: var(--dark); margin-bottom: 15px; padding-left: 5px; }
     
@@ -189,17 +189,17 @@
     <div>🔄 Hodeiarekin konektatzen...</div>
   </div>
 
-  <!-- ELEMENTO POPUP EMOJI GAMIFICACIÓN -->
+  <!-- POPUP EMOJI GAMIFICACIÓN -->
   <div id="emoji-popup">🎉</div>
 
-  <!-- PANTALLA 1: PERFILES -->
+  <!-- PANTALLA 1: PERFILES (Pantalla Principal) -->
   <div id="profile-selection">
-    <button class="btn-admin-access" onclick="openAuthModal()">⚙️</button>
     <div class="profile-header">
       <h1>Zereginak</h1>
-      <p style="color: var(--secondary); font-size: 1.2rem; margin-top: 5px;">Nor zarete gaur?</p>
+      <p style="color: var(--secondary); font-size: 1.2rem; margin-top: 5px;">Aukeratu haurraren profil bat:</p>
     </div>
     <div id="profile-buttons-container" class="profile-buttons"></div>
+    <button class="btn-action" style="background: var(--secondary); margin-top: 25px;" onclick="showAdminScreen()">⚙️ Kudeaketa Panela</button>
   </div>
 
   <!-- PANTALLA 2: CALENDARIO / TAREAS -->
@@ -214,7 +214,7 @@
         Aste osoa<br>ikusi
       </button>
       <button class="btn-top btn-aldatu" onclick="showProfiles()">
-        <span style="font-size: 1.2rem;">←</span> Aldatu
+        <span style="font-size: 1.2rem;">👶</span> Profilak
       </button>
     </div>
 
@@ -236,16 +236,17 @@
     <div id="rewards-grid-container" class="rewards-grid"></div>
   </div>
 
-  <!-- PANTALLA 3: ADMIN COMPLETA -->
+  <!-- PANTALLA: KUDEAKETA PANELA (ADMIN) -->
   <div id="admin-screen">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h1>Kudeaketa Panela</h1>
-      <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">← Hasiera</button>
+      <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">👶 Profilak</button>
     </div>
     
     <div class="admin-card">
       <h2>Haurrak eta Avatarrak</h2>
       <div class="child-tabs" id="admin-child-tabs"></div>
+      <div id="child-shortcut-container" style="margin-bottom: 15px;"></div>
       <div style="display:flex; gap:10px; margin-top:10px;">
         <button class="btn-action" style="background: var(--primary); font-size:0.9rem;" onclick="editCurrentChildAvatar()">📷 Aldatu Avatarra</button>
         <button class="btn-action btn-green" style="font-size:0.9rem;" onclick="addNewChild()">+ Haur berria</button>
@@ -266,26 +267,14 @@
 
     <div class="admin-card">
       <h2>📅 Egutegi eta Historial Kudeaketa</h2>
-      <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Markatu edo desmarkatu zereginak edozein egunetakotik (azken 4 asteak).</p>
-      <button class="btn-action" style="background: var(--primary);" onclick="openAdminWeeklyView()">Ikusi eta editatu aste osoa</button>
+      <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Markatu edo desmarkatu zereginak aste honetarako (Admin aldaketak).</p>
+      <div id="admin-weekly-view-container" style="overflow-x: auto;"></div>
     </div>
 
     <div class="admin-card">
       <h2>Pasahitza Aldatu</h2>
       <input type="password" id="new-admin-pass" class="form-input" placeholder="Pasahitz berria..." style="margin-bottom: 10px;">
       <button class="btn-action" style="background: var(--dark);" onclick="updatePassword()">Gorde pasahitza</button>
-    </div>
-  </div>
-
-  <!-- MODAL CONTRASEÑA -->
-  <div id="auth-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h3 style="font-size: 1.5rem; color: var(--dark);">Sarbidea</h3>
-      <input type="password" id="admin-pass-input" class="form-input" placeholder="Pasahitza..." onkeyup="if(event.key==='Enter') verifyAdminPassword()">
-      <div style="display: flex; gap: 10px;">
-        <button class="btn-action" style="background: var(--secondary);" onclick="closeAuthModal()">Utzi</button>
-        <button class="btn-action btn-green" onclick="verifyAdminPassword()">Sartu</button>
-      </div>
     </div>
   </div>
 
@@ -396,7 +385,6 @@
 
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
     
-    // Estado global en memoria sincronizado con Firestore
     let cloudData = {
       adminPassword: '1234',
       children: [
@@ -484,11 +472,13 @@
 
         document.getElementById('loading-overlay').style.display = 'none';
         
-        if (!currentChild && getChildrenList().length > 0) {
-          initApp();
-        } else {
-          refreshCurrentView();
+        const kids = getChildrenList();
+        if (kids.length > 0) {
+          if (!adminSelectedChild) adminSelectedChild = kids[0].name;
+          if (!currentChild) currentChild = kids[0].name;
         }
+
+        refreshCurrentView();
       }, (error) => {
         console.error("Errorea datuak kargatzean:", error);
         document.getElementById('loading-overlay').innerHTML = `<div style="color:var(--danger)">Ezin izan da hodeiarekin konektatu. Egiaztatu konfigurazioa.</div>`;
@@ -560,14 +550,13 @@
       }, 1000);
     }
 
-    function initApp() {
-      const kids = getChildrenList();
-      if (kids.length > 0 && !currentChild) {
-        currentChild = kids[0].name;
-        adminSelectedChild = kids[0].name;
-      }
-      document.getElementById('profile-selection').style.display = 'block';
-      renderProfileSelection();
+    function showAdminScreen() {
+      document.getElementById('profile-selection').style.display = 'none';
+      document.getElementById('calendar-screen').style.display = 'none';
+      document.getElementById('rewards-screen').style.display = 'none';
+      document.getElementById('progress-footer').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'block';
+      renderAdminPanel();
     }
 
     function renderProfileSelection() {
@@ -590,8 +579,9 @@
     function selectProfile(name) {
       currentChild = name;
       document.getElementById('profile-selection').style.display = 'none';
-      document.getElementById('calendar-screen').style.display = 'block';
+      document.getElementById('admin-screen').style.display = 'none';
       document.getElementById('rewards-screen').style.display = 'none';
+      document.getElementById('calendar-screen').style.display = 'block';
       document.getElementById('progress-footer').style.display = 'flex';
       document.getElementById('app-subtitle').innerText = `Zereginak - ${currentChild}`;
       currentView = 'daily';
@@ -609,6 +599,7 @@
 
     function showCalendarScreen() {
       document.getElementById('rewards-screen').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'none';
       document.getElementById('calendar-screen').style.display = 'block';
       document.getElementById('progress-footer').style.display = 'flex';
       renderView();
@@ -616,6 +607,7 @@
 
     function showRewardsScreen() {
       document.getElementById('calendar-screen').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'none';
       document.getElementById('rewards-screen').style.display = 'block';
       document.getElementById('progress-footer').style.display = 'flex';
       renderRewardsView();
@@ -633,8 +625,8 @@
         renderRewardsView();
       } else if (document.getElementById('admin-screen').style.display === 'block') {
         renderAdminPanel();
-      } else if (document.getElementById('profile-selection').style.display === 'block') {
-        renderProfileSelection();
+      } else {
+        showProfiles();
       }
     }
 
@@ -707,7 +699,7 @@
       const currentWeek = getCurrentWeekStamp();
       const weekState = stateObj[currentWeek] || {};
 
-      let html = `<h3 style="margin-bottom: 10px; color: var(--dark);">${childName} - Astearen kudeaketa ${isEditable ? '(Admin)' : '(Kontsulta)'}</h3>`;
+      let html = `<h3 style="margin-bottom: 10px; color: var(--dark);">${childName} - Egutegi Astea</h3>`;
       html += `<table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>`;
       days.forEach(d => html += `<th>${d.substring(0,3)}</th>`);
       html += `</tr></thead><tbody>`;
@@ -776,7 +768,6 @@
                       }
                     }
                   }
-                  if (!allKidsCompleted) return;
                 });
 
                 if (allKidsCompleted) multiplier = 2;
@@ -872,6 +863,7 @@
       const isDone = stateObj[currentWeek][key] === true;
       stateObj[currentWeek][key] = !isDone;
       saveChildStateToCloud(childName, stateObj);
+      renderAdminWeeklyView();
     }
 
     function updateFooter() {
@@ -1051,45 +1043,31 @@
     }
 
     // --- ADMIN Y GESTIÓN ---
-    function openAuthModal() {
-      document.getElementById('admin-pass-input').value = '';
-      document.getElementById('auth-modal').style.display = 'flex';
-    }
-    
-    function closeAuthModal() {
-      document.getElementById('auth-modal').style.display = 'none';
-    }
-    
-    function verifyAdminPassword() {
-      if (document.getElementById('admin-pass-input').value === getAdminPass()) {
-        closeAuthModal();
-        document.getElementById('profile-selection').style.display = 'none';
-        document.getElementById('calendar-screen').style.display = 'none';
-        document.getElementById('rewards-screen').style.display = 'none';
-        document.getElementById('progress-footer').style.display = 'none';
-        document.getElementById('admin-screen').style.display = 'block';
-        const kids = getChildrenList();
-        adminSelectedChild = kids.length > 0 ? kids[0].name : '';
-        renderAdminPanel();
-      } else {
-        alert('Pasahitz okerra');
-      }
-    }
-
     function renderAdminPanel() {
       renderAdminChildTabs();
       renderAdminTasks();
       renderAdminRewards();
+      renderAdminWeeklyView();
     }
 
     function renderAdminChildTabs() {
       const tabsContainer = document.getElementById('admin-child-tabs');
+      const shortcutContainer = document.getElementById('child-shortcut-container');
       let html = '';
       getChildrenList().forEach(child => {
         const activeClass = adminSelectedChild === child.name ? 'active' : '';
         html += `<div class="child-tab ${activeClass}" onclick="selectAdminChild('${child.name}')">${child.name}</div>`;
       });
       tabsContainer.innerHTML = html;
+
+      if (adminSelectedChild) {
+        shortcutContainer.innerHTML = `
+          <button class="btn-action" style="background: var(--success); font-size: 0.95rem;" onclick="selectProfile('${adminSelectedChild}')">
+            ▶️ Ireki ${adminSelectedChild}-(r)en ikuspegia
+          </button>`;
+      } else {
+        shortcutContainer.innerHTML = '';
+      }
     }
 
     function selectAdminChild(name) {
@@ -1227,7 +1205,7 @@
       cloudData.tasksConfig[adminSelectedChild] = tasks;
       saveCloudData();
       closeTaskModal();
-      renderAdminTasks();
+      renderAdminPanel();
     }
 
     function deleteTask(index) {
@@ -1236,7 +1214,7 @@
       tasks.splice(index, 1);
       cloudData.tasksConfig[adminSelectedChild] = tasks;
       saveCloudData();
-      renderAdminTasks();
+      renderAdminPanel();
     }
 
     function openRewardEditor(index = -1) {
@@ -1301,9 +1279,11 @@
       renderAdminRewards();
     }
 
-    function openAdminWeeklyView() {
-      const container = document.getElementById('admin-task-list');
-      renderWeeklyView(container, adminSelectedChild, true); 
+    function renderAdminWeeklyView() {
+      const container = document.getElementById('admin-weekly-view-container');
+      if (adminSelectedChild) {
+        renderWeeklyView(container, adminSelectedChild, true); 
+      }
     }
 
     function updatePassword() {
