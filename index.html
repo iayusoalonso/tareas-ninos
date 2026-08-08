@@ -8,6 +8,8 @@
   <!-- FIREBASE SDKs (CDN) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- CHART.JS CDN FOR RADAR CHART -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root {
@@ -235,6 +237,14 @@
     </div>
 
     <div id="view-container"></div>
+
+    <!-- TARJETA CON GRÁFICA TIPO RADAR / ARAÑA -->
+    <div id="radar-chart-card" class="admin-card" style="margin-top: 25px; text-align: center;">
+      <h3 style="color: var(--dark); margin-bottom: 15px; font-size: 1.1rem;">🕸️ Hobetzeko Arloak (Aste honetan)</h3>
+      <div style="max-width: 380px; margin: 0 auto; position: relative; height: 320px;">
+        <canvas id="radarImprovementChart"></canvas>
+      </div>
+    </div>
   </div>
 
   <!-- PANTALLA DE PREMIOS -->
@@ -334,7 +344,19 @@
       <h3 id="task-modal-title" style="color: var(--dark);">Zeregina</h3>
       <input type="text" id="t-name" class="form-input" placeholder="Zereginaren izena...">
       <input type="number" id="t-points" class="form-input" placeholder="Puntu totalak..." value="10">
-      <input type="text" id="t-category" class="form-input" placeholder="Kategoria (adib. Higiene)..." value="Ordena">
+      
+      <!-- DESPLEGABLE DE CATEGORÍAS -->
+      <div style="text-align: left; display: flex; flex-direction: column; gap: 5px;">
+        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Kategoria:</label>
+        <select id="t-category" class="form-input">
+          <option value="Higiene">Higiene</option>
+          <option value="Ordena">Ordena</option>
+          <option value="Ikasketak">Ikasketak (Estudios)</option>
+          <option value="Jokabidea">Jokabidea (Comportamiento)</option>
+          <option value="Besteak">Besteak (Otros)</option>
+        </select>
+      </div>
+
       <input type="number" id="t-checks" class="form-input" placeholder="Check kopurua (adib. 3)..." value="1" min="1" max="10">
       
       <div style="text-align: left; display: flex; flex-direction: column; gap: 5px;">
@@ -421,6 +443,7 @@
     const db = firebase.firestore();
 
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
+    const CATEGORIES = ['Higiene', 'Ordena', 'Ikasketak', 'Jokabidea', 'Besteak'];
     
     let cloudData = {
       adminPassword: '1234',
@@ -450,6 +473,7 @@
     let currentView = 'daily';
     let editingTaskIndex = -1;
     let editingRewardIndex = -1;
+    let radarChartInstance = null;
 
     // Recorte y Zoom
     let cropTargetType = ''; 
@@ -723,6 +747,7 @@
         renderWeeklyView(container, currentChild, false); 
       }
       updateFooter();
+      updateRadarChart();
     }
 
     function renderDailyView(container) {
@@ -821,6 +846,79 @@
       });
       html += `</tbody></table>`;
       container.innerHTML = html;
+    }
+
+    // --- CÁLCULO Y RENDERIZADO DEL GRÁFICO DE RADAR ---
+    function updateRadarChart() {
+      const canvas = document.getElementById('radarImprovementChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const categoryTotals = { 'Higiene': 0, 'Ordena': 0, 'Ikasketak': 0, 'Jokabidea': 0, 'Besteak': 0 };
+
+      const allTasks = getChildTasks(currentChild);
+      const stateObj = getChildState(currentChild);
+      const currentWeek = getCurrentWeekStamp();
+      const weekState = stateObj[currentWeek] || {};
+
+      days.forEach((day, dayIdx) => {
+        allTasks.forEach(task => {
+          if (isTaskActiveForDay(task, dayIdx)) {
+            const numChecks = task.checks || 1;
+            const rawCat = task.category || 'Besteak';
+            const cat = CATEGORIES.includes(rawCat) ? rawCat : 'Besteak';
+            
+            for (let i = 1; i <= numChecks; i++) {
+              const key = `${task.id}_${day}_chk${i}`;
+              if (!weekState[key]) {
+                categoryTotals[cat] += 1; // Suma 1 por cada check/tarea no cumplida
+              }
+            }
+          }
+        });
+      });
+
+      const chartData = CATEGORIES.map(cat => categoryTotals[cat]);
+
+      if (radarChartInstance) {
+        radarChartInstance.destroy();
+      }
+
+      radarChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['Higiene', 'Ordena', 'Ikasketak', 'Jokabidea', 'Besteak'],
+          datasets: [{
+            label: 'Falta diren zereginak (Pendientes)',
+            data: chartData,
+            backgroundColor: 'rgba(239, 68, 68, 0.25)',
+            borderColor: 'rgba(239, 68, 68, 1)',
+            pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(239, 68, 68, 1)',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              angleLines: { color: '#E2E8F0' },
+              grid: { color: '#CBD5E1' },
+              pointLabels: {
+                font: { size: 12, weight: 'bold' },
+                color: '#1E293B'
+              },
+              ticks: { beginAtZero: true, stepSize: 1, precision: 0 }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
     }
 
     function calculateChildPointsDetails(childName) {
@@ -1110,7 +1208,6 @@
       finalCtx.drawImage(cropImageObj, 0, 0);
       finalCtx.restore();
 
-      // Compresión ligera para optimizar consumo en Firestore y evitar rebasar 1MB por documento
       let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.65);
 
       if (cropTargetType === 'avatar') {
