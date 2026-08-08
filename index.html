@@ -1,1323 +1,344 @@
 <!DOCTYPE html>
-<html lang="eu">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Zereginak eta Sariak</title>
-
-  <!-- FIREBASE SDKs (CDN) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-  <style>
-    :root {
-      --primary: #3B82F6;
-      --warning: #F59E0B;
-      --secondary: #64748B;
-      --dark: #1E293B;
-      --success: #2ECC71;
-      --danger: #EF4444;
-      --bg: #F0F4F8;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; }
-    
-    body { background-color: var(--bg); color: #333; padding-bottom: 90px; }
-
-    #profile-selection, #calendar-screen, #admin-screen, #rewards-screen {
-      display: none; padding: 15px; max-width: 600px; margin: 0 auto;
-    }
-
-    .profile-header { text-align: center; margin-top: 40px; margin-bottom: 30px; }
-    .profile-header h1 { font-size: 2.5rem; color: var(--dark); font-weight: 900; }
-    .profile-buttons { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; }
-    .btn-profile {
-      background: white; border: 4px solid var(--primary); border-radius: 24px; padding: 15px 30px;
-      font-size: 1.5rem; font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-      display: flex; align-items: center; gap: 20px; width: 100%; max-width: 320px;
-    }
-    .profile-avatar-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
-    .btn-admin-access { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.8rem; cursor: pointer; opacity: 0.6; }
-
-    .app-title { font-size: 1.8rem; font-weight: 900; color: var(--dark); margin-bottom: 15px; padding-left: 5px; }
-    
-    .top-buttons { display: flex; gap: 10px; margin-bottom: 25px; }
-    .btn-top {
-      flex: 1; padding: 15px 5px; border-radius: 16px; border: none; color: white;
-      font-weight: 800; font-size: 1.1rem; cursor: pointer; display: flex; flex-direction: column;
-      align-items: center; gap: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    .btn-sariak { background: var(--warning); }
-    .btn-astea { background: var(--primary); }
-    .btn-aldatu { background: var(--secondary); }
-
-    .day-badge-wrap { text-align: center; margin-bottom: 25px; }
-    .day-badge {
-      background: var(--dark); color: white; display: inline-block; padding: 12px 30px;
-      border-radius: 25px; font-weight: 900; font-size: 1.2rem; text-transform: uppercase;
-      letter-spacing: 1px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-
-    #view-container { display: flex; flex-direction: column; gap: 20px; }
-
-    .daily-task-card-large {
-      position: relative; width: 100%; min-height: 260px; border-radius: 24px;
-      overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.1); background-color: #CBD5E1;
-      display: flex; flex-direction: column;
-    }
-    
-    .daily-task-img-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-    
-    .daily-task-overlay {
-      position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex;
-      flex-direction: column; justify-content: space-between;
-      background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 40%, rgba(0,0,0,0.25) 100%);
-    }
-
-    .badges-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .badge-dark {
-      background: #1E293B; color: white; padding: 6px 14px; border-radius: 14px;
-      font-size: 0.9rem; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .badge-shared { background: #8B5CF6; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; }
-    .star-icon { color: var(--warning); }
-
-    .task-title-large {
-      font-size: 2.3rem; font-weight: 900; color: #000; text-transform: uppercase;
-      margin-top: 10px; line-height: 1.1; letter-spacing: -1px;
-      text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0px 3px 0 #fff;
-    }
-
-    .checks-container { margin-top: 20px; align-self: flex-end; display: flex; gap: 10px; }
-    .checkbox-large {
-      width: 60px; height: 60px; background: #FFFFFF; border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: transform 0.1s;
-    }
-    .checkbox-large:active { transform: scale(0.9); }
-    .checkbox-large.state-done { background: var(--success); }
-    .checkbox-large.state-done::after { content: '✓'; color: white; font-size: 2.8rem; font-weight: 900; }
-
-    /* --- POPUP EMOJI GAMIFICACIÓN --- */
-    #emoji-popup {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-      font-size: 7rem; z-index: 9999; pointer-events: none;
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
-      opacity: 0; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
-    }
-    #emoji-popup.show {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-
-    /* --- VISTA DE PREMIOS --- */
-    .rewards-grid { display: flex; flex-direction: column; gap: 20px; }
-    .reward-card {
-      position: relative; width: 100%; min-height: 220px; border-radius: 24px;
-      overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.1); background-color: #CBD5E1;
-      display: flex; flex-direction: column; cursor: pointer; transition: transform 0.1s;
-    }
-    .reward-card:active { transform: scale(0.98); }
-    .reward-card.locked { filter: grayscale(100%); opacity: 0.75; cursor: not-allowed; }
-    .reward-img-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-    .reward-overlay {
-      position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex;
-      flex-direction: column; justify-content: space-between;
-      background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 50%, rgba(0,0,0,0.3) 100%);
-    }
-    .reward-title {
-      font-size: 2rem; font-weight: 900; color: #000; text-transform: uppercase;
-      margin-top: 10px; line-height: 1.1;
-      text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0px 3px 0 #fff;
-    }
-    .missing-points-box {
-      align-self: flex-end; background: rgba(239, 68, 68, 0.9); color: white;
-      padding: 10px 20px; border-radius: 16px; font-size: 2rem; font-weight: 900;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3); letter-spacing: -1px;
-    }
-    .available-badge-box {
-      align-self: flex-end; background: var(--success); color: white;
-      padding: 10px 20px; border-radius: 16px; font-size: 1.4rem; font-weight: 900;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-
-    /* --- VISTA SEMANAL --- */
-    .weekly-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    .weekly-table th, .weekly-table td { border: 1px solid #E2E8F0; padding: 10px; text-align: center; }
-    .weekly-table th { background: var(--primary); color: white; font-size: 0.9rem; }
-    .chk-weekly { width: 32px; height: 32px; border-radius: 8px; background: #F1F5F9; margin: 4px auto; display: flex; align-items: center; justify-content: center; border: 2px solid #CBD5E1; }
-    .chk-weekly.editable { cursor: pointer; }
-    .chk-weekly.done { background: var(--success); border-color: var(--success); color: white; font-weight: bold; }
-    .chk-weekly.done::after { content: '✓'; font-size: 1.2rem; }
-
-    /* --- FOOTER --- */
-    #progress-footer {
-      position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 20px;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 8px; z-index: 1000;
-      border-top-left-radius: 20px; border-top-right-radius: 20px; max-width: 600px; margin: 0 auto;
-    }
-    .progress-info { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.05rem; color: var(--dark); }
-    .progress-bar-bg { width: 100%; height: 12px; background: #E2E8F0; border-radius: 10px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; width: 0%; background: var(--warning); border-radius: 10px; transition: width 0.3s; }
-
-    /* --- MODALES Y ADMIN --- */
-    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; overflow-y: auto; }
-    .modal-card { background: white; border-radius: 24px; padding: 25px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; text-align: center; max-height: 90vh; overflow-y: auto; }
-    .form-input { padding: 12px; border: 2px solid #CBD5E1; border-radius: 12px; font-size: 1.1rem; outline: none; width: 100%; }
-    .btn-action { padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; width: 100%; }
-    .btn-green { background: #10B981; }
-    .btn-red { background: var(--danger); }
-    .admin-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-    .admin-card h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; color: var(--dark); }
-    .task-admin-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F1F5F9; gap: 10px; text-align: left; }
-    .child-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-    .child-tab { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--primary); text-align: center; }
-    .child-tab.active { background: var(--primary); color: white; }
-
-    #crop-canvas-container { position: relative; width: 100%; height: 260px; overflow: hidden; background: #000; border-radius: 12px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
-    #crop-canvas { cursor: grab; touch-action: none; }
-    #crop-canvas:active { cursor: grabbing; }
-    .zoom-controls { display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 5px; }
-    .btn-zoom { background: var(--dark); color: white; border: none; width: 40px; height: 40px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
-    
-    #loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999; font-weight: bold; font-size: 1.2rem; color: var(--dark); gap: 15px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zereginak - Gestor de Tareas y Premios</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding-top: 20px; }
+        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    </style>
 </head>
 <body>
 
-  <!-- LOADING INICIAL -->
-  <div id="loading-overlay">
-    <div>🔄 Hodeiarekin konektatzen...</div>
-  </div>
+    <div class="container">
+        <header class="text-center mb-4">
+            <h1 class="fw-bold">🌟 Zereginak</h1>
+            <p id="connectionStatus" class="text-muted">🔄 Hodeiarekin konektatzen...</p>
+        </header>
 
-  <!-- ELEMENTO POPUP EMOJI GAMIFICACIÓN -->
-  <div id="emoji-popup">🎉</div>
-
-  <!-- PANTALLA 1: PERFILES -->
-  <div id="profile-selection">
-    <button class="btn-admin-access" onclick="openAuthModal()">⚙️</button>
-    <div class="profile-header">
-      <h1>Zereginak</h1>
-      <p style="color: var(--secondary); font-size: 1.2rem; margin-top: 5px;">Nor zarete gaur?</p>
-    </div>
-    <div id="profile-buttons-container" class="profile-buttons"></div>
-  </div>
-
-  <!-- PANTALLA 2: CALENDARIO / TAREAS -->
-  <div id="calendar-screen">
-    <div class="app-title" id="app-subtitle">Zereginak</div>
-    
-    <div class="top-buttons">
-      <button class="btn-top btn-sariak" onclick="showRewardsScreen()">
-        <span style="font-size: 1.4rem;">🏆</span> Sariak
-      </button>
-      <button class="btn-top btn-astea" id="btn-toggle-view" onclick="toggleView()">
-        Aste osoa<br>ikusi
-      </button>
-      <button class="btn-top btn-aldatu" onclick="showProfiles()">
-        <span style="font-size: 1.2rem;">←</span> Aldatu
-      </button>
-    </div>
-
-    <div id="view-container"></div>
-  </div>
-
-  <!-- PANTALLA DE PREMIOS -->
-  <div id="rewards-screen">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h1 style="color: var(--dark);">🏆 Sariak</h1>
-      <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showCalendarScreen()">← Zereginak</button>
-    </div>
-
-    <div class="admin-card" style="text-align: center; background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 165%); color: white;">
-      <p style="font-size: 1.1rem; font-weight: bold; opacity: 0.9;">Zure Puntu Eskuragarriak</p>
-      <h2 id="rewards-available-points" style="font-size: 3rem; font-weight: 900; margin-top: 5px; border: none; color: white;">0 pts</h2>
-    </div>
-
-    <div id="rewards-grid-container" class="rewards-grid"></div>
-  </div>
-
-  <!-- PANTALLA 3: ADMIN COMPLETA -->
-  <div id="admin-screen">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h1>Kudeaketa Panela</h1>
-      <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">← Hasiera</button>
-    </div>
-    
-    <div class="admin-card">
-      <h2>Haurrak eta Avatarrak</h2>
-      <div class="child-tabs" id="admin-child-tabs"></div>
-      <div style="display:flex; gap:10px; margin-top:10px;">
-        <button class="btn-action" style="background: var(--primary); font-size:0.9rem;" onclick="editCurrentChildAvatar()">📷 Aldatu Avatarra</button>
-        <button class="btn-action btn-green" style="font-size:0.9rem;" onclick="addNewChild()">+ Haur berria</button>
-      </div>
-    </div>
-
-    <div class="admin-card">
-      <h2>Zereginak Kudeatu</h2>
-      <div id="admin-task-list"></div>
-      <button class="btn-action btn-green" style="margin-top: 15px;" onclick="openTaskEditor()">+ Gehitu zeregina berria</button>
-    </div>
-
-    <div class="admin-card">
-      <h2>🏆 Sariak Kudeatu</h2>
-      <div id="admin-reward-list"></div>
-      <button class="btn-action btn-green" style="margin-top: 15px;" onclick="openRewardEditor()">+ Gehitu saria berria</button>
-    </div>
-
-    <div class="admin-card">
-      <h2>📅 Egutegi eta Historial Kudeaketa</h2>
-      <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Markatu edo desmarkatu zereginak edozein egunetakotik (azken 4 asteak).</p>
-      <button class="btn-action" style="background: var(--primary);" onclick="openAdminWeeklyView()">Ikusi eta editatu aste osoa</button>
-    </div>
-
-    <div class="admin-card">
-      <h2>Pasahitza Aldatu</h2>
-      <input type="password" id="new-admin-pass" class="form-input" placeholder="Pasahitz berria..." style="margin-bottom: 10px;">
-      <button class="btn-action" style="background: var(--dark);" onclick="updatePassword()">Gorde pasahitza</button>
-    </div>
-  </div>
-
-  <!-- MODAL CONTRASEÑA -->
-  <div id="auth-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h3 style="font-size: 1.5rem; color: var(--dark);">Sarbidea</h3>
-      <input type="password" id="admin-pass-input" class="form-input" placeholder="Pasahitza..." onkeyup="if(event.key==='Enter') verifyAdminPassword()">
-      <div style="display: flex; gap: 10px;">
-        <button class="btn-action" style="background: var(--secondary);" onclick="closeAuthModal()">Utzi</button>
-        <button class="btn-action btn-green" onclick="verifyAdminPassword()">Sartu</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL RECORTADOR Y ZOOM -->
-  <div id="crop-modal" class="modal-overlay">
-    <div class="modal-card" style="max-width: 450px;">
-      <h3 id="crop-modal-title" style="color: var(--dark);">Irudia egokitu, mugitu eta zoom</h3>
-      <p style="font-size:0.85rem; color: var(--secondary);">Arrastratu irudia kokatzeko eta erabili botoiak zoometzeko.</p>
-      
-      <div id="crop-canvas-container">
-        <canvas id="crop-canvas"></canvas>
-      </div>
-
-      <div class="zoom-controls">
-        <button class="btn-zoom" onclick="adjustZoom(-0.1)">-</button>
-        <span style="font-weight: bold; font-size: 0.9rem; color: var(--secondary);">Zoom</span>
-        <button class="btn-zoom" onclick="adjustZoom(0.1)">+</button>
-      </div>
-
-      <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button class="btn-action" style="background: var(--secondary);" onclick="closeCropModal()">Utzi</button>
-        <button class="btn-action btn-green" onclick="confirmCropImage()">Gorde eta Konprimitu</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL EDITOR DE TAREA -->
-  <div id="task-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h3 id="task-modal-title" style="color: var(--dark);">Zeregina</h3>
-      <input type="text" id="t-name" class="form-input" placeholder="Zereginaren izena...">
-      <input type="number" id="t-points" class="form-input" placeholder="Puntu totalak..." value="10">
-      <input type="text" id="t-category" class="form-input" placeholder="Kategoria (adib. Higiene)..." value="Ordena">
-      <input type="number" id="t-checks" class="form-input" placeholder="Check kopurua (adib. 3)..." value="1" min="1" max="10">
-      
-      <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px; text-align: left;">
-        <input type="checkbox" id="t-shared" style="width: 22px; height: 22px; cursor: pointer;">
-        <label for="t-shared" style="font-size: 0.95rem; font-weight: bold; color: var(--dark); cursor: pointer;">Tarea partekatua (x2 puntu denek egitean)</label>
-      </div>
-
-      <div style="text-align: left; display:flex; flex-direction:column; gap:5px;">
-        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Zereginaren Irudia:</label>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <input type="file" id="t-file-input" accept="image/*" class="form-input" style="padding: 8px; flex:1;" onchange="prepareImageForCrop(this, 'task')">
-          <img id="t-preview-thumb" src="" alt="" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #CBD5E1;">
-        </div>
-      </div>
-      <input type="hidden" id="t-image-result">
-
-      <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button class="btn-action" style="background: var(--secondary);" onclick="closeTaskModal()">Utzi</button>
-        <button class="btn-action btn-green" onclick="saveTaskFromModal()">Gorde zeregina</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL EDITOR DE PREMIO -->
-  <div id="reward-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h3 id="reward-modal-title" style="color: var(--dark);">Saria</h3>
-      <input type="text" id="r-name" class="form-input" placeholder="Sariaren izena...">
-      <input type="number" id="r-points" class="form-input" placeholder="Behar diren puntuak..." value="50">
-      
-      <div style="text-align: left; display:flex; flex-direction:column; gap:5px;">
-        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Sariaren Irudia:</label>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <input type="file" id="r-file-input" accept="image/*" class="form-input" style="padding: 8px; flex:1;" onchange="prepareImageForCrop(this, 'reward')">
-          <img id="r-preview-thumb" src="" alt="" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #CBD5E1;">
-        </div>
-      </div>
-      <input type="hidden" id="r-image-result">
-
-      <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button class="btn-action" style="background: var(--secondary);" onclick="closeRewardModal()">Utzi</button>
-        <button class="btn-action btn-green" onclick="saveRewardFromModal()">Gorde saria</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- INPUT OCULTO PARA AVATAR -->
-  <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="prepareImageForCrop(this, 'avatar')">
-
-  <!-- FOOTER PROGRESO -->
-  <div id="progress-footer">
-    <div class="progress-info">
-      <span>Gaurko Puntuak: <span id="today-points" style="color: var(--warning);">0 pts</span></span>
-      <span style="color: var(--success);">⚡ Bonus: <span id="bonus-points">0 pts</span></span>
-    </div>
-    <div class="progress-bar-bg">
-      <div id="progress-bar-fill" class="progress-bar-fill"></div>
-    </div>
-  </div>
-
-  <script>
-    // --- CONFIGURACIÓN DE FIREBASE ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyCRiEwn8tzFTjtp19ExECeUgd6lsrOVa28",
-      authDomain: "zereginak.firebaseapp.com",
-      projectId: "zereginak",
-      storageBucket: "zereginak.firebasestorage.app",
-      messagingSenderId: "754897581210",
-      appId: "1:754897581210:web:eb53e3bfa2de888b679b23",
-      measurementId: "G-MTQ517BD4Z"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
-    
-    // Estado global en memoria sincronizado con Firestore
-    let cloudData = {
-      adminPassword: '1234',
-      children: [
-        { name: 'Luke', avatar: '' },
-        { name: 'Marty', avatar: '' }
-      ],
-      tasksConfig: {},
-      rewardsConfig: {},
-      rewardsSpent: {},
-      tasksState: {}
-    };
-
-    const defaultTasks = [
-      { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3, shared: false },
-      { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1, shared: false }
-    ];
-
-    const defaultRewards = [
-      { id: 'r1', name: 'Marrazki libre bat', points: 40, image: '' },
-      { id: 'r2', name: 'Txutxe bat', points: 80, image: '' }
-    ];
-
-    let currentChild = '';
-    let adminSelectedChild = '';
-    let currentView = 'daily';
-    let editingTaskIndex = -1;
-    let editingRewardIndex = -1;
-
-    // Recorte y Zoom
-    let cropTargetType = ''; 
-    let cropImageObj = new Image();
-    let canvasCrop = document.getElementById('crop-canvas');
-    let ctxCrop = canvasCrop.getContext('2d');
-    
-    let imgPosX = 0, imgPosY = 0;
-    let imgScale = 1;
-    let isDragging = false;
-    let startX = 0, startY = 0;
-
-    function getCurrentDayIndex() {
-      return (new Date().getDay() + 6) % 7;
-    }
-
-    function getCurrentWeekStamp() {
-      let d = new Date();
-      let date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-      let dayNum = date.getUTCDay() || 7;
-      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-      let yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
-      let weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
-      return `${date.getUTCFullYear()}-W${weekNo}`;
-    }
-
-    function getRecentWeeks() {
-      let weeks = [];
-      let d = new Date();
-      for (let i = 0; i < 4; i++) {
-        let date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-        let dayNum = date.getUTCDay() || 7;
-        date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-        let yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
-        let weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
-        weeks.push(`${date.getUTCFullYear()}-W${weekNo}`);
-        d.setDate(d.getDate() - 7);
-      }
-      return weeks;
-    }
-
-    // --- SINCRONIZACIÓN FIRESTORE EN TIEMPO REAL ---
-    function initFirestoreSync() {
-      db.collection("familia").doc("app_state").onSnapshot((doc) => {
-        if (doc.exists) {
-          cloudData = doc.data();
-        } else {
-          cloudData = {
-            adminPassword: '1234',
-            children: [{ name: 'Luke', avatar: '' }, { name: 'Marty', avatar: '' }],
-            tasksConfig: {},
-            rewardsConfig: {},
-            rewardsSpent: {},
-            tasksState: {}
-          };
-          db.collection("familia").doc("app_state").set(cloudData);
-        }
-
-        document.getElementById('loading-overlay').style.display = 'none';
-        
-        if (!currentChild && getChildrenList().length > 0) {
-          initApp();
-        } else {
-          refreshCurrentView();
-        }
-      }, (error) => {
-        console.error("Errorea datuak kargatzean:", error);
-        document.getElementById('loading-overlay').innerHTML = `<div style="color:var(--danger)">Ezin izan da hodeiarekin konektatu. Egiaztatu konfigurazioa.</div>`;
-      });
-    }
-
-    function saveCloudData() {
-      db.collection("familia").doc("app_state").set(cloudData).catch((err) => {
-        console.error("Errorea gordetzean:", err);
-      });
-    }
-
-    function getChildrenList() { return cloudData.children || []; }
-    function getAdminPass() { return cloudData.adminPassword || '1234'; }
-
-    function getChildTasks(childName) {
-      return (cloudData.tasksConfig && cloudData.tasksConfig[childName]) || defaultTasks;
-    }
-
-    function getChildRewards(childName) {
-      return (cloudData.rewardsConfig && cloudData.rewardsConfig[childName]) || defaultRewards;
-    }
-
-    function getChildState(childName) {
-      return (cloudData.tasksState && cloudData.tasksState[childName]) || {};
-    }
-
-    function saveChildStateToCloud(childName, stateObj) {
-      let recent = getRecentWeeks();
-      let cleaned = {};
-      recent.forEach(w => {
-        if (stateObj[w]) cleaned[w] = stateObj[w];
-      });
-      if (!cloudData.tasksState) cloudData.tasksState = {};
-      cloudData.tasksState[childName] = cleaned;
-      saveCloudData();
-    }
-
-    // --- EFECTOS DE GAMIFICACIÓN ---
-    function playBellSound() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
-        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12); 
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.9);
-      } catch (e) {}
-    }
-
-    function triggerGamificationEffect() {
-      if (navigator.vibrate) {
-        try { navigator.vibrate(150); } catch (e) {}
-      }
-      playBellSound();
-      const happyEmojis = ['🎉', '🥳', '😄', '🌟', '🚀', '✨', '🏆', '🙌', '🔥', '💪', '⭐', '😃'];
-      const randomEmoji = happyEmojis[Math.floor(Math.random() * happyEmojis.length)];
-      const popup = document.getElementById('emoji-popup');
-      popup.innerText = randomEmoji;
-      popup.classList.add('show');
-      setTimeout(() => {
-        popup.classList.remove('show');
-      }, 1000);
-    }
-
-    function initApp() {
-      const kids = getChildrenList();
-      if (kids.length > 0 && !currentChild) {
-        currentChild = kids[0].name;
-        adminSelectedChild = kids[0].name;
-      }
-      document.getElementById('profile-selection').style.display = 'block';
-      renderProfileSelection();
-    }
-
-    function renderProfileSelection() {
-      const container = document.getElementById('profile-buttons-container');
-      container.innerHTML = '';
-      getChildrenList().forEach(child => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-profile';
-        btn.onclick = () => selectProfile(child.name);
-        
-        let avatarHtml = child.avatar ? 
-          `<img class="profile-avatar-img" src="${child.avatar}" alt="avatar">` : 
-          `<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#E2E8F0"/><circle cx="50" cy="40" r="20" fill="#94A3B8"/><path d="M 20 85 Q 50 50 80 85" fill="#94A3B8"/></svg>`;
-        
-        btn.innerHTML = `${avatarHtml}<span>${child.name.toUpperCase()}</span>`;
-        container.appendChild(btn);
-      });
-    }
-
-    function selectProfile(name) {
-      currentChild = name;
-      document.getElementById('profile-selection').style.display = 'none';
-      document.getElementById('calendar-screen').style.display = 'block';
-      document.getElementById('rewards-screen').style.display = 'none';
-      document.getElementById('progress-footer').style.display = 'flex';
-      document.getElementById('app-subtitle').innerText = `Zereginak - ${currentChild}`;
-      currentView = 'daily';
-      renderView();
-    }
-
-    function showProfiles() {
-      document.getElementById('calendar-screen').style.display = 'none';
-      document.getElementById('rewards-screen').style.display = 'none';
-      document.getElementById('admin-screen').style.display = 'none';
-      document.getElementById('progress-footer').style.display = 'none';
-      document.getElementById('profile-selection').style.display = 'block';
-      renderProfileSelection();
-    }
-
-    function showCalendarScreen() {
-      document.getElementById('rewards-screen').style.display = 'none';
-      document.getElementById('calendar-screen').style.display = 'block';
-      document.getElementById('progress-footer').style.display = 'flex';
-      renderView();
-    }
-
-    function showRewardsScreen() {
-      document.getElementById('calendar-screen').style.display = 'none';
-      document.getElementById('rewards-screen').style.display = 'block';
-      document.getElementById('progress-footer').style.display = 'flex';
-      renderRewardsView();
-    }
-
-    function toggleView() {
-      currentView = currentView === 'daily' ? 'weekly' : 'daily';
-      renderView();
-    }
-
-    function refreshCurrentView() {
-      if (document.getElementById('calendar-screen').style.display === 'block') {
-        renderView();
-      } else if (document.getElementById('rewards-screen').style.display === 'block') {
-        renderRewardsView();
-      } else if (document.getElementById('admin-screen').style.display === 'block') {
-        renderAdminPanel();
-      } else if (document.getElementById('profile-selection').style.display === 'block') {
-        renderProfileSelection();
-      }
-    }
-
-    function renderView() {
-      const container = document.getElementById('view-container');
-      const toggleBtn = document.getElementById('btn-toggle-view');
-      
-      if (currentView === 'daily') {
-        toggleBtn.innerHTML = 'Aste osoa<br>ikusi';
-        renderDailyView(container);
-      } else {
-        toggleBtn.innerHTML = 'Gaurko eguna<br>ikusi';
-        renderWeeklyView(container, currentChild, false); 
-      }
-      updateFooter();
-    }
-
-    function renderDailyView(container) {
-      const dayIndex = getCurrentDayIndex();
-      const currentDayName = days[dayIndex];
-      const tasks = getChildTasks(currentChild);
-      const stateObj = getChildState(currentChild);
-      const currentWeek = getCurrentWeekStamp();
-      const weekState = stateObj[currentWeek] || {};
-
-      let html = `
-        <div class="day-badge-wrap">
-          <div class="day-badge">Gaur: ${currentDayName}</div>
-        </div>
-      `;
-
-      tasks.forEach(task => {
-        const numChecks = task.checks || 1;
-        let checksHtml = '';
-        for (let i = 1; i <= numChecks; i++) {
-          const key = `${task.id}_${currentDayName}_chk${i}`;
-          const isDone = weekState[key] === true;
-          checksHtml += `<div class="checkbox-large ${isDone ? 'state-done' : ''}" onclick="toggleCheck('${currentChild}', '${key}')"></div>`;
-        }
-
-        const imgSrc = task.image && task.image.trim() !== '' ? task.image : '';
-        const imgTag = imgSrc ? `<img class="daily-task-img-bg" src="${imgSrc}" alt="bg" onerror="this.style.display='none'">` : '';
-
-        html += `
-          <div class="daily-task-card-large">
-            ${imgTag}
-            <div class="daily-task-overlay">
-              <div>
-                <div class="badges-row">
-                  <div class="badge-dark">🏷️ ${task.category || 'Zeregina'}</div>
-                  <div class="badge-dark"><span class="star-icon">⭐</span> ${task.points} pts</div>
-                  ${task.shared ? `<div class="badge-shared">👥 Partekatua (x2)</div>` : ''}
-                  ${numChecks > 1 ? `<div class="badge-dark">Checks: ${numChecks}</div>` : ''}
+        <!-- PANEL DE ADMINISTRACIÓN -->
+        <div class="card p-4 mb-4">
+            <h3 class="mb-3">🛠️ Panel de Administración</h3>
+            
+            <!-- Formulario de Tareas -->
+            <div class="border p-3 rounded mb-4 bg-white">
+                <h5>Nueva Tarea</h5>
+                
+                <!-- Desplegable de Plantillas -->
+                <div class="mb-3">
+                    <label for="taskTemplateSelect" class="form-label">📋 Rellenar desde tarea existente:</label>
+                    <select id="taskTemplateSelect" class="form-select" onchange="loadTaskTemplate(this.value)">
+                        <option value="">-- Seleccionar tarea guardada --</option>
+                    </select>
                 </div>
-                <div class="task-title-large">${task.name}</div>
-              </div>
-              <div class="checks-container">
-                ${checksHtml}
-              </div>
+
+                <form id="taskForm" onsubmit="handleAddTask(event)">
+                    <div class="mb-3">
+                        <label for="taskText" class="form-label">Descripción de la tarea</label>
+                        <input type="text" id="taskText" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="taskPoints" class="form-label">Puntos</label>
+                            <input type="number" id="taskPoints" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="taskImage" class="form-label">Icono o URL de imagen</label>
+                            <input type="text" id="taskImage" class="form-control" placeholder="Ej: 🛏️">
+                        </div>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" id="taskBonus" class="form-check-input">
+                        <label for="taskBonus" class="form-check-label">Incluye Bonus</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">➕ Añadir Tarea</button>
+                </form>
             </div>
-          </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
 
-    function renderWeeklyView(container, childName, isEditable = false) {
-      const tasks = getChildTasks(childName);
-      const stateObj = getChildState(childName);
-      const currentWeek = getCurrentWeekStamp();
-      const weekState = stateObj[currentWeek] || {};
+            <!-- Listado de Tareas con Ordenación Manual -->
+            <div class="mb-4">
+                <h5>Gestión y Orden de Tareas</h5>
+                <div id="adminTaskList" class="list-group">
+                    <!-- Las tareas se renderizan aquí dinámicamente -->
+                </div>
+            </div>
 
-      let html = `<h3 style="margin-bottom: 10px; color: var(--dark);">${childName} - Astearen kudeaketa ${isEditable ? '(Admin)' : '(Kontsulta)'}</h3>`;
-      html += `<table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>`;
-      days.forEach(d => html += `<th>${d.substring(0,3)}</th>`);
-      html += `</tr></thead><tbody>`;
+            <!-- Formulario de Premios -->
+            <div class="border p-3 rounded bg-white">
+                <h5>Nuevo Premio</h5>
+                <form id="rewardForm" onsubmit="handleAddReward(event)">
+                    <div class="mb-3">
+                        <label for="rewardName" class="form-label">Nombre del Premio</label>
+                        <input type="text" id="rewardName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rewardPoints" class="form-label">Puntos necesarios</label>
+                        <input type="number" id="rewardPoints" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">🎁 Añadir Premio</button>
+                </form>
+            </div>
+        </div>
 
-      tasks.forEach(task => {
-        html += `<tr><td style="font-weight:bold; text-align:left; font-size: 0.9rem;">${task.name}<br><span style="font-size:0.75rem; color:var(--secondary);">${task.points}pts ${task.shared ? '👥' : ''}</span></td>`;
-        days.forEach(day => {
-          html += `<td>`;
-          const numChecks = task.checks || 1;
-          for (let i = 1; i <= numChecks; i++) {
-            const key = `${task.id}_${day}_chk${i}`;
-            const isDone = weekState[key] === true;
-            if (isEditable) {
-              html += `<div class="chk-weekly editable ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}')"></div>`;
-            } else {
-              html += `<div class="chk-weekly ${isDone ? 'done' : ''}"></div>`;
-            }
-          }
-          html += `</td>`;
-        });
-        html += `</tr>`;
-      });
-      html += `</tbody></table>`;
-      container.innerHTML = html;
-    }
+        <!-- VISTA GENERAL / NIÑOS -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h3>📝 Tareas Disponibles</h3>
+                    <div id="publicTaskList"></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h3>🏆 Premios Disponibles</h3>
+                    <div id="publicRewardList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    function calculateChildPointsDetails(childName) {
-      let stateObj = getChildState(childName);
-      let recentWeeks = getRecentWeeks();
-      let totalEarned = 0;
-      let totalBonus = 0;
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-      recentWeeks.forEach(week => {
-        let weekState = stateObj[week] || {};
-        let tasks = getChildTasks(childName);
+    <script>
+        // Configuración de Firebase (Sustituye con tus credenciales de tu proyecto)
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_AUTH_DOMAIN",
+            projectId: "zereginak",
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_MESSAGING_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
 
-        tasks.forEach(task => {
-          const numChecks = task.checks || 1;
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-          days.forEach(day => {
-            let allChecksDone = true;
-            for (let i = 1; i <= numChecks; i++) {
-              if (!weekState[`${task.id}_${day}_chk${i}`]) {
-                allChecksDone = false;
-                break;
-              }
-            }
+        let tasksCache = [];
+        let rewardsCache = [];
 
-            if (allChecksDone && numChecks > 0) {
-              let basePts = task.points;
-              let multiplier = 1;
+        // Inicializar datos en tiempo real
+        function initApp() {
+            const statusEl = document.getElementById('connectionStatus');
 
-              if (task.shared) {
-                let allKidsCompleted = true;
-                getChildrenList().forEach(otherChild => {
-                  let otherTasks = getChildTasks(otherChild.name);
-                  let matchingTask = otherTasks.find(ot => ot.name === task.name);
-                  if (matchingTask) {
-                    let otherState = getChildState(otherChild.name);
-                    let otherWeekState = otherState[week] || {};
-                    let otherNumChecks = matchingTask.checks || 1;
-                    for (let i = 1; i <= otherNumChecks; i++) {
-                      if (!otherWeekState[`${matchingTask.id}_${day}_chk${i}`]) {
-                        allKidsCompleted = false;
-                        break;
-                      }
-                    }
-                  }
-                  if (!allKidsCompleted) return;
+            // Escuchar cambios en Tareas
+            db.collection('tasks').onSnapshot((snapshot) => {
+                tasksCache = [];
+                snapshot.forEach((doc) => {
+                    tasksCache.push({ id: doc.id, ...doc.data() });
                 });
 
-                if (allKidsCompleted) multiplier = 2;
-              }
+                // Ordenar tareas por el campo 'order', y si coincide por fecha de creación
+                tasksCache.sort((a, b) => {
+                    const orderA = a.order !== undefined ? a.order : 0;
+                    const orderB = b.order !== undefined ? b.order : 0;
+                    if (orderA !== orderB) return orderA - orderB;
+                    const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt || 0);
+                    const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
+                    return timeA - timeB;
+                });
 
-              let earnedForThis = basePts * multiplier;
-              totalEarned += earnedForThis;
-              if (multiplier > 1) {
-                totalBonus += basePts * (multiplier - 1);
-              }
+                renderTasks();
+                updateTaskTemplates(tasksCache);
+                statusEl.textContent = "🟢 Konektatuta hodeiarekin";
+                statusEl.classList.remove('text-muted');
+                statusEl.classList.add('text-success');
+            }, (error) => {
+                console.error("Error al conectar con Firestore:", error);
+                statusEl.textContent = "🔴 Errorea konexioan";
+            });
+
+            // Escuchar cambios en Premios
+            db.collection('rewards').onSnapshot((snapshot) => {
+                rewardsCache = [];
+                snapshot.forEach((doc) => {
+                    rewardsCache.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Ordenar premios: 1º por puntos (ascendente), 2º alfabéticamente
+                rewardsCache.sort((a, b) => {
+                    if (a.points !== b.points) {
+                        return a.points - b.points;
+                    }
+                    const nameA = (a.name || '').toLowerCase();
+                    const nameB = (b.name || '').toLowerCase();
+                    return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' });
+                });
+
+                renderRewards();
+            });
+        }
+
+        // Renderizar Tareas
+        function renderTasks() {
+            const adminList = document.getElementById('adminTaskList');
+            const publicList = document.getElementById('publicTaskList');
+            
+            adminList.innerHTML = '';
+            publicList.innerHTML = '';
+
+            tasksCache.forEach((task, index) => {
+                // Admin item con controles de ordenación
+                adminList.innerHTML += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span>${task.image || '📌'} <strong>${task.text}</strong> (${task.points} pts)</span>
+                        </div>
+                        <div>
+                            <button onclick="moverTarea(${index}, -1)" ${index === 0 ? 'disabled' : ''} class="btn btn-sm btn-outline-secondary me-1">⬆️</button>
+                            <button onclick="moverTarea(${index}, 1)" ${index === tasksCache.length - 1 ? 'disabled' : ''} class="btn btn-sm btn-outline-secondary me-1">⬇️</button>
+                            <button onclick="deleteTask('${task.id}')" class="btn btn-sm btn-outline-danger">🗑️</button>
+                        </div>
+                    </div>
+                `;
+
+                // Vista pública
+                publicList.innerHTML += `
+                    <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
+                        <span>${task.image || '📌'} ${task.text}</span>
+                        <span class="badge bg-primary rounded-pill">+${task.points} pts</span>
+                    </div>
+                `;
+            });
+        }
+
+        // Renderizar Premios
+        function renderRewards() {
+            const publicRewardList = document.getElementById('publicRewardList');
+            publicRewardList.innerHTML = '';
+
+            rewardsCache.forEach((reward) => {
+                publicRewardList.innerHTML += `
+                    <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
+                        <span>🎁 ${reward.name}</span>
+                        <span class="badge bg-success rounded-pill">${reward.points} pts</span>
+                    </div>
+                `;
+            });
+        }
+
+        // Actualizar selector desplegable de plantillas evitando duplicados por texto
+        function updateTaskTemplates(tasksList) {
+            const select = document.getElementById('taskTemplateSelect');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">-- Seleccionar tarea guardada --</option>';
+
+            const uniqueTasks = {};
+            tasksList.forEach(t => {
+                if (!uniqueTasks[t.text]) {
+                    uniqueTasks[t.text] = t;
+                }
+            });
+
+            Object.values(uniqueTasks).forEach(task => {
+                const option = document.createElement('option');
+                option.value = JSON.stringify(task);
+                option.textContent = `${task.text} — ${task.points} pts`;
+                select.appendChild(option);
+            });
+        }
+
+        // Rellenar formulario automáticamente desde la plantilla seleccionada
+        function loadTaskTemplate(jsonString) {
+            if (!jsonString) return;
+            const task = JSON.parse(jsonString);
+
+            document.getElementById('taskText').value = task.text || '';
+            document.getElementById('taskPoints').value = task.points || '';
+            document.getElementById('taskImage').value = task.image || '';
+            document.getElementById('taskBonus').checked = !!task.bonus;
+        }
+
+        // Mover tarea hacia arriba o abajo en el orden manual
+        async function moverTarea(index, direccion) {
+            const targetIndex = index + direccion;
+            if (targetIndex < 0 || targetIndex >= tasksCache.length) return;
+
+            const tareaActual = tasksCache[index];
+            const tareaDestino = tasksCache[targetIndex];
+
+            // Asignar nuevos valores de orden
+            const newOrderActual = tareaDestino.order !== undefined ? tareaDestino.order : targetIndex;
+            const newOrderDestino = tareaActual.order !== undefined ? tareaActual.order : index;
+
+            // Si tenían el mismo orden por defecto, aseguramos valores distintos basados en índices
+            const finalOrderA = (newOrderActual === newOrderDestino) ? targetIndex : newOrderActual;
+            const finalOrderB = (newOrderActual === newOrderDestino) ? index : newOrderDestino;
+
+            try {
+                const batch = db.batch();
+                const refActual = db.collection('tasks').doc(tareaActual.id);
+                const refDestino = db.collection('tasks').doc(tareaDestino.id);
+
+                batch.update(refActual, { order: finalOrderA });
+                batch.update(refDestino, { order: finalOrderB });
+
+                await batch.commit();
+            } catch (error) {
+                console.error("Error al reordenar la tarea:", error);
             }
-          });
-        });
-      });
-
-      let spentMap = cloudData.rewardsSpent || {};
-      const spent = spentMap[childName] || 0;
-      return {
-        available: Math.max(0, Math.round(totalEarned - spent)),
-        bonus: Math.round(totalBonus)
-      };
-    }
-
-    function renderRewardsView() {
-      const pointsData = calculateChildPointsDetails(currentChild);
-      document.getElementById('rewards-available-points').innerText = `${pointsData.available} pts`;
-
-      const container = document.getElementById('rewards-grid-container');
-      const rewards = getChildRewards(currentChild);
-
-      let html = '';
-      rewards.forEach(reward => {
-        const canAfford = pointsData.available >= reward.points;
-        const missing = reward.points - pointsData.available;
-        const imgSrc = reward.image && reward.image.trim() !== '' ? reward.image : '';
-        const imgTag = imgSrc ? `<img class="reward-img-bg" src="${imgSrc}" alt="reward" onerror="this.style.display='none'">` : '';
-
-        const actionIndicator = canAfford ? 
-          `<div class="available-badge-box">Eskuragarri! Sakatu trukatzeko ⭐</div>` : 
-          `<div class="missing-points-box">-${missing} pts</div>`;
-
-        html += `
-          <div class="reward-card ${canAfford ? '' : 'locked'}" onclick="${canAfford ? `redeemReward('${reward.id}', ${reward.points}, '${reward.name}')` : `alert('Ez dituzu nahikoa puntu saria lortzeko. Falta zaizkizu: ${missing} pts')`}">
-            ${imgTag}
-            <div class="reward-overlay">
-              <div class="badges-row">
-                <div class="badge-dark"><span class="star-icon">⭐</span> ${reward.points} pts</div>
-              </div>
-              <div>
-                <div class="reward-title">${reward.name}</div>
-                <div style="margin-top: 15px;">
-                  ${actionIndicator}
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
-
-    function redeemReward(rewardId, cost, rewardName) {
-      if (!confirm(`Ziur "${rewardName}" saria trukatu nahi duzula ${cost} puntugatik?`)) return;
-      if (!cloudData.rewardsSpent) cloudData.rewardsSpent = {};
-      let spent = cloudData.rewardsSpent[currentChild] || 0;
-      spent += cost;
-      cloudData.rewardsSpent[currentChild] = spent;
-      saveCloudData();
-      alert(`Zorionak! Saria lortu duzu: ${rewardName}`);
-      renderRewardsView();
-    }
-
-    function toggleCheck(child, key) {
-      let stateObj = getChildState(child);
-      let currentWeek = getCurrentWeekStamp();
-      if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
-
-      const isDone = stateObj[currentWeek][key] === true;
-      const newState = !isDone;
-      stateObj[currentWeek][key] = newState;
-      saveChildStateToCloud(child, stateObj);
-
-      if (newState) {
-        triggerGamificationEffect();
-      }
-    }
-
-    function toggleWeeklyCheckFromAdmin(childName, key) {
-      let stateObj = getChildState(childName);
-      let currentWeek = getCurrentWeekStamp();
-      if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
-
-      const isDone = stateObj[currentWeek][key] === true;
-      stateObj[currentWeek][key] = !isDone;
-      saveChildStateToCloud(childName, stateObj);
-    }
-
-    function updateFooter() {
-      const dayIndex = getCurrentDayIndex();
-      const currentDayName = days[dayIndex];
-      const tasks = getChildTasks(currentChild);
-      const stateObj = getChildState(currentChild);
-      const currentWeek = getCurrentWeekStamp();
-      const weekState = stateObj[currentWeek] || {};
-      
-      let earnedToday = 0; let totalToday = 0;
-      tasks.forEach(task => {
-        totalToday += task.points;
-        const ptsPerCheck = task.points / (task.checks || 1);
-        for (let i = 1; i <= (task.checks || 1); i++) {
-          if (weekState[`${task.id}_${currentDayName}_chk${i}`]) earnedToday += ptsPerCheck;
         }
-      });
-      
-      document.getElementById('today-points').innerText = `${Math.round(earnedToday)} pts`;
-      const pct = totalToday > 0 ? (earnedToday / totalToday) * 100 : 0;
-      document.getElementById('progress-bar-fill').style.width = `${pct}%`;
 
-      const pointsData = calculateChildPointsDetails(currentChild);
-      document.getElementById('bonus-points').innerText = `${pointsData.bonus} pts`;
-    }
+        // Añadir Tarea
+        async function handleAddTask(e) {
+            e.preventDefault();
+            const text = document.getElementById('taskText').value;
+            const points = parseInt(document.getElementById('taskPoints').value);
+            const image = document.getElementById('taskImage').value;
+            const bonus = document.getElementById('taskBonus').checked;
 
-    // Recorte y Zoom
-    function prepareImageForCrop(input, targetType) {
-      if (input.files && input.files[0]) {
-        cropTargetType = targetType;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          cropImageObj.onload = function() {
-            openCropModal();
-          };
-          cropImageObj.src = e.target.result;
-        };
-        reader.readAsDataURL(input.files[0]);
-      }
-    }
+            // Asignar un orden superior alfabéticamente/cronológicamente por defecto (al final)
+            const maxOrder = tasksCache.length > 0 ? Math.max(...tasksCache.map(t => t.order || 0)) + 1 : 0;
 
-    function openCropModal() {
-      document.getElementById('crop-modal').style.display = 'flex';
-      canvasCrop.width = 320;
-      canvasCrop.height = cropTargetType === 'avatar' ? 320 : 180;
-
-      let hRatio = canvasCrop.width / cropImageObj.width;
-      let vRatio = canvasCrop.height / cropImageObj.height;
-      imgScale = Math.max(hRatio, vRatio);
-      
-      imgPosX = (canvasCrop.width - cropImageObj.width * imgScale) / 2;
-      imgPosY = (canvasCrop.height - cropImageObj.height * imgScale) / 2;
-
-      redrawCropCanvas();
-    }
-
-    function redrawCropCanvas() {
-      ctxCrop.clearRect(0, 0, canvasCrop.width, canvasCrop.height);
-      ctxCrop.save();
-      ctxCrop.translate(imgPosX, imgPosY);
-      ctxCrop.scale(imgScale, imgScale);
-      ctxCrop.drawImage(cropImageObj, 0, 0);
-      ctxCrop.restore();
-
-      ctxCrop.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      if (cropTargetType === 'avatar') {
-        ctxCrop.beginPath();
-        ctxCrop.rect(0, 0, canvasCrop.width, canvasCrop.height);
-        let radius = canvasCrop.width / 2;
-        ctxCrop.arc(radius, radius, radius, 0, Math.PI * 2, true);
-        ctxCrop.fill();
-
-        ctxCrop.strokeStyle = '#3B82F6';
-        ctxCrop.lineWidth = 3;
-        ctxCrop.beginPath();
-        ctxCrop.arc(radius, radius, radius, 0, Math.PI * 2);
-        ctxCrop.stroke();
-      } else {
-        ctxCrop.strokeStyle = '#3B82F6';
-        ctxCrop.lineWidth = 3;
-        ctxCrop.strokeRect(0, 0, canvasCrop.width, canvasCrop.height);
-      }
-    }
-
-    function adjustZoom(delta) {
-      imgScale = Math.max(0.2, imgScale + delta);
-      redrawCropCanvas();
-    }
-
-    canvasCrop.onmousedown = canvasCrop.ontouchstart = function(e) {
-      isDragging = true;
-      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      startX = clientX - imgPosX;
-      startY = clientY - imgPosY;
-      if (e.type === 'touchstart') e.preventDefault();
-    };
-
-    window.onmousemove = window.ontouchmove = function(e) {
-      if (!isDragging) return;
-      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      imgPosX = clientX - startX;
-      imgPosY = clientY - startY;
-      redrawCropCanvas();
-      if (e.type === 'touchmove') e.preventDefault();
-    };
-
-    window.onmouseup = window.ontouchend = function() {
-      isDragging = false;
-    };
-
-    function closeCropModal() {
-      document.getElementById('crop-modal').style.display = 'none';
-    }
-
-    function confirmCropImage() {
-      let finalCanvas = document.createElement('canvas');
-      let finalCtx = finalCanvas.getContext('2d');
-      
-      let outputW = cropTargetType === 'avatar' ? 200 : 600;
-      let outputH = Math.round(outputW * (canvasCrop.height / canvasCrop.width));
-      
-      finalCanvas.width = outputW;
-      finalCanvas.height = outputH;
-
-      finalCtx.fillStyle = '#FFFFFF';
-      finalCtx.fillRect(0, 0, outputW, outputH);
-
-      let ratio = outputW / canvasCrop.width;
-
-      finalCtx.save();
-      finalCtx.translate(imgPosX * ratio, imgPosY * ratio);
-      finalCtx.scale(imgScale * ratio, imgScale * ratio);
-      finalCtx.drawImage(cropImageObj, 0, 0);
-      finalCtx.restore();
-
-      let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.8);
-
-      if (cropTargetType === 'avatar') {
-        let kids = getChildrenList();
-        let childObj = kids.find(c => c.name === adminSelectedChild);
-        if (childObj) {
-          childObj.avatar = compressedDataUrl;
-          cloudData.children = kids;
-          saveCloudData();
+            try {
+                await db.collection('tasks').add({
+                    text,
+                    points,
+                    image,
+                    bonus,
+                    order: maxOrder,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById('taskForm').reset();
+                document.getElementById('taskTemplateSelect').value = "";
+            } catch (error) {
+                console.error("Error al añadir tarea:", error);
+            }
         }
-      } else if (cropTargetType === 'task') {
-        document.getElementById('t-image-result').value = compressedDataUrl;
-        let thumb = document.getElementById('t-preview-thumb');
-        thumb.src = compressedDataUrl;
-        thumb.style.display = 'block';
 
-        let tasks = getChildTasks(adminSelectedChild);
-        if (editingTaskIndex >= 0 && tasks[editingTaskIndex]) {
-          tasks[editingTaskIndex].image = compressedDataUrl;
-          if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
-          cloudData.tasksConfig[adminSelectedChild] = tasks;
-          saveCloudData();
+        // Eliminar Tarea
+        async function deleteTask(id) {
+            try {
+                await db.collection('tasks').doc(id).delete();
+            } catch (error) {
+                console.error("Error al eliminar tarea:", error);
+            }
         }
-      } else if (cropTargetType === 'reward') {
-        document.getElementById('r-image-result').value = compressedDataUrl;
-        let thumb = document.getElementById('r-preview-thumb');
-        thumb.src = compressedDataUrl;
-        thumb.style.display = 'block';
 
-        let rewards = getChildRewards(adminSelectedChild);
-        if (editingRewardIndex >= 0 && rewards[editingRewardIndex]) {
-          rewards[editingRewardIndex].image = compressedDataUrl;
-          if (!cloudData.rewardsConfig) cloudData.rewardsConfig = {};
-          cloudData.rewardsConfig[adminSelectedChild] = rewards;
-          saveCloudData();
+        // Añadir Premio
+        async function handleAddReward(e) {
+            e.preventDefault();
+            const name = document.getElementById('rewardName').value;
+            const points = parseInt(document.getElementById('rewardPoints').value);
+
+            try {
+                await db.collection('rewards').add({
+                    name,
+                    points
+                });
+                document.getElementById('rewardForm').reset();
+            } catch (error) {
+                console.error("Error al añadir premio:", error);
+            }
         }
-      }
-      closeCropModal();
-    }
 
-    // --- ADMIN Y GESTIÓN ---
-    function openAuthModal() {
-      document.getElementById('admin-pass-input').value = '';
-      document.getElementById('auth-modal').style.display = 'flex';
-    }
-    
-    function closeAuthModal() {
-      document.getElementById('auth-modal').style.display = 'none';
-    }
-    
-    function verifyAdminPassword() {
-      if (document.getElementById('admin-pass-input').value === getAdminPass()) {
-        closeAuthModal();
-        document.getElementById('profile-selection').style.display = 'none';
-        document.getElementById('calendar-screen').style.display = 'none';
-        document.getElementById('rewards-screen').style.display = 'none';
-        document.getElementById('progress-footer').style.display = 'none';
-        document.getElementById('admin-screen').style.display = 'block';
-        const kids = getChildrenList();
-        adminSelectedChild = kids.length > 0 ? kids[0].name : '';
-        renderAdminPanel();
-      } else {
-        alert('Pasahitz okerra');
-      }
-    }
-
-    function renderAdminPanel() {
-      renderAdminChildTabs();
-      renderAdminTasks();
-      renderAdminRewards();
-    }
-
-    function renderAdminChildTabs() {
-      const tabsContainer = document.getElementById('admin-child-tabs');
-      let html = '';
-      getChildrenList().forEach(child => {
-        const activeClass = adminSelectedChild === child.name ? 'active' : '';
-        html += `<div class="child-tab ${activeClass}" onclick="selectAdminChild('${child.name}')">${child.name}</div>`;
-      });
-      tabsContainer.innerHTML = html;
-    }
-
-    function selectAdminChild(name) {
-      adminSelectedChild = name;
-      renderAdminPanel();
-    }
-
-    function editCurrentChildAvatar() {
-      document.getElementById('avatar-file-input').click();
-    }
-
-    function addNewChild() {
-      const name = prompt('Haurraren izena:');
-      if (!name) return;
-      let kids = getChildrenList();
-      kids.push({ name, avatar: '' });
-      cloudData.children = kids;
-      saveCloudData();
-      adminSelectedChild = name;
-      renderAdminPanel();
-    }
-
-    function renderAdminTasks() {
-      const listContainer = document.getElementById('admin-task-list');
-      const tasks = getChildTasks(adminSelectedChild);
-      let html = '';
-      tasks.forEach((task, index) => {
-        const thumbHtml = task.image && task.image.trim() !== '' ? 
-          `<img src="${task.image}" style="width: 45px; height: 35px; border-radius: 6px; object-fit: cover; border: 1px solid #CBD5E1; flex-shrink: 0;">` :
-          `<div style="width: 45px; height: 35px; border-radius: 6px; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #64748B; flex-shrink: 0;">Ez</div>`;
-
-        html += `
-          <div class="task-admin-row">
-            <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-              ${thumbHtml}
-              <div>
-                <b>${task.name}</b> ${task.shared ? '👥 (Partekatua)' : ''}<br>
-                <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | Checks: ${task.checks || 1} | 🏷️ ${task.category || 'Gabe'}</span>
-              </div>
-            </div>
-            <div style="display:flex; gap:5px; flex-shrink: 0;">
-              <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.9rem;" onclick="openTaskEditor(${index})">Editatu</button>
-              <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.9rem;" onclick="deleteTask(${index})">Ezabatu</button>
-            </div>
-          </div>
-        `;
-      });
-      listContainer.innerHTML = html;
-    }
-
-    function renderAdminRewards() {
-      const listContainer = document.getElementById('admin-reward-list');
-      const rewards = getChildRewards(adminSelectedChild);
-      let html = '';
-      rewards.forEach((reward, index) => {
-        const thumbHtml = reward.image && reward.image.trim() !== '' ? 
-          `<img src="${reward.image}" style="width: 45px; height: 35px; border-radius: 6px; object-fit: cover; border: 1px solid #CBD5E1; flex-shrink: 0;">` :
-          `<div style="width: 45px; height: 35px; border-radius: 6px; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #64748B; flex-shrink: 0;">Ez</div>`;
-
-        html += `
-          <div class="task-admin-row">
-            <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-              ${thumbHtml}
-              <div>
-                <b>${reward.name}</b><br>
-                <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${reward.points} pts</span>
-              </div>
-            </div>
-            <div style="display:flex; gap:5px; flex-shrink: 0;">
-              <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.9rem;" onclick="openRewardEditor(${index})">Editatu</button>
-              <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.9rem;" onclick="deleteReward(${index})">Ezabatu</button>
-            </div>
-          </div>
-        `;
-      });
-      listContainer.innerHTML = html;
-    }
-
-    function openTaskEditor(index = -1) {
-      editingTaskIndex = index;
-      const tasks = getChildTasks(adminSelectedChild);
-      let thumb = document.getElementById('t-preview-thumb');
-      
-      if (index >= 0) {
-        let t = tasks[index];
-        document.getElementById('task-modal-title').innerText = 'Zeregina Editatu';
-        document.getElementById('t-name').value = t.name;
-        document.getElementById('t-points').value = t.points;
-        document.getElementById('t-category').value = t.category || 'Ordena';
-        document.getElementById('t-checks').value = t.checks || 1;
-        document.getElementById('t-shared').checked = !!t.shared;
-        document.getElementById('t-image-result').value = t.image || '';
-        if (t.image) {
-          thumb.src = t.image;
-          thumb.style.display = 'block';
-        } else {
-          thumb.style.display = 'none';
-        }
-      } else {
-        document.getElementById('task-modal-title').innerText = 'Zeregin Berria Gehitu';
-        document.getElementById('t-name').value = '';
-        document.getElementById('t-points').value = '10';
-        document.getElementById('t-category').value = 'Ordena';
-        document.getElementById('t-checks').value = '1';
-        document.getElementById('t-shared').checked = false;
-        document.getElementById('t-image-result').value = '';
-        thumb.style.display = 'none';
-      }
-      document.getElementById('t-file-input').value = '';
-      document.getElementById('task-modal').style.display = 'flex';
-    }
-
-    function closeTaskModal() {
-      document.getElementById('task-modal').style.display = 'none';
-    }
-
-    function saveTaskFromModal() {
-      const name = document.getElementById('t-name').value;
-      if (!name) return alert('Idatzi zereginaren izena');
-      const points = parseInt(document.getElementById('t-points').value) || 10;
-      const category = document.getElementById('t-category').value || 'Ordena';
-      const checks = parseInt(document.getElementById('t-checks').value) || 1;
-      const shared = document.getElementById('t-shared').checked;
-      const image = document.getElementById('t-image-result').value;
-
-      let tasks = getChildTasks(adminSelectedChild);
-
-      if (editingTaskIndex >= 0) {
-        tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, shared, image };
-      } else {
-        tasks.push({ id: 't_' + Date.now(), name, points, category, checks, shared, image });
-      }
-
-      if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
-      cloudData.tasksConfig[adminSelectedChild] = tasks;
-      saveCloudData();
-      closeTaskModal();
-      renderAdminTasks();
-    }
-
-    function deleteTask(index) {
-      if (!confirm('Ziur zeregin hau ezabatu nahi duzula?')) return;
-      let tasks = getChildTasks(adminSelectedChild);
-      tasks.splice(index, 1);
-      cloudData.tasksConfig[adminSelectedChild] = tasks;
-      saveCloudData();
-      renderAdminTasks();
-    }
-
-    function openRewardEditor(index = -1) {
-      editingRewardIndex = index;
-      const rewards = getChildRewards(adminSelectedChild);
-      let thumb = document.getElementById('r-preview-thumb');
-      
-      if (index >= 0) {
-        let r = rewards[index];
-        document.getElementById('reward-modal-title').innerText = 'Saria Editatu';
-        document.getElementById('r-name').value = r.name;
-        document.getElementById('r-points').value = r.points;
-        document.getElementById('r-image-result').value = r.image || '';
-        if (r.image) {
-          thumb.src = r.image;
-          thumb.style.display = 'block';
-        } else {
-          thumb.style.display = 'none';
-        }
-      } else {
-        document.getElementById('reward-modal-title').innerText = 'Sari Berria Gehitu';
-        document.getElementById('r-name').value = '';
-        document.getElementById('r-points').value = '50';
-        document.getElementById('r-image-result').value = '';
-        thumb.style.display = 'none';
-      }
-      document.getElementById('r-file-input').value = '';
-      document.getElementById('reward-modal').style.display = 'flex';
-    }
-
-    function closeRewardModal() {
-      document.getElementById('reward-modal').style.display = 'none';
-    }
-
-    function saveRewardFromModal() {
-      const name = document.getElementById('r-name').value;
-      if (!name) return alert('Idatzi sariaren izena');
-      const points = parseInt(document.getElementById('r-points').value) || 50;
-      const image = document.getElementById('r-image-result').value;
-
-      let rewards = getChildRewards(adminSelectedChild);
-
-      if (editingRewardIndex >= 0) {
-        rewards[editingRewardIndex] = { ...rewards[editingRewardIndex], name, points, image };
-      } else {
-        rewards.push({ id: 'r_' + Date.now(), name, points, image });
-      }
-
-      if (!cloudData.rewardsConfig) cloudData.rewardsConfig = {};
-      cloudData.rewardsConfig[adminSelectedChild] = rewards;
-      saveCloudData();
-      closeRewardModal();
-      renderAdminRewards();
-    }
-
-    function deleteReward(index) {
-      if (!confirm('Ziur saria ezabatu nahi duzula?')) return;
-      let rewards = getChildRewards(adminSelectedChild);
-      rewards.splice(index, 1);
-      cloudData.rewardsConfig[adminSelectedChild] = rewards;
-      saveCloudData();
-      renderAdminRewards();
-    }
-
-    function openAdminWeeklyView() {
-      const container = document.getElementById('admin-task-list');
-      renderWeeklyView(container, adminSelectedChild, true); 
-    }
-
-    function updatePassword() {
-      const newPass = document.getElementById('new-admin-pass').value;
-      if (!newPass) return alert('Idatzi pasahitz bat');
-      cloudData.adminPassword = newPass;
-      saveCloudData();
-      alert('Pasahitza gorde da!');
-      document.getElementById('new-admin-pass').value = '';
-    }
-
-    // Inicializar conexión
-    initFirestoreSync();
-  </script>
+        // Arrancar aplicación al cargar la página
+        window.onload = initApp;
+    </script>
 </body>
 </html>
