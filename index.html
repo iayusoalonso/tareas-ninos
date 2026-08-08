@@ -247,9 +247,10 @@
       <h2>Haurrak eta Avatarrak</h2>
       <div class="child-tabs" id="admin-child-tabs"></div>
       <div id="child-shortcut-container" style="margin-bottom: 15px;"></div>
-      <div style="display:flex; gap:10px; margin-top:10px;">
-        <button class="btn-action" style="background: var(--primary); font-size:0.9rem;" onclick="editCurrentChildAvatar()">📷 Aldatu Avatarra</button>
-        <button class="btn-action btn-green" style="font-size:0.9rem;" onclick="addNewChild()">+ Haur berria</button>
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;">
+        <button class="btn-action" style="background: var(--primary); font-size:0.9rem; flex:1;" onclick="editCurrentChildAvatar()">📷 Aldatu Avatarra</button>
+        <button class="btn-action btn-red" style="font-size:0.9rem; flex:1;" onclick="deleteCurrentChild()">🗑️ Ezabatu Haurra</button>
+        <button class="btn-action btn-green" style="font-size:0.9rem; flex:1;" onclick="addNewChild()">+ Haur berria</button>
       </div>
     </div>
 
@@ -474,8 +475,8 @@
         
         const kids = getChildrenList();
         if (kids.length > 0) {
-          if (!adminSelectedChild) adminSelectedChild = kids[0].name;
-          if (!currentChild) currentChild = kids[0].name;
+          if (!adminSelectedChild || !kids.some(k => k.name === adminSelectedChild)) adminSelectedChild = kids[0].name;
+          if (!currentChild || !kids.some(k => k.name === currentChild)) currentChild = kids[0].name;
         }
 
         refreshCurrentView();
@@ -550,7 +551,14 @@
       }, 1000);
     }
 
+    // MEJORA 1: Protección del acceso al Panel de Administración mediante contraseña
     function showAdminScreen() {
+      const pass = prompt("Sartu Kudeaketa Panelaren pasahitza:");
+      if (pass === null) return;
+      if (pass !== getAdminPass()) {
+        alert("Pasahitz okerra!");
+        return;
+      }
       document.getElementById('profile-selection').style.display = 'none';
       document.getElementById('calendar-screen').style.display = 'none';
       document.getElementById('rewards-screen').style.display = 'none';
@@ -1087,6 +1095,32 @@
       cloudData.children = kids;
       saveCloudData();
       adminSelectedChild = name;
+      renderAdminPanel();
+    }
+
+    // MEJORA 2: Función para eliminar el perfil de un niño seleccionado con limpieza de sus datos
+    function deleteCurrentChild() {
+      let kids = getChildrenList();
+      if (kids.length <= 1) {
+        alert('Ezin da haur bakarra ezabatu. Gutxienez perfil bat egon behar da.');
+        return;
+      }
+      if (!adminSelectedChild) return;
+      if (!confirm(`Ziur zaude "${adminSelectedChild}" haurra eta bere datu guztiak ezabatu nahi dituzula?`)) return;
+
+      const removedChild = adminSelectedChild;
+      kids = kids.filter(c => c.name !== removedChild);
+      cloudData.children = kids;
+
+      if (cloudData.tasksConfig) delete cloudData.tasksConfig[removedChild];
+      if (cloudData.rewardsConfig) delete cloudData.rewardsConfig[removedChild];
+      if (cloudData.rewardsSpent) delete cloudData.rewardsSpent[removedChild];
+      if (cloudData.tasksState) delete cloudData.tasksState[removedChild];
+
+      adminSelectedChild = kids[0].name;
+      if (currentChild === removedChild) currentChild = kids[0].name;
+
+      saveCloudData();
       renderAdminPanel();
     }
 
