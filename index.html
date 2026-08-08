@@ -17,6 +17,7 @@
       --dark: #1E293B;
       --success: #2ECC71;
       --danger: #EF4444;
+      --special: #8B5CF6;
       --bg: #F0F4F8;
     }
 
@@ -56,6 +57,9 @@
       border-radius: 25px; font-weight: 900; font-size: 1.2rem; text-transform: uppercase;
       letter-spacing: 1px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
+    .day-badge.special-mode {
+      background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+    }
 
     #view-container { display: flex; flex-direction: column; gap: 20px; }
 
@@ -79,6 +83,7 @@
       font-size: 0.9rem; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     .badge-shared { background: #8B5CF6; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; }
+    .badge-special { background: #EC4899; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; }
     .star-icon { color: var(--warning); }
 
     .task-title-large {
@@ -97,19 +102,16 @@
     .checkbox-large.state-done { background: var(--success); }
     .checkbox-large.state-done::after { content: '✓'; color: white; font-size: 2.8rem; font-weight: 900; }
 
-    /* --- POPUP EMOJI GAMIFICACIÓN --- */
+    /* POPUP EMOJI GAMIFICACIÓN */
     #emoji-popup {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
       font-size: 7rem; z-index: 9999; pointer-events: none;
       transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
       opacity: 0; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
     }
-    #emoji-popup.show {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
+    #emoji-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 
-    /* --- VISTA DE PREMIOS --- */
+    /* VISTA DE PREMIOS */
     .rewards-grid { display: flex; flex-direction: column; gap: 20px; }
     .reward-card {
       position: relative; width: 100%; min-height: 220px; border-radius: 24px;
@@ -140,7 +142,7 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
-    /* --- VISTA SEMANAL --- */
+    /* VISTA SEMANAL */
     .weekly-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .weekly-table th, .weekly-table td { border: 1px solid #E2E8F0; padding: 10px; text-align: center; }
     .weekly-table th { background: var(--primary); color: white; font-size: 0.9rem; }
@@ -149,7 +151,7 @@
     .chk-weekly.done { background: var(--success); border-color: var(--success); color: white; font-weight: bold; }
     .chk-weekly.done::after { content: '✓'; font-size: 1.2rem; }
 
-    /* --- FOOTER --- */
+    /* FOOTER */
     #progress-footer {
       position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 20px;
       box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 8px; z-index: 1000;
@@ -159,62 +161,29 @@
     .progress-bar-bg { width: 100%; height: 12px; background: #E2E8F0; border-radius: 10px; overflow: hidden; }
     .progress-bar-fill { height: 100%; width: 0%; background: var(--warning); border-radius: 10px; transition: width 0.3s; }
 
-    /* --- MODALES Y ADMIN --- */
+    /* MODALES Y ADMIN */
     .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; overflow-y: auto; }
     .modal-card { background: white; border-radius: 24px; padding: 25px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; text-align: center; max-height: 90vh; overflow-y: auto; }
     .form-input { padding: 12px; border: 2px solid #CBD5E1; border-radius: 12px; font-size: 1.1rem; outline: none; width: 100%; }
     .btn-action { padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; width: 100%; }
     .btn-green { background: #10B981; }
     .btn-red { background: var(--danger); }
+    .btn-purple { background: var(--special); }
     .admin-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .admin-card h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; color: var(--dark); }
     
-    /* FILA DE TAREA REESTRUCTURADA EN ADMIN */
     .task-admin-row {
-      display: flex;
-      align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid #F1F5F9;
-      gap: 12px;
-      text-align: left;
+      display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #F1F5F9;
+      gap: 12px; text-align: left;
     }
-    .task-admin-img-col {
-      width: 75px;
-      height: 75px;
-      flex-shrink: 0;
-    }
-    .task-admin-img-col img {
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      object-fit: cover;
-      border: 1px solid #CBD5E1;
-    }
+    .task-admin-img-col { width: 75px; height: 75px; flex-shrink: 0; }
+    .task-admin-img-col img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; border: 1px solid #CBD5E1; }
     .task-admin-placeholder {
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      background: #E2E8F0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      color: #64748B;
-      font-weight: bold;
+      width: 100%; height: 100%; border-radius: 12px; background: #E2E8F0;
+      display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #64748B; font-weight: bold;
     }
-    .task-admin-content-col {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      gap: 8px;
-      min-width: 0;
-    }
-    .task-admin-btns {
-      display: flex;
-      gap: 5px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+    .task-admin-content-col { display: flex; flex-direction: column; flex: 1; gap: 8px; min-width: 0; }
+    .task-admin-btns { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
 
     .child-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
     .child-tab { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--primary); text-align: center; }
@@ -289,6 +258,17 @@
       <h1>Kudeaketa Panela</h1>
       <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">👶 Profilak</button>
     </div>
+
+    <div class="admin-card" style="border: 2px solid var(--special);">
+      <h2>🎉 Gaurko Eguna / Egoera</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <div>
+          <b style="font-size:1.05rem;">Egun Berezia (Elegitua / Evento):</b>
+          <p style="font-size:0.85rem; color:var(--secondary);">Markatu aktibatzeko zeregin bereziak gaurko egunean.</p>
+        </div>
+        <button id="btn-toggle-special-day" class="btn-action" style="width:auto; padding:10px 20px;" onclick="toggleSpecialDayMode()"></button>
+      </div>
+    </div>
     
     <div class="admin-card">
       <h2>Haurrak eta Avatarrak</h2>
@@ -357,6 +337,16 @@
       <input type="text" id="t-category" class="form-input" placeholder="Kategoria (adib. Higiene)..." value="Ordena">
       <input type="number" id="t-checks" class="form-input" placeholder="Check kopurua (adib. 3)..." value="1" min="1" max="10">
       
+      <div style="text-align: left; display: flex; flex-direction: column; gap: 5px;">
+        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Noiz egin behar da?:</label>
+        <select id="t-schedule" class="form-input">
+          <option value="all">Egunero (Lunes a Domingo)</option>
+          <option value="weekdays">Eskola Egunak (Astelehena-Ostirala)</option>
+          <option value="weekend">Asteburua (Larunbata-Igandea)</option>
+          <option value="special">Egun Bereziak bakarrik (Eventos)</option>
+        </select>
+      </div>
+
       <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px; text-align: left;">
         <input type="checkbox" id="t-shared" style="width: 22px; height: 22px; cursor: pointer;">
         <label for="t-shared" style="font-size: 0.95rem; font-weight: bold; color: var(--dark); cursor: pointer;">Tarea partekatua (x2 puntu denek egitean)</label>
@@ -434,6 +424,7 @@
     
     let cloudData = {
       adminPassword: '1234',
+      isSpecialDayActive: false,
       children: [
         { name: 'Luke', avatar: '' },
         { name: 'Marty', avatar: '' }
@@ -445,8 +436,8 @@
     };
 
     const defaultTasks = [
-      { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3, shared: false },
-      { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1, shared: false }
+      { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3, shared: false, schedule: 'all' },
+      { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1, shared: false, schedule: 'all' }
     ];
 
     const defaultRewards = [
@@ -473,6 +464,23 @@
 
     function getCurrentDayIndex() {
       return (new Date().getDay() + 6) % 7;
+    }
+
+    function isWeekend(dayIndex) {
+      return dayIndex === 5 || dayIndex === 6; // Larunbata o Igandea
+    }
+
+    function isTaskActiveForDay(task, dayIndex) {
+      if (cloudData.isSpecialDayActive) {
+        return task.schedule === 'special' || task.schedule === 'all';
+      }
+
+      if (task.schedule === 'special') return false;
+      if (!task.schedule || task.schedule === 'all') return true;
+      if (task.schedule === 'weekdays' && !isWeekend(dayIndex)) return true;
+      if (task.schedule === 'weekend' && isWeekend(dayIndex)) return true;
+
+      return false;
     }
 
     function getCurrentWeekStamp() {
@@ -508,6 +516,7 @@
         } else {
           cloudData = {
             adminPassword: '1234',
+            isSpecialDayActive: false,
             children: [{ name: 'Luke', avatar: '' }, { name: 'Marty', avatar: '' }],
             tasksConfig: {},
             rewardsConfig: {},
@@ -601,6 +610,12 @@
       setTimeout(() => {
         popup.classList.remove('show');
       }, 1000);
+    }
+
+    function toggleSpecialDayMode() {
+      cloudData.isSpecialDayActive = !cloudData.isSpecialDayActive;
+      saveCloudData();
+      renderAdminPanel();
     }
 
     function showAdminScreen() {
@@ -706,16 +721,25 @@
     function renderDailyView(container) {
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
-      const tasks = getChildTasks(currentChild);
+      const allTasks = getChildTasks(currentChild);
       const stateObj = getChildState(currentChild);
       const currentWeek = getCurrentWeekStamp();
       const weekState = stateObj[currentWeek] || {};
 
+      const tasks = allTasks.filter(t => isTaskActiveForDay(t, dayIndex));
+
+      const isSpecial = cloudData.isSpecialDayActive;
+      let badgeLabel = isSpecial ? '🎉 GAUR EGUN BEREZIA DA!' : `Gaur: ${currentDayName}`;
+
       let html = `
         <div class="day-badge-wrap">
-          <div class="day-badge">Gaur: ${currentDayName}</div>
+          <div class="day-badge ${isSpecial ? 'special-mode' : ''}">${badgeLabel}</div>
         </div>
       `;
+
+      if (tasks.length === 0) {
+        html += `<div style="text-align:center; padding: 40px; color: var(--secondary); font-weight: bold;">Egun honetarako ez dago zereginik pentsatuta! 🎈</div>`;
+      }
 
       tasks.forEach(task => {
         const numChecks = task.checks || 1;
@@ -738,6 +762,7 @@
                   <div class="badge-dark">🏷️ ${task.category || 'Zeregina'}</div>
                   <div class="badge-dark"><span class="star-icon">⭐</span> ${task.points} pts</div>
                   ${task.shared ? `<div class="badge-shared">👥 Partekatua (x2)</div>` : ''}
+                  ${task.schedule === 'special' ? `<div class="badge-special">🎉 Berezia</div>` : ''}
                   ${numChecks > 1 ? `<div class="badge-dark">Checks: ${numChecks}</div>` : ''}
                 </div>
                 <div class="task-title-large">${task.name}</div>
@@ -765,17 +790,23 @@
 
       tasks.forEach(task => {
         html += `<tr><td style="font-weight:bold; text-align:left; font-size: 0.9rem;">${task.name}<br><span style="font-size:0.75rem; color:var(--secondary);">${task.points}pts ${task.shared ? '👥' : ''}</span></td>`;
-        days.forEach(day => {
-          html += `<td>`;
-          const numChecks = task.checks || 1;
-          for (let i = 1; i <= numChecks; i++) {
-            const key = `${task.id}_${day}_chk${i}`;
-            const isDone = weekState[key] === true;
-            if (isEditable) {
-              html += `<div class="chk-weekly editable ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}')"></div>`;
-            } else {
-              html += `<div class="chk-weekly ${isDone ? 'done' : ''}"></div>`;
+        days.forEach((day, dayIdx) => {
+          const appliesToday = isTaskActiveForDay(task, dayIdx);
+          html += `<td style="${!appliesToday ? 'background:#F8FAFC;' : ''}">`;
+          
+          if (appliesToday) {
+            const numChecks = task.checks || 1;
+            for (let i = 1; i <= numChecks; i++) {
+              const key = `${task.id}_${day}_chk${i}`;
+              const isDone = weekState[key] === true;
+              if (isEditable) {
+                html += `<div class="chk-weekly editable ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}')"></div>`;
+              } else {
+                html += `<div class="chk-weekly ${isDone ? 'done' : ''}"></div>`;
+              }
             }
+          } else {
+            html += `<span style="color:#CBD5E1; font-size:0.8rem;">-</span>`;
           }
           html += `</td>`;
         });
@@ -928,11 +959,13 @@
     function updateFooter() {
       const dayIndex = getCurrentDayIndex();
       const currentDayName = days[dayIndex];
-      const tasks = getChildTasks(currentChild);
+      const allTasks = getChildTasks(currentChild);
       const stateObj = getChildState(currentChild);
       const currentWeek = getCurrentWeekStamp();
       const weekState = stateObj[currentWeek] || {};
       
+      const tasks = allTasks.filter(t => isTaskActiveForDay(t, dayIndex));
+
       let earnedToday = 0; let totalToday = 0;
       tasks.forEach(task => {
         totalToday += task.points;
@@ -1103,6 +1136,13 @@
 
     // --- ADMIN Y GESTIÓN ---
     function renderAdminPanel() {
+      // Estado del día especial
+      const isSpec = !!cloudData.isSpecialDayActive;
+      const btnSpec = document.getElementById('btn-toggle-special-day');
+      btnSpec.innerText = isSpec ? '🎉 Aktibatuta (Desaktibatu)' : '⚪ Desaktibatuta (Aktibatu)';
+      btnSpec.className = `btn-action ${isSpec ? 'btn-purple' : ''}`;
+      if (!isSpec) btnSpec.style.background = 'var(--secondary)';
+
       renderAdminChildTabs();
       renderAdminTasks();
       renderAdminRewards();
@@ -1179,7 +1219,6 @@
       renderAdminPanel();
     }
 
-    // LISTADO DE TAREAS REORDENADO SEGÚN ESQUEMA (Naranja: Izq | Verde: Der Sup | Azul: Der Inf)
     function renderAdminTasks() {
       const listContainer = document.getElementById('admin-task-list');
       const tasks = getChildTasks(adminSelectedChild);
@@ -1192,17 +1231,20 @@
         const isFirst = index === 0;
         const isLast = index === tasks.length - 1;
 
+        let schedLabel = 'Egunero';
+        if (task.schedule === 'weekdays') schedLabel = 'Eskola (L-V)';
+        if (task.schedule === 'weekend') schedLabel = 'Asteburua (S-D)';
+        if (task.schedule === 'special') schedLabel = '🎉 Berezia';
+
         html += `
           <div class="task-admin-row">
-            <!-- Naranja: Imagen grande a la izquierda -->
             <div class="task-admin-img-col">
               ${thumbHtml}
             </div>
-            <!-- Lado derecho con Verde (Info) y Azul (Botonera) -->
             <div class="task-admin-content-col">
               <div>
-                <b style="font-size: 1.05rem; color: var(--dark);">${task.name}</b> ${task.shared ? '👥 (Partekatua)' : ''}<br>
-                <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | Checks: ${task.checks || 1} | 🏷️ ${task.category || 'Gabe'}</span>
+                <b style="font-size: 1.05rem; color: var(--dark);">${task.name}</b> ${task.shared ? '👥' : ''}<br>
+                <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | 📅 ${schedLabel} | 🏷️ ${task.category || 'Gabe'}</span>
               </div>
               <div class="task-admin-btns">
                 <button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isFirst ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isFirst ? '' : `moveTask(${index}, -1)`}">⬆️</button>
@@ -1259,6 +1301,7 @@
         document.getElementById('t-points').value = t.points;
         document.getElementById('t-category').value = t.category || 'Ordena';
         document.getElementById('t-checks').value = t.checks || 1;
+        document.getElementById('t-schedule').value = t.schedule || 'all';
         document.getElementById('t-shared').checked = !!t.shared;
         document.getElementById('t-image-result').value = t.image || '';
         if (t.image) {
@@ -1273,6 +1316,7 @@
         document.getElementById('t-points').value = '10';
         document.getElementById('t-category').value = 'Ordena';
         document.getElementById('t-checks').value = '1';
+        document.getElementById('t-schedule').value = 'all';
         document.getElementById('t-shared').checked = false;
         document.getElementById('t-image-result').value = '';
         thumb.style.display = 'none';
@@ -1291,15 +1335,16 @@
       const points = parseInt(document.getElementById('t-points').value) || 10;
       const category = document.getElementById('t-category').value || 'Ordena';
       const checks = parseInt(document.getElementById('t-checks').value) || 1;
+      const schedule = document.getElementById('t-schedule').value || 'all';
       const shared = document.getElementById('t-shared').checked;
       const image = document.getElementById('t-image-result').value;
 
       let tasks = getChildTasks(adminSelectedChild);
 
       if (editingTaskIndex >= 0) {
-        tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, shared, image };
+        tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, schedule, shared, image };
       } else {
-        tasks.push({ id: 't_' + Date.now(), name, points, category, checks, shared, image });
+        tasks.push({ id: 't_' + Date.now(), name, points, category, checks, schedule, shared, image });
       }
 
       if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
