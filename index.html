@@ -168,7 +168,54 @@
     .btn-red { background: var(--danger); }
     .admin-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .admin-card h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; color: var(--dark); }
-    .task-admin-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F1F5F9; gap: 10px; text-align: left; }
+    
+    /* FILA DE TAREA REESTRUCTURADA EN ADMIN */
+    .task-admin-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #F1F5F9;
+      gap: 12px;
+      text-align: left;
+    }
+    .task-admin-img-col {
+      width: 75px;
+      height: 75px;
+      flex-shrink: 0;
+    }
+    .task-admin-img-col img {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 1px solid #CBD5E1;
+    }
+    .task-admin-placeholder {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      background: #E2E8F0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: #64748B;
+      font-weight: bold;
+    }
+    .task-admin-content-col {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 8px;
+      min-width: 0;
+    }
+    .task-admin-btns {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     .child-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
     .child-tab { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--primary); text-align: center; }
     .child-tab.active { background: var(--primary); color: white; }
@@ -192,7 +239,7 @@
   <!-- POPUP EMOJI GAMIFICACIÓN -->
   <div id="emoji-popup">🎉</div>
 
-  <!-- PANTALLA 1: PERFILES (Pantalla Principal) -->
+  <!-- PANTALLA 1: PERFILES -->
   <div id="profile-selection">
     <div class="profile-header">
       <h1>Zereginak</h1>
@@ -498,7 +545,6 @@
       return (cloudData.tasksConfig && cloudData.tasksConfig[childName]) || defaultTasks;
     }
 
-    // ORDENACIÓN AUTOMÁTICA DE PREMIOS POR PUNTOS Y ALFABÉTICAMENTE
     function getChildRewards(childName) {
       let rawList = (cloudData.rewardsConfig && cloudData.rewardsConfig[childName]) || defaultRewards;
       return [...rawList].sort((a, b) => {
@@ -1118,7 +1164,6 @@
       renderAdminPanel();
     }
 
-    // REORDENACIÓN DE TAREAS (Mover arriba / abajo)
     function moveTask(index, direction) {
       let tasks = getChildTasks(adminSelectedChild);
       let targetIndex = index + direction;
@@ -1134,32 +1179,37 @@
       renderAdminPanel();
     }
 
+    // LISTADO DE TAREAS REORDENADO SEGÚN ESQUEMA (Naranja: Izq | Verde: Der Sup | Azul: Der Inf)
     function renderAdminTasks() {
       const listContainer = document.getElementById('admin-task-list');
       const tasks = getChildTasks(adminSelectedChild);
       let html = '';
       tasks.forEach((task, index) => {
         const thumbHtml = task.image && task.image.trim() !== '' ? 
-          `<img src="${task.image}" style="width: 45px; height: 35px; border-radius: 6px; object-fit: cover; border: 1px solid #CBD5E1; flex-shrink: 0;">` :
-          `<div style="width: 45px; height: 35px; border-radius: 6px; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #64748B; flex-shrink: 0;">Ez</div>`;
+          `<img src="${task.image}" alt="thumb">` :
+          `<div class="task-admin-placeholder">Ez dago</div>`;
 
         const isFirst = index === 0;
         const isLast = index === tasks.length - 1;
 
         html += `
           <div class="task-admin-row">
-            <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+            <!-- Naranja: Imagen grande a la izquierda -->
+            <div class="task-admin-img-col">
               ${thumbHtml}
+            </div>
+            <!-- Lado derecho con Verde (Info) y Azul (Botonera) -->
+            <div class="task-admin-content-col">
               <div>
-                <b>${task.name}</b> ${task.shared ? '👥 (Partekatua)' : ''}<br>
+                <b style="font-size: 1.05rem; color: var(--dark);">${task.name}</b> ${task.shared ? '👥 (Partekatua)' : ''}<br>
                 <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | Checks: ${task.checks || 1} | 🏷️ ${task.category || 'Gabe'}</span>
               </div>
-            </div>
-            <div style="display:flex; gap:4px; flex-shrink: 0;">
-              <button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isFirst ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isFirst ? '' : `moveTask(${index}, -1)`}">⬆️</button>
-              <button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isLast ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isLast ? '' : `moveTask(${index}, 1)`}">⬇️</button>
-              <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.9rem;" onclick="openTaskEditor(${index})">Editatu</button>
-              <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.9rem;" onclick="deleteTask(${index})">Ezabatu</button>
+              <div class="task-admin-btns">
+                <button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isFirst ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isFirst ? '' : `moveTask(${index}, -1)`}">⬆️</button>
+                <button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isLast ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isLast ? '' : `moveTask(${index}, 1)`}">⬇️</button>
+                <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.85rem;" onclick="openTaskEditor(${index})">Editatu</button>
+                <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.85rem;" onclick="deleteTask(${index})">Ezabatu</button>
+              </div>
             </div>
           </div>
         `;
@@ -1173,21 +1223,23 @@
       let html = '';
       rewards.forEach((reward, index) => {
         const thumbHtml = reward.image && reward.image.trim() !== '' ? 
-          `<img src="${reward.image}" style="width: 45px; height: 35px; border-radius: 6px; object-fit: cover; border: 1px solid #CBD5E1; flex-shrink: 0;">` :
-          `<div style="width: 45px; height: 35px; border-radius: 6px; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #64748B; flex-shrink: 0;">Ez</div>`;
+          `<img src="${reward.image}" alt="thumb">` :
+          `<div class="task-admin-placeholder">Ez dago</div>`;
 
         html += `
           <div class="task-admin-row">
-            <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+            <div class="task-admin-img-col">
               ${thumbHtml}
+            </div>
+            <div class="task-admin-content-col">
               <div>
-                <b>${reward.name}</b><br>
+                <b style="font-size: 1.05rem; color: var(--dark);">${reward.name}</b><br>
                 <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${reward.points} pts</span>
               </div>
-            </div>
-            <div style="display:flex; gap:5px; flex-shrink: 0;">
-              <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.9rem;" onclick="openRewardEditor(${index})">Editatu</button>
-              <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.9rem;" onclick="deleteReward(${index})">Ezabatu</button>
+              <div class="task-admin-btns">
+                <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.85rem;" onclick="openRewardEditor(${index})">Editatu</button>
+                <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.85rem;" onclick="deleteReward(${index})">Ezabatu</button>
+              </div>
             </div>
           </div>
         `;
