@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zereginak-v3';
+const CACHE_NAME = 'zereginak-v4-secure';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -35,6 +35,14 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // SEGURIDAD: No interceptar recursos externos (CDN de Firebase, Chart.js, etc.)
+  // Solo cachear recursos propios del dominio
+  if (url.origin !== self.location.origin) {
+    return; // Dejar que el navegador maneje CDN externos normalmente
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
