@@ -93,11 +93,13 @@
     .sync-ok { background: var(--success); color: white; }
     .sync-pending { background: var(--warning); color: white; }
     .sync-error { background: var(--danger); color: white; }
+    #auth-fallback-banner { position: fixed; top: 0; left: 0; right: 0; background: var(--danger); color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 0.9rem; z-index: 10000; display: none; }
   </style>
 <base target="_blank">
 </head>
 <body>
-  <div id="loading-overlay"><div>🔄 Hodeiarekin konektatzen...</div></div>
+  <div id="auth-fallback-banner">⚠️ Ezin da hodeiarekin konektatu. Modu lokalean ari gara.</div>
+  <div id="loading-overlay"><div id="loading-text">🔄 Hodeiarekin konektatzen...</div></div>
   <div id="sync-status"></div>
   <div id="emoji-popup">🎉</div>
   <div id="profile-selection">
@@ -164,840 +166,401 @@
     // SEGURIDAD: Rate Limiting para Admin Login
     // ============================================
     const SECURITY = {
-      MAX_ATTEMPTS: 5,
-      LOCKOUT_DURATION_MS: 5 * 60 * 1000,
+      MAX_ATTEMPTS: 5, LOCKOUT_DURATION_MS: 5 * 60 * 1000,
       getAttempts() {
         const attempts = parseInt(localStorage.getItem('admin_attempts') || '0');
         const lastAttempt = parseInt(localStorage.getItem('admin_last_attempt') || '0');
         const now = Date.now();
-        if (attempts >= this.MAX_ATTEMPTS && now - lastAttempt > this.LOCKOUT_DURATION_MS) {
-          this.resetAttempts();
-          return { attempts: 0, locked: false };
-        }
-        return { attempts: attempts, locked: attempts >= this.MAX_ATTEMPTS, remainingTime: attempts >= this.MAX_ATTEMPTS ? this.LOCKOUT_DURATION_MS - (now - lastAttempt) : 0 };
+        if (attempts >= this.MAX_ATTEMPTS && now - lastAttempt > this.LOCKOUT_DURATION_MS) { this.resetAttempts(); return { attempts: 0, locked: false }; }
+        return { attempts, locked: attempts >= this.MAX_ATTEMPTS, remainingTime: attempts >= this.MAX_ATTEMPTS ? this.LOCKOUT_DURATION_MS - (now - lastAttempt) : 0 };
       },
-      recordFailedAttempt() {
-        const attempts = parseInt(localStorage.getItem('admin_attempts') || '0') + 1;
-        localStorage.setItem('admin_attempts', attempts);
-        localStorage.setItem('admin_last_attempt', Date.now());
-        return attempts;
-      },
-      resetAttempts() {
-        localStorage.removeItem('admin_attempts');
-        localStorage.removeItem('admin_last_attempt');
-      },
+      recordFailedAttempt() { const a = parseInt(localStorage.getItem('admin_attempts') || '0') + 1; localStorage.setItem('admin_attempts', a); localStorage.setItem('admin_last_attempt', Date.now()); return a; },
+      resetAttempts() { localStorage.removeItem('admin_attempts'); localStorage.removeItem('admin_last_attempt'); },
       isLocked() { return this.getAttempts().locked; }
     };
 
     // ============================================
-    // SEGURIDAD: Validación de integridad de datos
+    // SEGURIDAD: Validación de integridad
     // ============================================
     const DataValidator = {
       validateCloudData(data) {
         if (!data) return false;
-        if (data.rewardsSpent) {
-          for (const child in data.rewardsSpent) {
-            if (typeof data.rewardsSpent[child] !== 'number' || data.rewardsSpent[child] < 0) {
-              console.error('Validación fallida: rewardsSpent negativo detectado para', child);
-              return false;
-            }
-          }
-        }
-        if (!Array.isArray(data.children)) { console.error('Validación fallida: children no es array'); return false; }
-        if (data.tasksConfig) {
-          for (const child in data.tasksConfig) {
-            if (!Array.isArray(data.tasksConfig[child])) { console.error('Validación fallida: tasksConfig no es array para', child); return false; }
-            for (const task of data.tasksConfig[child]) {
-              if (!task.id || !task.name || typeof task.points !== 'number') { console.error('Validación fallida: tarea inválida', task); return false; }
-              if (task.points < -50 || task.points > 500) { console.error('Validación fallida: puntos fuera de rango', task.points); return false; }
-            }
-          }
-        }
+        if (data.rewardsSpent) { for (const c in data.rewardsSpent) { if (typeof data.rewardsSpent[c] !== 'number' || data.rewardsSpent[c] < 0) { console.error('rewardsSpent negativo:', c); return false; } } }
+        if (!Array.isArray(data.children)) return false;
+        if (data.tasksConfig) { for (const c in data.tasksConfig) { if (!Array.isArray(data.tasksConfig[c])) return false; for (const t of data.tasksConfig[c]) { if (!t.id || !t.name || typeof t.points !== 'number') return false; if (t.points < -50 || t.points > 500) return false; } } }
         return true;
       },
       sanitizeBeforeSave(data) {
         const clean = JSON.parse(JSON.stringify(data));
-        if (clean.rewardsSpent) {
-          for (const child in clean.rewardsSpent) {
-            clean.rewardsSpent[child] = Math.max(0, Math.round(clean.rewardsSpent[child] || 0));
-          }
-        }
+        if (clean.rewardsSpent) { for (const c in clean.rewardsSpent) clean.rewardsSpent[c] = Math.max(0, Math.round(clean.rewardsSpent[c] || 0)); }
         clean._lastModified = firebase.firestore.FieldValue.serverTimestamp();
         clean._modifiedByDevice = auth.currentUser ? auth.currentUser.uid : 'anonymous';
-        clean._appVersion = '2.0.0';
+        clean._appVersion = '2.0.1';
         return clean;
       }
     };
 
     // ============================================
-    // SINCRONIZACIÓN: Cola offline + indicador visual
+    // SINCRONIZACIÓN: Offline + indicador
     // ============================================
     const SyncManager = {
-      pendingChanges: [],
-      isOnline: navigator.onLine,
+      pendingChanges: [], isOnline: navigator.onLine,
       init() {
-        window.addEventListener('online', () => {
-          this.isOnline = true;
-          this.showStatus('sync-ok', '✓ Sincronizatuta', 2000);
-          this.flushPendingChanges();
-        });
-        window.addEventListener('offline', () => {
-          this.isOnline = false;
-          this.showStatus('sync-pending', '⚠️ Lineaz kanpo - aldaketak gordetzen...', 0);
-        });
+        window.addEventListener('online', () => { this.isOnline = true; this.showStatus('sync-ok', '✓ Sincronizatuta', 2000); this.flushPendingChanges(); });
+        window.addEventListener('offline', () => { this.isOnline = false; this.showStatus('sync-pending', '⚠️ Lineaz kanpo', 0); });
       },
-      showStatus(className, text, durationMs) {
-        const el = document.getElementById('sync-status');
-        if (!el) return;
-        el.className = '';
-        el.classList.add(className);
-        el.textContent = text;
-        el.style.display = 'block';
-        if (durationMs > 0) setTimeout(() => { el.style.display = 'none'; }, durationMs);
-      },
-      hideStatus() {
-        const el = document.getElementById('sync-status');
-        if (el) el.style.display = 'none';
-      },
-      queueChange(changeFn) {
-        if (!this.isOnline) {
-          this.pendingChanges.push(changeFn);
-          this.showStatus('sync-pending', `⏳ ${this.pendingChanges.length} aldaketa zain...`, 0);
-          try { localStorage.setItem('zereginak_pending_queue', JSON.stringify(this.pendingChanges.length)); } catch (e) {}
-          return false;
-        }
-        return true;
-      },
-      saveQueueToStorage() {
-        try { localStorage.setItem('zereginak_pending_queue', JSON.stringify(this.pendingChanges.length)); } catch (e) {}
-      },
-      async flushPendingChanges() {
-        if (this.pendingChanges.length === 0) { this.hideStatus(); return; }
-        this.showStatus('sync-pending', '🔄 Sincronizatzen...', 0);
-        const queue = [...this.pendingChanges];
-        this.pendingChanges = [];
-        for (const change of queue) {
-          try { await change(); } catch (err) { console.error('Error sincronizando:', err); this.pendingChanges.push(change); }
-        }
-        if (this.pendingChanges.length === 0) { this.showStatus('sync-ok', '✓ Sincronizatuta!', 3000); localStorage.removeItem('zereginak_pending_queue'); }
-        else { this.showStatus('sync-error', `❌ ${this.pendingChanges.length} errore`, 0); }
-      }
+      showStatus(cls, text, dur) { const el = document.getElementById('sync-status'); if (!el) return; el.className = cls; el.textContent = text; el.style.display = 'block'; if (dur > 0) setTimeout(() => el.style.display = 'none', dur); },
+      hideStatus() { const el = document.getElementById('sync-status'); if (el) el.style.display = 'none'; },
+      queueChange(fn) { if (!this.isOnline) { this.pendingChanges.push(fn); this.showStatus('sync-pending', `⏳ ${this.pendingChanges.length} aldaketa`, 0); try { localStorage.setItem('z_pending', this.pendingChanges.length); } catch(e){} return false; } return true; },
+      async flushPendingChanges() { if (!this.pendingChanges.length) { this.hideStatus(); return; } this.showStatus('sync-pending', '🔄 Sincronizatzen...', 0); const q = [...this.pendingChanges]; this.pendingChanges = []; for (const fn of q) { try { await fn(); } catch(e) { this.pendingChanges.push(fn); } } if (!this.pendingChanges.length) { this.showStatus('sync-ok', '✓ Sincronizatuta!', 3000); localStorage.removeItem('z_pending'); } else { this.showStatus('sync-error', `❌ ${this.pendingChanges.length} errore`, 0); } }
     };
 
-    const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
-    const CATEGORIES = ['Higiene', 'Ordena', 'Ikasketak', 'Jokabidea', 'Besteak'];
-    let cloudData = { adminPassword: '1234', isSpecialDayActive: false, children: [{ name: 'Luke', avatar: '' }, { name: 'Marty', avatar: '' }], tasksConfig: {}, rewardsConfig: {}, rewardsSpent: {}, tasksState: {} };
-    const defaultTasks = [
-      { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3, shared: false, schedule: 'all' },
-      { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1, shared: false, schedule: 'all' }
-    ];
-    const defaultRewards = [
-      { id: 'r1', name: 'Marrazki libre bat', points: 40, image: '' },
-      { id: 'r2', name: 'Txutxe bat', points: 80, image: '' }
-    ];
-    let currentChild = '', adminSelectedChild = '', currentView = 'daily', editingTaskIndex = -1, editingRewardIndex = -1, radarChartInstance = null, isAuthenticated = false;
-    let cropTargetType = '', cropImageObj = new Image(), canvasCrop = document.getElementById('crop-canvas'), ctxCrop = canvasCrop.getContext('2d');
-    let imgPosX = 0, imgPosY = 0, imgScale = 1, isDragging = false, startX = 0, startY = 0;
+    const days = ['Astelehena','Asteartea','Asteazkena','Osteguna','Ostirala','Larunbata','Igandea'];
+    const CATEGORIES = ['Higiene','Ordena','Ikasketak','Jokabidea','Besteak'];
+    let cloudData = { adminPassword:'1234', isSpecialDayActive:false, children:[{name:'Luke',avatar:''},{name:'Marty',avatar:''}], tasksConfig:{}, rewardsConfig:{}, rewardsSpent:{}, tasksState:{} };
+    const defaultTasks = [{id:'dientes',name:'Hortzak garbitu',image:'',category:'Higiene',points:10,checks:3,shared:false,schedule:'all'},{id:'habitacion',name:'Gela jaso',image:'',category:'Ordena',points:15,checks:1,shared:false,schedule:'all'}];
+    const defaultRewards = [{id:'r1',name:'Marrazki libre bat',points:40,image:''},{id:'r2',name:'Txutxe bat',points:80,image:''}];
+    let currentChild='', adminSelectedChild='', currentView='daily', editingTaskIndex=-1, editingRewardIndex=-1, radarChartInstance=null, isAuthenticated=false, authFallbackMode=false;
+    let cropTargetType='', cropImageObj=new Image(), canvasCrop=document.getElementById('crop-canvas'), ctxCrop=canvasCrop.getContext('2d');
+    let imgPosX=0, imgPosY=0, imgScale=1, isDragging=false, startX=0, startY=0;
 
     function lockScroll(lock) { document.body.style.overflow = lock ? 'hidden' : ''; }
-    function getCurrentDayIndex() { return (new Date().getDay() + 6) % 7; }
-    function isWeekend(dayIndex) { return dayIndex === 5 || dayIndex === 6; }
-    function isTaskActiveForDay(task, dayIndex) {
-      if (cloudData.isSpecialDayActive) return task.schedule === 'special' || task.schedule === 'all';
-      if (task.schedule === 'special') return false;
-      if (!task.schedule || task.schedule === 'all') return true;
-      if (task.schedule === 'weekdays' && !isWeekend(dayIndex)) return true;
-      if (task.schedule === 'weekend' && isWeekend(dayIndex)) return true;
+    function getCurrentDayIndex() { return (new Date().getDay()+6)%7; }
+    function isWeekend(d) { return d===5||d===6; }
+    function isTaskActiveForDay(t,d) { if(cloudData.isSpecialDayActive) return t.schedule==='special'||t.schedule==='all'; if(t.schedule==='special') return false; if(!t.schedule||t.schedule==='all') return true; if(t.schedule==='weekdays'&&!isWeekend(d)) return true; if(t.schedule==='weekend'&&isWeekend(d)) return true; return false; }
+    function getCurrentWeekStamp() { let d=new Date(), date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); let dayNum=date.getUTCDay()||7; date.setUTCDate(date.getUTCDate()+4-dayNum); let ys=new Date(Date.UTC(date.getUTCFullYear(),0,1)); let wn=Math.ceil((((date-ys)/86400000)+1)/7); return `${date.getUTCFullYear()}-W${wn}`; }
+    function getRecentWeeks() { let weeks=[], d=new Date(); for(let i=0;i<4;i++){ let date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); let dayNum=date.getUTCDay()||7; date.setUTCDate(date.getUTCDate()+4-dayNum); let ys=new Date(Date.UTC(date.getUTCFullYear(),0,1)); let wn=Math.ceil((((date-ys)/86400000)+1)/7); weeks.push(`${date.getUTCFullYear()}-W${wn}`); d.setDate(d.getDate()-7); } return weeks; }
+
+    // ============================================
+    // AUTENTICACIÓN ANÓNIMA CON RETRY Y FALLBACK
+    // ============================================
+    async function initAuth() {
+      const loadingText = document.getElementById('loading-text');
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await auth.signInAnonymously();
+          isAuthenticated = true;
+          console.log('Auth OK intento', attempt, 'UID:', auth.currentUser.uid);
+          return true;
+        } catch (err) {
+          console.error('Auth intento', attempt, 'fallido:', err.code, err.message);
+          if (attempt < 3) {
+            loadingText.innerText = `🔄 Auth saiatzen... (${attempt}/3)`;
+            await new Promise(r => setTimeout(r, 1000 * attempt));
+          }
+        }
+      }
+      // Fallback: modo local sin auth
+      console.warn('Auth falló tras 3 intentos. Activando modo fallback local.');
+      authFallbackMode = true;
+      isAuthenticated = false;
+      document.getElementById('auth-fallback-banner').style.display = 'block';
+      loadingText.innerText = '⚠️ Modu lokala (hodeia ez dago erabilgarri)';
+      // Intentar cargar desde localStorage
+      try {
+        const saved = localStorage.getItem('zereginak_local_backup');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (DataValidator.validateCloudData(parsed)) {
+            cloudData = parsed;
+            console.log('Datos locales cargados desde backup');
+          }
+        }
+      } catch(e) {}
       return false;
     }
-    function getCurrentWeekStamp() {
-      let d = new Date(), date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-      let dayNum = date.getUTCDay() || 7;
-      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-      let yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
-      let weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
-      return `${date.getUTCFullYear()}-W${weekNo}`;
-    }
-    function getRecentWeeks() {
-      let weeks = [], d = new Date();
-      for (let i = 0; i < 4; i++) {
-        let date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-        let dayNum = date.getUTCDay() || 7;
-        date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-        let yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
-        let weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
-        weeks.push(`${date.getUTCFullYear()}-W${weekNo}`);
-        d.setDate(d.getDate() - 7);
-      }
-      return weeks;
+
+    function saveLocalBackup() {
+      try { localStorage.setItem('zereginak_local_backup', JSON.stringify(cloudData)); } catch(e) {}
     }
 
-    async function initAuth() {
-      try { await auth.signInAnonymously(); isAuthenticated = true; console.log('Auth OK, UID:', auth.currentUser.uid); }
-      catch (err) { console.error('Auth error:', err); isAuthenticated = false; }
-    }
-
+    // --- SINCRONIZACIÓN FIRESTORE ---
     function initFirestoreSync() {
-      initAuth().then(() => {
+      initAuth().then((authOk) => {
+        if (!authOk) {
+          // Modo fallback: cargar datos locales y mostrar app
+          document.getElementById('loading-overlay').style.display = 'none';
+          const kids = getChildrenList();
+          if (kids.length > 0) {
+            if (!adminSelectedChild || !kids.some(k=>k.name===adminSelectedChild)) adminSelectedChild = kids[0].name;
+            if (!currentChild || !kids.some(k=>k.name===currentChild)) currentChild = kids[0].name;
+          }
+          refreshCurrentView();
+          return;
+        }
+
         db.collection("familia").doc("app_state").onSnapshot((doc) => {
           if (doc.exists) {
             const data = doc.data();
-            if (DataValidator.validateCloudData(data)) cloudData = data;
-            else { console.error('Datos inválidos recibidos'); SyncManager.showStatus('sync-error', '❌ Datu baliogabeak', 3000); }
+            if (DataValidator.validateCloudData(data)) { cloudData = data; saveLocalBackup(); }
+            else { console.error('Datos inválidos recibidos'); SyncManager.showStatus('sync-error','❌ Datu baliogabeak',3000); }
           } else {
-            cloudData = { adminPassword: '1234', isSpecialDayActive: false, children: [{ name: 'Luke', avatar: '' }, { name: 'Marty', avatar: '' }], tasksConfig: {}, rewardsConfig: {}, rewardsSpent: {}, tasksState: {} };
+            cloudData = { adminPassword:'1234', isSpecialDayActive:false, children:[{name:'Luke',avatar:''},{name:'Marty',avatar:''}], tasksConfig:{}, rewardsConfig:{}, rewardsSpent:{}, tasksState:{} };
             db.collection("familia").doc("app_state").set(cloudData);
           }
           document.getElementById('loading-overlay').style.display = 'none';
           const kids = getChildrenList();
           if (kids.length > 0) {
-            if (!adminSelectedChild || !kids.some(k => k.name === adminSelectedChild)) adminSelectedChild = kids[0].name;
-            if (!currentChild || !kids.some(k => k.name === currentChild)) currentChild = kids[0].name;
+            if (!adminSelectedChild || !kids.some(k=>k.name===adminSelectedChild)) adminSelectedChild = kids[0].name;
+            if (!currentChild || !kids.some(k=>k.name===currentChild)) currentChild = kids[0].name;
           }
           refreshCurrentView();
         }, (error) => {
-          console.error("Errorea kargatzean:", error);
-          document.getElementById('loading-overlay').innerHTML = `<div style="color:var(--danger)">Ezin izan da hodeiarekin konektatu. Egiaztatu konfigurazioa.</div>`;
+          console.error("Firestore error:", error);
+          document.getElementById('loading-overlay').innerHTML = `<div style="color:var(--danger)">Ezin izan da hodeiarekin konektatu.<br><small>${error.message}</small><br><br><button onclick="location.reload()" class="btn-action" style="background:var(--primary);width:auto;padding:10px 20px;">🔄 Berriz saiatu</button></div>`;
         });
       });
     }
 
     function saveCloudData() {
-      if (!DataValidator.validateCloudData(cloudData)) {
-        console.error('Datos locales inválidos');
-        SyncManager.showStatus('sync-error', '❌ Ezin da gorde: datu baliogabeak', 3000);
-        return Promise.reject('Datos inválidos');
-      }
-      const dataToSave = DataValidator.sanitizeBeforeSave(cloudData);
-      if (!SyncManager.isOnline) {
-        SyncManager.queueChange(() => saveCloudData());
+      if (authFallbackMode) {
+        // Modo local: solo guardar en localStorage
+        saveLocalBackup();
+        SyncManager.showStatus('sync-pending', '💾 Modu lokala', 2000);
         return Promise.resolve();
       }
-      return db.collection("familia").doc("app_state").set(dataToSave).catch((err) => {
-        console.error("Errorea gordetzean:", err);
-        SyncManager.showStatus('sync-error', '❌ Errorea gordetzean', 3000);
-        SyncManager.queueChange(() => saveCloudData());
-      });
+      if (!DataValidator.validateCloudData(cloudData)) { SyncManager.showStatus('sync-error','❌ Datu baliogabeak',3000); return Promise.reject('Datos inválidos'); }
+      const dataToSave = DataValidator.sanitizeBeforeSave(cloudData);
+      if (!SyncManager.isOnline) { SyncManager.queueChange(()=>saveCloudData()); return Promise.resolve(); }
+      return db.collection("familia").doc("app_state").set(dataToSave).then(()=>{ saveLocalBackup(); }).catch((err)=>{ console.error("Save error:",err); SyncManager.showStatus('sync-error','❌ Errorea gordetzean',3000); SyncManager.queueChange(()=>saveCloudData()); });
     }
 
-    function getChildrenList() { return cloudData.children || []; }
-    function getAdminPass() { return cloudData.adminPassword || '1234'; }
-    function getChildTasks(childName) {
-      if (cloudData.tasksConfig && cloudData.tasksConfig[childName]) return cloudData.tasksConfig[childName];
-      return JSON.parse(JSON.stringify(defaultTasks));
-    }
-    function getChildRewards(childName) {
-      let rawList = (cloudData.rewardsConfig && cloudData.rewardsConfig[childName]) || JSON.parse(JSON.stringify(defaultRewards));
-      return [...rawList].sort((a, b) => { if (a.points !== b.points) return a.points - b.points; return a.name.localeCompare(b.name); });
-    }
-    function getChildState(childName) { return (cloudData.tasksState && cloudData.tasksState[childName]) || {}; }
-    function saveChildStateToCloud(childName, stateObj) {
-      let recent = getRecentWeeks(), cleaned = {};
-      recent.forEach(w => { if (stateObj[w]) cleaned[w] = stateObj[w]; });
-      if (!cloudData.tasksState) cloudData.tasksState = {};
-      cloudData.tasksState[childName] = cleaned;
-      saveCloudData();
-    }
+    function getChildrenList() { return cloudData.children||[]; }
+    function getAdminPass() { return cloudData.adminPassword||'1234'; }
+    function getChildTasks(n) { if(cloudData.tasksConfig&&cloudData.tasksConfig[n]) return cloudData.tasksConfig[n]; return JSON.parse(JSON.stringify(defaultTasks)); }
+    function getChildRewards(n) { let raw=(cloudData.rewardsConfig&&cloudData.rewardsConfig[n])||JSON.parse(JSON.stringify(defaultRewards)); return [...raw].sort((a,b)=>a.points!==b.points?a.points-b.points:a.name.localeCompare(b.name)); }
+    function getChildState(n) { return (cloudData.tasksState&&cloudData.tasksState[n])||{}; }
+    function saveChildStateToCloud(n, so) { let recent=getRecentWeeks(), cleaned={}; recent.forEach(w=>{if(so[w])cleaned[w]=so[w]}); if(!cloudData.tasksState)cloudData.tasksState={}; cloudData.tasksState[n]=cleaned; saveCloudData(); }
 
-    function playBellSound() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.9);
-      } catch (e) {}
-    }
-
-    function triggerGamificationEffect() {
-      if (navigator.vibrate) { try { navigator.vibrate(150); } catch (e) {} }
-      playBellSound();
-      const happyEmojis = ['🎉', '🥳', '😄', '🌟', '🚀', '✨', '🏆', '🙌', '🔥', '💪', '⭐', '😃'];
-      const randomEmoji = happyEmojis[Math.floor(Math.random() * happyEmojis.length)];
-      const popup = document.getElementById('emoji-popup');
-      popup.innerText = randomEmoji;
-      popup.classList.add('show');
-      setTimeout(() => { popup.classList.remove('show'); }, 1000);
-    }
-
-    function toggleSpecialDayMode() {
-      cloudData.isSpecialDayActive = !cloudData.isSpecialDayActive;
-      saveCloudData();
-      renderAdminPanel();
-    }
+    function playBellSound() { try { const a=new(window.AudioContext||window.webkitAudioContext)(), o=a.createOscillator(), g=a.createGain(); o.type='sine'; o.frequency.setValueAtTime(587.33,a.currentTime); o.frequency.exponentialRampToValueAtTime(880,a.currentTime+0.12); g.gain.setValueAtTime(0.3,a.currentTime); g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.9); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+0.9); } catch(e){} }
+    function triggerGamificationEffect() { if(navigator.vibrate){try{navigator.vibrate(150);}catch(e){}} playBellSound(); const em=['🎉','🥳','😄','🌟','🚀','✨','🏆','🙌','🔥','💪','⭐','😃']; const r=em[Math.floor(Math.random()*em.length)]; const p=document.getElementById('emoji-popup'); p.innerText=r; p.classList.add('show'); setTimeout(()=>p.classList.remove('show'),1000); }
+    function toggleSpecialDayMode() { cloudData.isSpecialDayActive=!cloudData.isSpecialDayActive; saveCloudData(); renderAdminPanel(); }
 
     function showAdminScreen() {
-      const securityStatus = SECURITY.getAttempts();
-      if (securityStatus.locked) {
-        const remainingSeconds = Math.ceil(securityStatus.remainingTime / 1000);
-        alert(`Saiakera gehiegi. Saiatu berriro ${remainingSeconds} segundotan.`);
-        return;
-      }
-      const pass = prompt("Sartu Kudeaketa Panelaren pasahitza:");
-      if (pass === null) return;
-      if (pass !== getAdminPass()) {
-        const attempts = SECURITY.recordFailedAttempt();
-        const remaining = SECURITY.MAX_ATTEMPTS - attempts;
-        if (remaining <= 0) alert('Saiakera gehiegi! Panela blokeatuta dago 5 minutuz.');
-        else alert(`Pasahitz okerra! ${remaining} saiakera geratzen dira.`);
-        return;
-      }
+      const sec=SECURITY.getAttempts();
+      if(sec.locked){alert(`Saiakera gehiegi. Saiatu berriro ${Math.ceil(sec.remainingTime/1000)} segundotan.`); return;}
+      const pass=prompt("Sartu Kudeaketa Panelaren pasahitza:"); if(pass===null)return;
+      if(pass!==getAdminPass()){const a=SECURITY.recordFailedAttempt(); if(a>=SECURITY.MAX_ATTEMPTS)alert('Saiakera gehiegi! Panela blokeatuta 5 minutuz.'); else alert(`Pasahitz okerra! ${SECURITY.MAX_ATTEMPTS-a} saiakera geratzen dira.`); return;}
       SECURITY.resetAttempts();
-      document.getElementById('profile-selection').style.display = 'none';
-      document.getElementById('calendar-screen').style.display = 'none';
-      document.getElementById('rewards-screen').style.display = 'none';
-      document.getElementById('progress-footer').style.display = 'none';
-      document.getElementById('admin-screen').style.display = 'block';
+      document.getElementById('profile-selection').style.display='none';
+      document.getElementById('calendar-screen').style.display='none';
+      document.getElementById('rewards-screen').style.display='none';
+      document.getElementById('progress-footer').style.display='none';
+      document.getElementById('admin-screen').style.display='block';
       renderAdminPanel();
     }
 
-    function renderProfileSelection() {
-      const container = document.getElementById('profile-buttons-container');
-      container.innerHTML = '';
-      getChildrenList().forEach(child => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-profile';
-        btn.onclick = () => selectProfile(child.name);
-        let avatarHtml = child.avatar ? `<img class="profile-avatar-img" src="${child.avatar}" alt="avatar">` : `<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#E2E8F0"/><circle cx="50" cy="40" r="20" fill="#94A3B8"/><path d="M 20 85 Q 50 50 80 85" fill="#94A3B8"/></svg>`;
-        btn.innerHTML = `${avatarHtml}<span>${child.name.toUpperCase()}</span>`;
-        container.appendChild(btn);
-      });
-    }
+    function renderProfileSelection() { const c=document.getElementById('profile-buttons-container'); c.innerHTML=''; getChildrenList().forEach(child=>{const b=document.createElement('button'); b.className='btn-profile'; b.onclick=()=>selectProfile(child.name); let ah=child.avatar?`<img class="profile-avatar-img" src="${child.avatar}" alt="avatar">`:`<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#E2E8F0"/><circle cx="50" cy="40" r="20" fill="#94A3B8"/><path d="M 20 85 Q 50 50 80 85" fill="#94A3B8"/></svg>`; b.innerHTML=`${ah}<span>${child.name.toUpperCase()}</span>`; c.appendChild(b);}); }
+    function selectProfile(name) { currentChild=name; document.getElementById('profile-selection').style.display='none'; document.getElementById('admin-screen').style.display='none'; document.getElementById('rewards-screen').style.display='none'; document.getElementById('calendar-screen').style.display='block'; document.getElementById('progress-footer').style.display='flex'; document.getElementById('app-subtitle').innerText=`Zereginak - ${currentChild}`; currentView='daily'; renderView(); }
+    function showProfiles() { document.getElementById('calendar-screen').style.display='none'; document.getElementById('rewards-screen').style.display='none'; document.getElementById('admin-screen').style.display='none'; document.getElementById('progress-footer').style.display='none'; document.getElementById('profile-selection').style.display='block'; renderProfileSelection(); }
+    function showCalendarScreen() { document.getElementById('rewards-screen').style.display='none'; document.getElementById('admin-screen').style.display='none'; document.getElementById('calendar-screen').style.display='block'; document.getElementById('progress-footer').style.display='flex'; renderView(); }
+    function showRewardsScreen() { document.getElementById('calendar-screen').style.display='none'; document.getElementById('admin-screen').style.display='none'; document.getElementById('rewards-screen').style.display='block'; document.getElementById('progress-footer').style.display='flex'; renderRewardsView(); }
+    function toggleView() { currentView=currentView==='daily'?'weekly':'daily'; renderView(); }
+    function refreshCurrentView() { if(document.getElementById('calendar-screen').style.display==='block')renderView(); else if(document.getElementById('rewards-screen').style.display==='block')renderRewardsView(); else if(document.getElementById('admin-screen').style.display==='block')renderAdminPanel(); else showProfiles(); }
 
-    function selectProfile(name) {
-      currentChild = name;
-      document.getElementById('profile-selection').style.display = 'none';
-      document.getElementById('admin-screen').style.display = 'none';
-      document.getElementById('rewards-screen').style.display = 'none';
-      document.getElementById('calendar-screen').style.display = 'block';
-      document.getElementById('progress-footer').style.display = 'flex';
-      document.getElementById('app-subtitle').innerText = `Zereginak - ${currentChild}`;
-      currentView = 'daily';
-      renderView();
-    }
-
-    function showProfiles() {
-      document.getElementById('calendar-screen').style.display = 'none';
-      document.getElementById('rewards-screen').style.display = 'none';
-      document.getElementById('admin-screen').style.display = 'none';
-      document.getElementById('progress-footer').style.display = 'none';
-      document.getElementById('profile-selection').style.display = 'block';
-      renderProfileSelection();
-    }
-
-    function showCalendarScreen() {
-      document.getElementById('rewards-screen').style.display = 'none';
-      document.getElementById('admin-screen').style.display = 'none';
-      document.getElementById('calendar-screen').style.display = 'block';
-      document.getElementById('progress-footer').style.display = 'flex';
-      renderView();
-    }
-
-    function showRewardsScreen() {
-      document.getElementById('calendar-screen').style.display = 'none';
-      document.getElementById('admin-screen').style.display = 'none';
-      document.getElementById('rewards-screen').style.display = 'block';
-      document.getElementById('progress-footer').style.display = 'flex';
-      renderRewardsView();
-    }
-
-    function toggleView() {
-      currentView = currentView === 'daily' ? 'weekly' : 'daily';
-      renderView();
-    }
-
-    function refreshCurrentView() {
-      if (document.getElementById('calendar-screen').style.display === 'block') renderView();
-      else if (document.getElementById('rewards-screen').style.display === 'block') renderRewardsView();
-      else if (document.getElementById('admin-screen').style.display === 'block') renderAdminPanel();
-      else showProfiles();
-    }
-
-    function renderView() {
-      const container = document.getElementById('view-container');
-      const toggleBtn = document.getElementById('btn-toggle-view');
-      if (currentView === 'daily') { toggleBtn.innerHTML = 'Aste osoa<br>ikusi'; renderDailyView(container); }
-      else { toggleBtn.innerHTML = 'Gaurko eguna<br>ikusi'; renderWeeklyView(container, currentChild, false); }
-      updateFooter();
-      updateRadarChart();
-    }
+    function renderView() { const c=document.getElementById('view-container'), tb=document.getElementById('btn-toggle-view'); if(currentView==='daily'){tb.innerHTML='Aste osoa<br>ikusi'; renderDailyView(c);} else {tb.innerHTML='Gaurko eguna<br>ikusi'; renderWeeklyView(c,currentChild,false);} updateFooter(); updateRadarChart(); }
 
     function renderDailyView(container) {
-      const dayIndex = getCurrentDayIndex(), currentDayName = days[dayIndex];
-      const allTasks = getChildTasks(currentChild), stateObj = getChildState(currentChild);
-      const currentWeek = getCurrentWeekStamp(), weekState = stateObj[currentWeek] || {};
-      const tasks = allTasks.filter(t => isTaskActiveForDay(t, dayIndex));
-      const isSpecial = cloudData.isSpecialDayActive;
-      let badgeLabel = isSpecial ? '🎉 GAUR EGUN BEREZIA DA!' : `Gaur: ${currentDayName}`;
-      let html = `<div class="day-badge-wrap"><div class="day-badge ${isSpecial ? 'special-mode' : ''}">${badgeLabel}</div></div>`;
-      if (tasks.length === 0) html += `<div style="text-align:center; padding: 40px; color: var(--secondary); font-weight: bold;">Egun honetarako ez dago zereginik pentsatuta! 🎈</div>`;
-      tasks.forEach(task => {
-        const numChecks = task.checks || 1;
-        let checksHtml = '';
-        for (let i = 1; i <= numChecks; i++) {
-          const key = `${task.id}_${currentDayName}_chk${i}`, isDone = weekState[key] === true;
-          checksHtml += `<div class="checkbox-large ${isDone ? 'state-done' : ''}" onclick="toggleCheck('${currentChild}', '${key}')"></div>`;
-        }
-        const imgSrc = task.image && task.image.trim() !== '' ? task.image : '';
-        const imgTag = imgSrc ? `<img class="daily-task-img-bg" src="${imgSrc}" alt="bg" onerror="this.style.display='none'">` : '';
-        html += `<div class="daily-task-card-large">${imgTag}<div class="daily-task-overlay"><div><div class="badges-row"><div class="badge-dark">🏷️ ${task.category || 'Zeregina'}</div><div class="badge-dark"><span class="star-icon">⭐</span> ${task.points} pts</div>${task.shared ? `<div class="badge-shared">👥 Partekatua (x2)</div>` : ''}${task.schedule === 'special' ? `<div class="badge-special">🎉 Berezia</div>` : ''}${numChecks > 1 ? `<div class="badge-dark">Checks: ${numChecks}</div>` : ''}</div><div class="task-title-large">${task.name}</div></div><div class="checks-container">${checksHtml}</div></div></div>`;
+      const di=getCurrentDayIndex(), cdn=days[di], allTasks=getChildTasks(currentChild), stateObj=getChildState(currentChild), cw=getCurrentWeekStamp(), ws=stateObj[cw]||{};
+      const tasks=allTasks.filter(t=>isTaskActiveForDay(t,di));
+      const isSpec=cloudData.isSpecialDayActive;
+      let badgeLabel=isSpec?'🎉 GAUR EGUN BEREZIA DA!':`Gaur: ${cdn}`;
+      let html=`<div class="day-badge-wrap"><div class="day-badge ${isSpec?'special-mode':''}">${badgeLabel}</div></div>`;
+      if(tasks.length===0) html+=`<div style="text-align:center;padding:40px;color:var(--secondary);font-weight:bold;">Egun honetarako ez dago zereginik pentsatuta! 🎈</div>`;
+      tasks.forEach(task=>{
+        const nc=task.checks||1; let ch='';
+        for(let i=1;i<=nc;i++){const k=`${task.id}_${cdn}_chk${i}`, done=ws[k]===true; ch+=`<div class="checkbox-large ${done?'state-done':''}" onclick="toggleCheck('${currentChild}','${k}')"></div>`;}
+        const imgSrc=task.image&&task.image.trim()!==''?task.image:''; const imgTag=imgSrc?`<img class="daily-task-img-bg" src="${imgSrc}" alt="bg" onerror="this.style.display='none'">`:'';
+        html+=`<div class="daily-task-card-large">${imgTag}<div class="daily-task-overlay"><div><div class="badges-row"><div class="badge-dark">🏷️ ${task.category||'Zeregina'}</div><div class="badge-dark"><span class="star-icon">⭐</span> ${task.points} pts</div>${task.shared?`<div class="badge-shared">👥 Partekatua (x2)</div>`:''}${task.schedule==='special'?`<div class="badge-special">🎉 Berezia</div>`:''}${nc>1?`<div class="badge-dark">Checks: ${nc}</div>`:''}</div><div class="task-title-large">${task.name}</div></div><div class="checks-container">${ch}</div></div></div>`;
       });
-      container.innerHTML = html;
+      container.innerHTML=html;
     }
 
-    function renderWeeklyView(container, childName, isEditable = false) {
-      const tasks = getChildTasks(childName), stateObj = getChildState(childName);
-      const currentWeek = getCurrentWeekStamp(), weekState = stateObj[currentWeek] || {};
-      let html = `<h3 style="margin-bottom: 10px; color: var(--dark);">${childName} - Egutegi Astea</h3><table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>`;
-      days.forEach(d => html += `<th>${d.substring(0,3)}</th>`);
-      html += `</tr></thead><tbody>`;
-      tasks.forEach(task => {
-        html += `<tr><td style="font-weight:bold; text-align:left; font-size: 0.9rem;">${task.name}<br><span style="font-size:0.75rem; color:var(--secondary);">${task.points}pts ${task.shared ? '👥' : ''}</span></td>`;
-        days.forEach((day, dayIdx) => {
-          const appliesToday = isTaskActiveForDay(task, dayIdx);
-          html += `<td style="${!appliesToday ? 'background:#F8FAFC;' : ''}">`;
-          if (appliesToday) {
-            const numChecks = task.checks || 1;
-            for (let i = 1; i <= numChecks; i++) {
-              const key = `${task.id}_${day}_chk${i}`, isDone = weekState[key] === true;
-              if (isEditable) html += `<div class="chk-weekly editable ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}')"></div>`;
-              else html += `<div class="chk-weekly ${isDone ? 'done' : ''}"></div>`;
-            }
-          } else html += `<span style="color:#CBD5E1; font-size:0.8rem;">-</span>`;
-          html += `</td>`;
+    function renderWeeklyView(container, childName, isEditable=false) {
+      const tasks=getChildTasks(childName), stateObj=getChildState(childName), cw=getCurrentWeekStamp(), ws=stateObj[cw]||{};
+      let html=`<h3 style="margin-bottom:10px;color:var(--dark);">${childName} - Egutegi Astea</h3><table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>`;
+      days.forEach(d=>html+=`<th>${d.substring(0,3)}</th>`); html+=`</tr></thead><tbody>`;
+      tasks.forEach(task=>{
+        html+=`<tr><td style="font-weight:bold;text-align:left;font-size:0.9rem;">${task.name}<br><span style="font-size:0.75rem;color:var(--secondary);">${task.points}pts ${task.shared?'👥':''}</span></td>`;
+        days.forEach((day,dayIdx)=>{
+          const applies=isTaskActiveForDay(task,dayIdx);
+          html+=`<td style="${!applies?'background:#F8FAFC;':''}">`;
+          if(applies){const nc=task.checks||1; for(let i=1;i<=nc;i++){const k=`${task.id}_${day}_chk${i}`, done=ws[k]===true; if(isEditable) html+=`<div class="chk-weekly editable ${done?'done':''}" onclick="toggleWeeklyCheckFromAdmin('${childName}','${k}')"></div>`; else html+=`<div class="chk-weekly ${done?'done':''}"></div>`;}}
+          else html+=`<span style="color:#CBD5E1;font-size:0.8rem;">-</span>`;
+          html+=`</td>`;
         });
-        html += `</tr>`;
+        html+=`</tr>`;
       });
-      html += `</tbody></table>`;
-      container.innerHTML = html;
+      html+=`</tbody></table>`; container.innerHTML=html;
     }
 
     function updateRadarChart() {
-      const canvas = document.getElementById('radarImprovementChart');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const categoryTotals = { 'Higiene': 0, 'Ordena': 0, 'Ikasketak': 0, 'Jokabidea': 0, 'Besteak': 0 };
-      const allTasks = getChildTasks(currentChild), stateObj = getChildState(currentChild);
-      const currentWeek = getCurrentWeekStamp(), weekState = stateObj[currentWeek] || {};
-      days.forEach((day, dayIdx) => {
-        allTasks.forEach(task => {
-          if (isTaskActiveForDay(task, dayIdx)) {
-            const numChecks = task.checks || 1;
-            const rawCat = task.category || 'Besteak', cat = CATEGORIES.includes(rawCat) ? rawCat : 'Besteak';
-            for (let i = 1; i <= numChecks; i++) { const key = `${task.id}_${day}_chk${i}`; if (!weekState[key]) categoryTotals[cat] += 1; }
-          }
-        });
-      });
-      const chartData = CATEGORIES.map(cat => categoryTotals[cat]);
-      if (radarChartInstance) radarChartInstance.destroy();
-      radarChartInstance = new Chart(ctx, {
-        type: 'radar',
-        data: { labels: ['Higiene', 'Ordena', 'Ikasketak', 'Jokabidea', 'Besteak'], datasets: [{ label: 'Falta diren zereginak (Pendientes)', data: chartData, backgroundColor: 'rgba(239, 68, 68, 0.25)', borderColor: 'rgba(239, 68, 68, 1)', pointBackgroundColor: 'rgba(239, 68, 68, 1)', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(239, 68, 68, 1)', borderWidth: 2 }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: '#E2E8F0' }, grid: { color: '#CBD5E1' }, pointLabels: { font: { size: 12, weight: 'bold' }, color: '#1E293B' }, ticks: { beginAtZero: true, stepSize: 1, precision: 0 } } }, plugins: { legend: { display: false } } }
-      });
+      const canvas=document.getElementById('radarImprovementChart'); if(!canvas)return; const ctx=canvas.getContext('2d');
+      const ct={'Higiene':0,'Ordena':0,'Ikasketak':0,'Jokabidea':0,'Besteak':0};
+      const allTasks=getChildTasks(currentChild), stateObj=getChildState(currentChild), cw=getCurrentWeekStamp(), ws=stateObj[cw]||{};
+      days.forEach((day,di)=>{allTasks.forEach(task=>{if(isTaskActiveForDay(task,di)){const nc=task.checks||1, rawCat=task.category||'Besteak', cat=CATEGORIES.includes(rawCat)?rawCat:'Besteak'; for(let i=1;i<=nc;i++){const k=`${task.id}_${day}_chk${i}`; if(!ws[k]) ct[cat]+=1;}}});});
+      const chartData=CATEGORIES.map(c=>ct[c]);
+      if(radarChartInstance) radarChartInstance.destroy();
+      radarChartInstance=new Chart(ctx,{type:'radar',data:{labels:['Higiene','Ordena','Ikasketak','Jokabidea','Besteak'],datasets:[{label:'Falta diren zereginak',data:chartData,backgroundColor:'rgba(239,68,68,0.25)',borderColor:'rgba(239,68,68,1)',pointBackgroundColor:'rgba(239,68,68,1)',pointBorderColor:'#fff',pointHoverBackgroundColor:'#fff',pointHoverBorderColor:'rgba(239,68,68,1)',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{angleLines:{color:'#E2E8F0'},grid:{color:'#CBD5E1'},pointLabels:{font:{size:12,weight:'bold'},color:'#1E293B'},ticks:{beginAtZero:true,stepSize:1,precision:0}}},plugins:{legend:{display:false}}}});
     }
 
     function calculateChildPointsDetails(childName) {
-      let stateObj = getChildState(childName), recentWeeks = getRecentWeeks();
-      let totalEarned = 0, totalBonus = 0, kidsList = getChildrenList();
-      recentWeeks.forEach(week => {
-        let weekState = stateObj[week] || {}, tasks = getChildTasks(childName);
-        tasks.forEach(task => {
-          const numChecks = task.checks || 1;
-          days.forEach(day => {
-            let allChecksDone = true;
-            for (let i = 1; i <= numChecks; i++) { if (!weekState[`${task.id}_${day}_chk${i}`]) { allChecksDone = false; break; } }
-            if (allChecksDone && numChecks > 0) {
-              let basePts = task.points, multiplier = 1;
-              if (task.shared) {
-                let allKidsCompleted = true;
-                if (kidsList.length <= 1) allKidsCompleted = false;
-                else {
-                  kidsList.forEach(otherChild => {
-                    let otherTasks = getChildTasks(otherChild.name), matchingTask = otherTasks.find(ot => ot.name === task.name);
-                    if (!matchingTask) allKidsCompleted = false;
-                    else {
-                      let otherState = getChildState(otherChild.name), otherWeekState = otherState[week] || {}, otherNumChecks = matchingTask.checks || 1;
-                      for (let i = 1; i <= otherNumChecks; i++) { if (!otherWeekState[`${matchingTask.id}_${day}_chk${i}`]) { allKidsCompleted = false; break; } }
-                    }
+      let stateObj=getChildState(childName), recentWeeks=getRecentWeeks(), totalEarned=0, totalBonus=0, kidsList=getChildrenList();
+      recentWeeks.forEach(week=>{
+        let weekState=stateObj[week]||{}, tasks=getChildTasks(childName);
+        tasks.forEach(task=>{
+          const nc=task.checks||1;
+          days.forEach(day=>{
+            let allDone=true;
+            for(let i=1;i<=nc;i++){if(!weekState[`${task.id}_${day}_chk${i}`]){allDone=false;break;}}
+            if(allDone&&nc>0){
+              let basePts=task.points, mult=1;
+              if(task.shared){
+                let allKidsDone=true;
+                if(kidsList.length<=1) allKidsDone=false;
+                else{
+                  kidsList.forEach(other=>{
+                    let otherTasks=getChildTasks(other.name), mt=otherTasks.find(ot=>ot.name===task.name);
+                    if(!mt) allKidsDone=false;
+                    else{let otherState=getChildState(other.name), ows=otherState[week]||{}, onc=mt.checks||1; for(let i=1;i<=onc;i++){if(!ows[`${mt.id}_${day}_chk${i}`]){allKidsDone=false;break;}}}
                   });
                 }
-                if (allKidsCompleted) multiplier = 2;
+                if(allKidsDone) mult=2;
               }
-              let earnedForThis = basePts * multiplier;
-              totalEarned += earnedForThis;
-              if (multiplier > 1) totalBonus += basePts * (multiplier - 1);
+              let earned=basePts*mult; totalEarned+=earned; if(mult>1) totalBonus+=basePts*(mult-1);
             }
           });
         });
       });
-      let spentMap = cloudData.rewardsSpent || {}, spent = spentMap[childName] || 0;
-      return { available: Math.max(0, Math.round(totalEarned - spent)), bonus: Math.round(totalBonus) };
+      let spentMap=cloudData.rewardsSpent||{}, spent=spentMap[childName]||0;
+      return {available:Math.max(0,Math.round(totalEarned-spent)),bonus:Math.round(totalBonus)};
     }
 
     function renderRewardsView() {
-      const pointsData = calculateChildPointsDetails(currentChild);
-      document.getElementById('rewards-available-points').innerText = `${pointsData.available} pts`;
-      const container = document.getElementById('rewards-grid-container'), rewards = getChildRewards(currentChild);
-      let html = '';
-      rewards.forEach(reward => {
-        const canAfford = pointsData.available >= reward.points, missing = reward.points - pointsData.available;
-        const imgSrc = reward.image && reward.image.trim() !== '' ? reward.image : '';
-        const imgTag = imgSrc ? `<img class="reward-img-bg" src="${imgSrc}" alt="reward" onerror="this.style.display='none'">` : '';
-        const actionIndicator = canAfford ? `<div class="available-badge-box">Eskuragarri! Sakatu trukatzeko ⭐</div>` : `<div class="missing-points-box">-${missing} pts</div>`;
-        html += `<div class="reward-card ${canAfford ? '' : 'locked'}" onclick="${canAfford ? `redeemReward('${reward.id}', ${reward.points}, '${reward.name}')` : `alert('Ez dituzu nahikoa puntu saria lortzeko. Falta zaizkizu: ${missing} pts')`}">${imgTag}<div class="reward-overlay"><div class="badges-row"><div class="badge-dark"><span class="star-icon">⭐</span> ${reward.points} pts</div></div><div><div class="reward-title">${reward.name}</div><div style="margin-top: 15px;">${actionIndicator}</div></div></div></div>`;
+      const pd=calculateChildPointsDetails(currentChild);
+      document.getElementById('rewards-available-points').innerText=`${pd.available} pts`;
+      const container=document.getElementById('rewards-grid-container'), rewards=getChildRewards(currentChild);
+      let html='';
+      rewards.forEach(reward=>{
+        const canAfford=pd.available>=reward.points, missing=reward.points-pd.available;
+        const imgSrc=reward.image&&reward.image.trim()!==''?reward.image:'';
+        const imgTag=imgSrc?`<img class="reward-img-bg" src="${imgSrc}" alt="reward" onerror="this.style.display='none'">`:'';
+        const action=canAfford?`<div class="available-badge-box">Eskuragarri! Sakatu trukatzeko ⭐</div>`:`<div class="missing-points-box">-${missing} pts</div>`;
+        html+=`<div class="reward-card ${canAfford?'':'locked'}" onclick="${canAfford?`redeemReward('${reward.id}',${reward.points},'${reward.name}')`:`alert('Ez dituzu nahikoa puntu. Falta zaizkizu: ${missing} pts')`}">${imgTag}<div class="reward-overlay"><div class="badges-row"><div class="badge-dark"><span class="star-icon">⭐</span> ${reward.points} pts</div></div><div><div class="reward-title">${reward.name}</div><div style="margin-top:15px;">${action}</div></div></div></div>`;
       });
-      container.innerHTML = html;
+      container.innerHTML=html;
     }
 
-    function redeemReward(rewardId, cost, rewardName) {
-      if (!confirm(`Ziur "${rewardName}" saria trukatu nahi duzula ${cost} puntugatik?`)) return;
-      if (!cloudData.rewardsSpent) cloudData.rewardsSpent = {};
-      let spent = cloudData.rewardsSpent[currentChild] || 0;
-      spent += cost;
-      cloudData.rewardsSpent[currentChild] = spent;
+    function redeemReward(rewardId,cost,rewardName) {
+      if(!confirm(`Ziur "${rewardName}" saria trukatu nahi duzula ${cost} puntugatik?`))return;
+      if(!cloudData.rewardsSpent) cloudData.rewardsSpent={};
+      let spent=cloudData.rewardsSpent[currentChild]||0;
+      spent+=cost; cloudData.rewardsSpent[currentChild]=spent;
       saveCloudData();
       alert(`Zorionak! Saria lortu duzu: ${rewardName}`);
       renderRewardsView();
     }
 
-    function toggleCheck(child, key) {
-      let stateObj = getChildState(child), currentWeek = getCurrentWeekStamp();
-      if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
-      const isDone = stateObj[currentWeek][key] === true, newState = !isDone;
-      stateObj[currentWeek][key] = newState;
-      saveChildStateToCloud(child, stateObj);
-      if (newState) triggerGamificationEffect();
+    function toggleCheck(child,key) {
+      let stateObj=getChildState(child), cw=getCurrentWeekStamp();
+      if(!stateObj[cw]) stateObj[cw]={};
+      const isDone=stateObj[cw][key]===true, newState=!isDone;
+      stateObj[cw][key]=newState;
+      saveChildStateToCloud(child,stateObj);
+      if(newState) triggerGamificationEffect();
     }
 
-    function toggleWeeklyCheckFromAdmin(childName, key) {
-      let stateObj = getChildState(childName), currentWeek = getCurrentWeekStamp();
-      if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
-      const isDone = stateObj[currentWeek][key] === true;
-      stateObj[currentWeek][key] = !isDone;
-      saveChildStateToCloud(childName, stateObj);
+    function toggleWeeklyCheckFromAdmin(childName,key) {
+      let stateObj=getChildState(childName), cw=getCurrentWeekStamp();
+      if(!stateObj[cw]) stateObj[cw]={};
+      const isDone=stateObj[cw][key]===true;
+      stateObj[cw][key]=!isDone;
+      saveChildStateToCloud(childName,stateObj);
       renderAdminWeeklyView();
     }
 
     function updateFooter() {
-      const dayIndex = getCurrentDayIndex(), currentDayName = days[dayIndex];
-      const allTasks = getChildTasks(currentChild), stateObj = getChildState(currentChild);
-      const currentWeek = getCurrentWeekStamp(), weekState = stateObj[currentWeek] || {};
-      const tasks = allTasks.filter(t => isTaskActiveForDay(t, dayIndex));
-      let earnedToday = 0, totalToday = 0;
-      tasks.forEach(task => {
-        totalToday += task.points;
-        const ptsPerCheck = task.points / (task.checks || 1);
-        for (let i = 1; i <= (task.checks || 1); i++) { if (weekState[`${task.id}_${currentDayName}_chk${i}`]) earnedToday += ptsPerCheck; }
-      });
-      document.getElementById('today-points').innerText = `${Math.round(earnedToday)} pts`;
-      const pct = totalToday > 0 ? (earnedToday / totalToday) * 100 : 0;
-      document.getElementById('progress-bar-fill').style.width = `${pct}%`;
-      const pointsData = calculateChildPointsDetails(currentChild);
-      document.getElementById('bonus-points').innerText = `${pointsData.bonus} pts`;
+      const di=getCurrentDayIndex(), cdn=days[di], allTasks=getChildTasks(currentChild), stateObj=getChildState(currentChild), cw=getCurrentWeekStamp(), ws=stateObj[cw]||{};
+      const tasks=allTasks.filter(t=>isTaskActiveForDay(t,di));
+      let earnedToday=0, totalToday=0;
+      tasks.forEach(task=>{totalToday+=task.points; const ppc=task.points/(task.checks||1); for(let i=1;i<=(task.checks||1);i++){if(ws[`${task.id}_${cdn}_chk${i}`]) earnedToday+=ppc;}});
+      document.getElementById('today-points').innerText=`${Math.round(earnedToday)} pts`;
+      const pct=totalToday>0?(earnedToday/totalToday)*100:0;
+      document.getElementById('progress-bar-fill').style.width=`${pct}%`;
+      const pd=calculateChildPointsDetails(currentChild);
+      document.getElementById('bonus-points').innerText=`${pd.bonus} pts`;
     }
 
-    function prepareImageForCrop(input, targetType) {
-      if (input.files && input.files[0]) {
-        cropTargetType = targetType;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          cropImageObj.onload = function() { openCropModal(); };
-          cropImageObj.src = e.target.result;
-        };
+    function prepareImageForCrop(input,targetType) {
+      if(input.files&&input.files[0]){
+        cropTargetType=targetType;
+        const reader=new FileReader();
+        reader.onload=function(e){cropImageObj.onload=function(){openCropModal();};cropImageObj.src=e.target.result;};
         reader.readAsDataURL(input.files[0]);
       }
     }
-
     function openCropModal() {
-      lockScroll(true);
-      document.getElementById('crop-modal').style.display = 'flex';
-      canvasCrop.width = 320;
-      canvasCrop.height = cropTargetType === 'avatar' ? 320 : 180;
-      let hRatio = canvasCrop.width / cropImageObj.width, vRatio = canvasCrop.height / cropImageObj.height;
-      imgScale = Math.max(hRatio, vRatio);
-      imgPosX = (canvasCrop.width - cropImageObj.width * imgScale) / 2;
-      imgPosY = (canvasCrop.height - cropImageObj.height * imgScale) / 2;
+      lockScroll(true); document.getElementById('crop-modal').style.display='flex';
+      canvasCrop.width=320; canvasCrop.height=cropTargetType==='avatar'?320:180;
+      let hRatio=canvasCrop.width/cropImageObj.width, vRatio=canvasCrop.height/cropImageObj.height;
+      imgScale=Math.max(hRatio,vRatio);
+      imgPosX=(canvasCrop.width-cropImageObj.width*imgScale)/2;
+      imgPosY=(canvasCrop.height-cropImageObj.height*imgScale)/2;
       redrawCropCanvas();
     }
-
     function redrawCropCanvas() {
-      ctxCrop.clearRect(0, 0, canvasCrop.width, canvasCrop.height);
-      ctxCrop.save();
-      ctxCrop.translate(imgPosX, imgPosY);
-      ctxCrop.scale(imgScale, imgScale);
-      ctxCrop.drawImage(cropImageObj, 0, 0);
-      ctxCrop.restore();
-      ctxCrop.fillStyle = 'rgba(0, 0, 0, 0.5)';
-      if (cropTargetType === 'avatar') {
-        ctxCrop.beginPath();
-        ctxCrop.rect(0, 0, canvasCrop.width, canvasCrop.height);
-        let radius = canvasCrop.width / 2;
-        ctxCrop.arc(radius, radius, radius, 0, Math.PI * 2, true);
-        ctxCrop.fill();
-        ctxCrop.strokeStyle = '#3B82F6'; ctxCrop.lineWidth = 3;
-        ctxCrop.beginPath(); ctxCrop.arc(radius, radius, radius, 0, Math.PI * 2); ctxCrop.stroke();
-      } else {
-        ctxCrop.strokeStyle = '#3B82F6'; ctxCrop.lineWidth = 3;
-        ctxCrop.strokeRect(0, 0, canvasCrop.width, canvasCrop.height);
-      }
+      ctxCrop.clearRect(0,0,canvasCrop.width,canvasCrop.height);
+      ctxCrop.save(); ctxCrop.translate(imgPosX,imgPosY); ctxCrop.scale(imgScale,imgScale); ctxCrop.drawImage(cropImageObj,0,0); ctxCrop.restore();
+      ctxCrop.fillStyle='rgba(0,0,0,0.5)';
+      if(cropTargetType==='avatar'){
+        ctxCrop.beginPath(); ctxCrop.rect(0,0,canvasCrop.width,canvasCrop.height);
+        let r=canvasCrop.width/2; ctxCrop.arc(r,r,r,0,Math.PI*2,true); ctxCrop.fill();
+        ctxCrop.strokeStyle='#3B82F6'; ctxCrop.lineWidth=3; ctxCrop.beginPath(); ctxCrop.arc(r,r,r,0,Math.PI*2); ctxCrop.stroke();
+      } else { ctxCrop.strokeStyle='#3B82F6'; ctxCrop.lineWidth=3; ctxCrop.strokeRect(0,0,canvasCrop.width,canvasCrop.height); }
     }
-
-    function adjustZoom(delta) { imgScale = Math.max(0.2, imgScale + delta); redrawCropCanvas(); }
-
-    canvasCrop.onmousedown = canvasCrop.ontouchstart = function(e) {
-      isDragging = true;
-      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      startX = clientX - imgPosX; startY = clientY - imgPosY;
-      if (e.type === 'touchstart') e.preventDefault();
-    };
-
-    window.onmousemove = window.ontouchmove = function(e) {
-      if (!isDragging) return;
-      let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      imgPosX = clientX - startX; imgPosY = clientY - startY;
-      redrawCropCanvas();
-      if (e.type === 'touchmove') e.preventDefault();
-    };
-
-    window.onmouseup = window.ontouchend = function() { isDragging = false; };
-
-    function closeCropModal() { lockScroll(false); document.getElementById('crop-modal').style.display = 'none'; }
-
-    function confirmCropImage() {
-      let finalCanvas = document.createElement('canvas'), finalCtx = finalCanvas.getContext('2d');
-      let outputW = cropTargetType === 'avatar' ? 200 : 450;
-      let outputH = Math.round(outputW * (canvasCrop.height / canvasCrop.width));
-      finalCanvas.width = outputW; finalCanvas.height = outputH;
-      finalCtx.fillStyle = '#FFFFFF'; finalCtx.fillRect(0, 0, outputW, outputH);
-      let ratio = outputW / canvasCrop.width;
-      finalCtx.save();
-      finalCtx.translate(imgPosX * ratio, imgPosY * ratio);
-      finalCtx.scale(imgScale * ratio, imgScale * ratio);
-      finalCtx.drawImage(cropImageObj, 0, 0);
-      finalCtx.restore();
-      let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.65);
-      if (cropTargetType === 'avatar') {
-        let kids = getChildrenList(), childObj = kids.find(c => c.name === adminSelectedChild);
-        if (childObj) { childObj.avatar = compressedDataUrl; cloudData.children = kids; saveCloudData(); }
-      } else if (cropTargetType === 'task') {
-        document.getElementById('t-image-result').value = compressedDataUrl;
-        let thumb = document.getElementById('t-preview-thumb');
-        thumb.src = compressedDataUrl; thumb.style.display = 'block';
-        let tasks = getChildTasks(adminSelectedChild);
-        if (editingTaskIndex >= 0 && tasks[editingTaskIndex]) {
-          tasks[editingTaskIndex].image = compressedDataUrl;
-          if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
-          cloudData.tasksConfig[adminSelectedChild] = tasks; saveCloudData();
-        }
-      } else if (cropTargetType === 'reward') {
-        document.getElementById('r-image-result').value = compressedDataUrl;
-        let thumb = document.getElementById('r-preview-thumb');
-        thumb.src = compressedDataUrl; thumb.style.display = 'block';
-        let rewards = getChildRewards(adminSelectedChild);
-        if (editingRewardIndex >= 0 && rewards[editingRewardIndex]) {
-          rewards[editingRewardIndex].image = compressedDataUrl;
-          if (!cloudData.rewardsConfig) cloudData.rewardsConfig = {};
-          cloudData.rewardsConfig[adminSelectedChild] = rewards; saveCloudData();
-        }
-      }
+    function adjustZoom(delta){imgScale=Math.max(0.2,imgScale+delta);redrawCropCanvas();}
+    canvasCrop.onmousedown=canvasCrop.ontouchstart=function(e){isDragging=true;let cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;startX=cx-imgPosX;startY=cy-imgPosY;if(e.type==='touchstart')e.preventDefault();};
+    window.onmousemove=window.ontouchmove=function(e){if(!isDragging)return;let cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;imgPosX=cx-startX;imgPosY=cy-startY;redrawCropCanvas();if(e.type==='touchmove')e.preventDefault();};
+    window.onmouseup=window.ontouchend=function(){isDragging=false;};
+    function closeCropModal(){lockScroll(false);document.getElementById('crop-modal').style.display='none';}
+    function confirmCropImage(){
+      let fc=document.createElement('canvas'),fctx=fc.getContext('2d');
+      let ow=cropTargetType==='avatar'?200:450,oh=Math.round(ow*(canvasCrop.height/canvasCrop.width));
+      fc.width=ow;fc.height=oh;fctx.fillStyle='#FFFFFF';fctx.fillRect(0,0,ow,oh);
+      let ratio=ow/canvasCrop.width;
+      fctx.save();fctx.translate(imgPosX*ratio,imgPosY*ratio);fctx.scale(imgScale*ratio,imgScale*ratio);fctx.drawImage(cropImageObj,0,0);fctx.restore();
+      let cdu=fc.toDataURL('image/jpeg',0.65);
+      if(cropTargetType==='avatar'){let kids=getChildrenList(),co=kids.find(c=>c.name===adminSelectedChild);if(co){co.avatar=cdu;cloudData.children=kids;saveCloudData();}}
+      else if(cropTargetType==='task'){document.getElementById('t-image-result').value=cdu;let thumb=document.getElementById('t-preview-thumb');thumb.src=cdu;thumb.style.display='block';let tasks=getChildTasks(adminSelectedChild);if(editingTaskIndex>=0&&tasks[editingTaskIndex]){tasks[editingTaskIndex].image=cdu;if(!cloudData.tasksConfig)cloudData.tasksConfig={};cloudData.tasksConfig[adminSelectedChild]=tasks;saveCloudData();}}
+      else if(cropTargetType==='reward'){document.getElementById('r-image-result').value=cdu;let thumb=document.getElementById('r-preview-thumb');thumb.src=cdu;thumb.style.display='block';let rewards=getChildRewards(adminSelectedChild);if(editingRewardIndex>=0&&rewards[editingRewardIndex]){rewards[editingRewardIndex].image=cdu;if(!cloudData.rewardsConfig)cloudData.rewardsConfig={};cloudData.rewardsConfig[adminSelectedChild]=rewards;saveCloudData();}}
       closeCropModal();
     }
 
     function renderAdminPanel() {
-      const isSpec = !!cloudData.isSpecialDayActive;
-      const btnSpec = document.getElementById('btn-toggle-special-day');
-      btnSpec.innerText = isSpec ? '🎉 Aktibatuta (Desaktibatu)' : '⚪ Desaktibatuta (Aktibatu)';
-      btnSpec.className = `btn-action ${isSpec ? 'btn-purple' : ''}`;
-      if (!isSpec) btnSpec.style.background = 'var(--secondary)';
+      const isSpec=!!cloudData.isSpecialDayActive, btnSpec=document.getElementById('btn-toggle-special-day');
+      btnSpec.innerText=isSpec?'🎉 Aktibatuta (Desaktibatu)':'⚪ Desaktibatuta (Aktibatu)';
+      btnSpec.className=`btn-action ${isSpec?'btn-purple':''}`; if(!isSpec)btnSpec.style.background='var(--secondary)';
       renderAdminChildTabs(); renderAdminTasks(); renderAdminRewards(); renderAdminWeeklyView();
     }
+    function renderAdminChildTabs() { const tc=document.getElementById('admin-child-tabs'); let html=''; getChildrenList().forEach(child=>{const ac=adminSelectedChild===child.name?'active':'';html+=`<div class="child-tab ${ac}" onclick="selectAdminChild('${child.name}')">${child.name}</div>`;});tc.innerHTML=html; }
+    function selectAdminChild(name){adminSelectedChild=name;renderAdminPanel();}
+    function editCurrentChildAvatar(){document.getElementById('avatar-file-input').click();}
+    function addNewChild(){const name=prompt('Haurraren izena:');if(!name)return;let kids=getChildrenList();kids.push({name,avatar:''});cloudData.children=kids;saveCloudData();adminSelectedChild=name;renderAdminPanel();}
+    function deleteCurrentChild(){let kids=getChildrenList();if(kids.length<=1){alert('Ezin da haur bakarra ezabatu.');return;}if(!adminSelectedChild)return;if(!confirm(`Ziur "${adminSelectedChild}" ezabatu nahi duzula?`))return;const rc=adminSelectedChild;kids=kids.filter(c=>c.name!==rc);cloudData.children=kids;if(cloudData.tasksConfig)delete cloudData.tasksConfig[rc];if(cloudData.rewardsConfig)delete cloudData.rewardsConfig[rc];if(cloudData.rewardsSpent)delete cloudData.rewardsSpent[rc];if(cloudData.tasksState)delete cloudData.tasksState[rc];adminSelectedChild=kids[0].name;if(currentChild===rc)currentChild=kids[0].name;saveCloudData();renderAdminPanel();}
+    function moveTask(index,direction){let tasks=getChildTasks(adminSelectedChild),ti=index+direction;if(ti<0||ti>=tasks.length)return;let temp=tasks[index];tasks[index]=tasks[ti];tasks[ti]=temp;if(!cloudData.tasksConfig)cloudData.tasksConfig={};cloudData.tasksConfig[adminSelectedChild]=tasks;saveCloudData();renderAdminPanel();}
+    function renderAdminTasks(){const lc=document.getElementById('admin-task-list'),tasks=getChildTasks(adminSelectedChild);let html='';tasks.forEach((task,index)=>{const th=task.image&&task.image.trim()!==''?`<img src="${task.image}" alt="thumb">`:`<div class="task-admin-placeholder">Ez dago</div>`;const isF=index===0,isL=index===tasks.length-1;let sl='Egunero';if(task.schedule==='weekdays')sl='Eskola (L-V)';if(task.schedule==='weekend')sl='Asteburua (S-D)';if(task.schedule==='special')sl='🎉 Berezia';html+=`<div class="task-admin-row"><div class="task-admin-img-col">${th}</div><div class="task-admin-content-col"><div><b style="font-size:1.05rem;color:var(--dark);">${task.name}</b> ${task.shared?'👥':''}<br><span style="font-size:0.8rem;color:var(--secondary);">⭐ ${task.points} pts | 📅 ${sl} | 🏷️ ${task.category||'Gabe'}</span></div><div class="task-admin-btns"><button class="btn-action" style="padding:6px 8px;width:auto;background:var(--secondary);font-size:0.8rem;${isF?'opacity:0.3;cursor:default;':''}" onclick="${isF?'':`moveTask(${index},-1)`}">⬆️</button><button class="btn-action" style="padding:6px 8px;width:auto;background:var(--secondary);font-size:0.8rem;${isL?'opacity:0.3;cursor:default;':''}" onclick="${isL?'':`moveTask(${index},1)`}">⬇️</button><button class="btn-action" style="padding:6px 10px;width:auto;background:var(--primary);font-size:0.85rem;" onclick="openTaskEditor(${index})">Editatu</button><button class="btn-action btn-red" style="padding:6px 10px;width:auto;font-size:0.85rem;" onclick="deleteTask(${index})">Ezabatu</button></div></div></div>`;});lc.innerHTML=html;}
+    function renderAdminRewards(){const lc=document.getElementById('admin-reward-list'),rewards=getChildRewards(adminSelectedChild);let html='';rewards.forEach((reward,index)=>{const th=reward.image&&reward.image.trim()!==''?`<img src="${reward.image}" alt="thumb">`:`<div class="task-admin-placeholder">Ez dago</div>`;html+=`<div class="task-admin-row"><div class="task-admin-img-col">${th}</div><div class="task-admin-content-col"><div><b style="font-size:1.05rem;color:var(--dark);">${reward.name}</b><br><span style="font-size:0.8rem;color:var(--secondary);">⭐ ${reward.points} pts</span></div><div class="task-admin-btns"><button class="btn-action" style="padding:6px 10px;width:auto;background:var(--primary);font-size:0.85rem;" onclick="openRewardEditor(${index})">Editatu</button><button class="btn-action btn-red" style="padding:6px 10px;width:auto;font-size:0.85rem;" onclick="deleteReward(${index})">Ezabatu</button></div></div></div>`;});lc.innerHTML=html;}
+    function openTaskEditor(index=-1){lockScroll(true);editingTaskIndex=index;const tasks=getChildTasks(adminSelectedChild),thumb=document.getElementById('t-preview-thumb');if(index>=0){let t=tasks[index];document.getElementById('task-modal-title').innerText='Zeregina Editatu';document.getElementById('t-name').value=t.name;document.getElementById('t-points').value=t.points;document.getElementById('t-category').value=t.category||'Ordena';document.getElementById('t-checks').value=t.checks||1;document.getElementById('t-schedule').value=t.schedule||'all';document.getElementById('t-shared').checked=!!t.shared;document.getElementById('t-image-result').value=t.image||'';if(t.image){thumb.src=t.image;thumb.style.display='block';}else{thumb.style.display='none';}}else{document.getElementById('task-modal-title').innerText='Zeregin Berria Gehitu';document.getElementById('t-name').value='';document.getElementById('t-points').value='10';document.getElementById('t-category').value='Ordena';document.getElementById('t-checks').value='1';document.getElementById('t-schedule').value='all';document.getElementById('t-shared').checked=false;document.getElementById('t-image-result').value='';thumb.style.display='none';}document.getElementById('t-file-input').value='';document.getElementById('task-modal').style.display='flex';}
+    function closeTaskModal(){lockScroll(false);document.getElementById('task-modal').style.display='none';}
+    function saveTaskFromModal(){const name=document.getElementById('t-name').value;if(!name)return alert('Idatzi zereginaren izena');const points=parseInt(document.getElementById('t-points').value)||10;const category=document.getElementById('t-category').value||'Ordena';const checks=parseInt(document.getElementById('t-checks').value)||1;const schedule=document.getElementById('t-schedule').value||'all';const shared=document.getElementById('t-shared').checked;const image=document.getElementById('t-image-result').value;let tasks=getChildTasks(adminSelectedChild);if(editingTaskIndex>=0)tasks[editingTaskIndex]={...tasks[editingTaskIndex],name,points,category,checks,schedule,shared,image};else tasks.push({id:'t_'+Date.now(),name,points,category,checks,schedule,shared,image});if(!cloudData.tasksConfig)cloudData.tasksConfig={};cloudData.tasksConfig[adminSelectedChild]=tasks;saveCloudData();closeTaskModal();renderAdminPanel();}
+    function deleteTask(index){if(!confirm('Ziur zeregin hau ezabatu nahi duzula?'))return;let tasks=getChildTasks(adminSelectedChild);tasks.splice(index,1);cloudData.tasksConfig[adminSelectedChild]=tasks;saveCloudData();renderAdminPanel();}
+    function openRewardEditor(index=-1){lockScroll(true);editingRewardIndex=index;const rewards=getChildRewards(adminSelectedChild),thumb=document.getElementById('r-preview-thumb');if(index>=0){let r=rewards[index];document.getElementById('reward-modal-title').innerText='Saria Editatu';document.getElementById('r-name').value=r.name;document.getElementById('r-points').value=r.points;document.getElementById('r-image-result').value=r.image||'';if(r.image){thumb.src=r.image;thumb.style.display='block';}else{thumb.style.display='none';}}else{document.getElementById('reward-modal-title').innerText='Sari Berria Gehitu';document.getElementById('r-name').value='';document.getElementById('r-points').value='50';document.getElementById('r-image-result').value='';thumb.style.display='none';}document.getElementById('r-file-input').value='';document.getElementById('reward-modal').style.display='flex';}
+    function closeRewardModal(){lockScroll(false);document.getElementById('reward-modal').style.display='none';}
+    function saveRewardFromModal(){const name=document.getElementById('r-name').value;if(!name)return alert('Idatzi sariaren izena');const points=parseInt(document.getElementById('r-points').value)||50;const image=document.getElementById('r-image-result').value;let rewards=getChildRewards(adminSelectedChild);if(editingRewardIndex>=0)rewards[editingRewardIndex]={...rewards[editingRewardIndex],name,points,image};else rewards.push({id:'r_'+Date.now(),name,points,image});if(!cloudData.rewardsConfig)cloudData.rewardsConfig={};cloudData.rewardsConfig[adminSelectedChild]=rewards;saveCloudData();closeRewardModal();renderAdminRewards();}
+    function deleteReward(index){if(!confirm('Ziur saria ezabatu nahi duzula?'))return;let rewards=getChildRewards(adminSelectedChild);rewards.splice(index,1);cloudData.rewardsConfig[adminSelectedChild]=rewards;saveCloudData();renderAdminRewards();}
+    function renderAdminWeeklyView(){const c=document.getElementById('admin-weekly-view-container');if(adminSelectedChild)renderWeeklyView(c,adminSelectedChild,true);}
+    function updatePassword(){const np=document.getElementById('new-admin-pass').value;if(!np)return alert('Idatzi pasahitz bat');cloudData.adminPassword=np;saveCloudData();alert('Pasahitza gorde da!');document.getElementById('new-admin-pass').value='';}
 
-    function renderAdminChildTabs() {
-      const tabsContainer = document.getElementById('admin-child-tabs');
-      let html = '';
-      getChildrenList().forEach(child => {
-        const activeClass = adminSelectedChild === child.name ? 'active' : '';
-        html += `<div class="child-tab ${activeClass}" onclick="selectAdminChild('${child.name}')">${child.name}</div>`;
-      });
-      tabsContainer.innerHTML = html;
-    }
-
-    function selectAdminChild(name) { adminSelectedChild = name; renderAdminPanel(); }
-    function editCurrentChildAvatar() { document.getElementById('avatar-file-input').click(); }
-
-    function addNewChild() {
-      const name = prompt('Haurraren izena:');
-      if (!name) return;
-      let kids = getChildrenList();
-      kids.push({ name, avatar: '' });
-      cloudData.children = kids; saveCloudData();
-      adminSelectedChild = name; renderAdminPanel();
-    }
-
-    function deleteCurrentChild() {
-      let kids = getChildrenList();
-      if (kids.length <= 1) { alert('Ezin da haur bakarra ezabatu. Gutxienez perfil bat egon behar da.'); return; }
-      if (!adminSelectedChild) return;
-      if (!confirm(`Ziur zaude "${adminSelectedChild}" haurra eta bere datu guztiak ezabatu nahi dituzula?`)) return;
-      const removedChild = adminSelectedChild;
-      kids = kids.filter(c => c.name !== removedChild); cloudData.children = kids;
-      if (cloudData.tasksConfig) delete cloudData.tasksConfig[removedChild];
-      if (cloudData.rewardsConfig) delete cloudData.rewardsConfig[removedChild];
-      if (cloudData.rewardsSpent) delete cloudData.rewardsSpent[removedChild];
-      if (cloudData.tasksState) delete cloudData.tasksState[removedChild];
-      adminSelectedChild = kids[0].name;
-      if (currentChild === removedChild) currentChild = kids[0].name;
-      saveCloudData(); renderAdminPanel();
-    }
-
-    function moveTask(index, direction) {
-      let tasks = getChildTasks(adminSelectedChild), targetIndex = index + direction;
-      if (targetIndex < 0 || targetIndex >= tasks.length) return;
-      let temp = tasks[index]; tasks[index] = tasks[targetIndex]; tasks[targetIndex] = temp;
-      if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
-      cloudData.tasksConfig[adminSelectedChild] = tasks; saveCloudData(); renderAdminPanel();
-    }
-
-    function renderAdminTasks() {
-      const listContainer = document.getElementById('admin-task-list'), tasks = getChildTasks(adminSelectedChild);
-      let html = '';
-      tasks.forEach((task, index) => {
-        const thumbHtml = task.image && task.image.trim() !== '' ? `<img src="${task.image}" alt="thumb">` : `<div class="task-admin-placeholder">Ez dago</div>`;
-        const isFirst = index === 0, isLast = index === tasks.length - 1;
-        let schedLabel = 'Egunero';
-        if (task.schedule === 'weekdays') schedLabel = 'Eskola (L-V)';
-        if (task.schedule === 'weekend') schedLabel = 'Asteburua (S-D)';
-        if (task.schedule === 'special') schedLabel = '🎉 Berezia';
-        html += `<div class="task-admin-row"><div class="task-admin-img-col">${thumbHtml}</div><div class="task-admin-content-col"><div><b style="font-size: 1.05rem; color: var(--dark);">${task.name}</b> ${task.shared ? '👥' : ''}<br><span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | 📅 ${schedLabel} | 🏷️ ${task.category || 'Gabe'}</span></div><div class="task-admin-btns"><button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isFirst ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isFirst ? '' : `moveTask(${index}, -1)`}">⬆️</button><button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isLast ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isLast ? '' : `moveTask(${index}, 1)`}">⬇️</button><button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.85rem;" onclick="openTaskEditor(${index})">Editatu</button><button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.85rem;" onclick="deleteTask(${index})">Ezabatu</button></div></div></div>`;
-      });
-      listContainer.innerHTML = html;
-    }
-
-    function renderAdminRewards() {
-      const listContainer = document.getElementById('admin-reward-list'), rewards = getChildRewards(adminSelectedChild);
-      let html = '';
-      rewards.forEach((reward, index) => {
-        const thumbHtml = reward.image && reward.image.trim() !== '' ? `<img src="${reward.image}" alt="thumb">` : `<div class="task-admin-placeholder">Ez dago</div>`;
-        html += `<div class="task-admin-row"><div class="task-admin-img-col">${thumbHtml}</div><div class="task-admin-content-col"><div><b style="font-size: 1.05rem; color: var(--dark);">${reward.name}</b><br><span style="font-size:0.8rem; color:var(--secondary);">⭐ ${reward.points} pts</span></div><div class="task-admin-btns"><button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.85rem;" onclick="openRewardEditor(${index})">Editatu</button><button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.85rem;" onclick="deleteReward(${index})">Ezabatu</button></div></div></div>`;
-      });
-      listContainer.innerHTML = html;
-    }
-
-    function openTaskEditor(index = -1) {
-      lockScroll(true); editingTaskIndex = index;
-      const tasks = getChildTasks(adminSelectedChild), thumb = document.getElementById('t-preview-thumb');
-      if (index >= 0) {
-        let t = tasks[index];
-        document.getElementById('task-modal-title').innerText = 'Zeregina Editatu';
-        document.getElementById('t-name').value = t.name;
-        document.getElementById('t-points').value = t.points;
-        document.getElementById('t-category').value = t.category || 'Ordena';
-        document.getElementById('t-checks').value = t.checks || 1;
-        document.getElementById('t-schedule').value = t.schedule || 'all';
-        document.getElementById('t-shared').checked = !!t.shared;
-        document.getElementById('t-image-result').value = t.image || '';
-        if (t.image) { thumb.src = t.image; thumb.style.display = 'block'; } else { thumb.style.display = 'none'; }
-      } else {
-        document.getElementById('task-modal-title').innerText = 'Zeregin Berria Gehitu';
-        document.getElementById('t-name').value = '';
-        document.getElementById('t-points').value = '10';
-        document.getElementById('t-category').value = 'Ordena';
-        document.getElementById('t-checks').value = '1';
-        document.getElementById('t-schedule').value = 'all';
-        document.getElementById('t-shared').checked = false;
-        document.getElementById('t-image-result').value = '';
-        thumb.style.display = 'none';
-      }
-      document.getElementById('t-file-input').value = '';
-      document.getElementById('task-modal').style.display = 'flex';
-    }
-
-    function closeTaskModal() { lockScroll(false); document.getElementById('task-modal').style.display = 'none'; }
-
-    function saveTaskFromModal() {
-      const name = document.getElementById('t-name').value;
-      if (!name) return alert('Idatzi zereginaren izena');
-      const points = parseInt(document.getElementById('t-points').value) || 10;
-      const category = document.getElementById('t-category').value || 'Ordena';
-      const checks = parseInt(document.getElementById('t-checks').value) || 1;
-      const schedule = document.getElementById('t-schedule').value || 'all';
-      const shared = document.getElementById('t-shared').checked;
-      const image = document.getElementById('t-image-result').value;
-      let tasks = getChildTasks(adminSelectedChild);
-      if (editingTaskIndex >= 0) tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, schedule, shared, image };
-      else tasks.push({ id: 't_' + Date.now(), name, points, category, checks, schedule, shared, image });
-      if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
-      cloudData.tasksConfig[adminSelectedChild] = tasks; saveCloudData(); closeTaskModal(); renderAdminPanel();
-    }
-
-    function deleteTask(index) {
-      if (!confirm('Ziur zeregin hau ezabatu nahi duzula?')) return;
-      let tasks = getChildTasks(adminSelectedChild);
-      tasks.splice(index, 1); cloudData.tasksConfig[adminSelectedChild] = tasks; saveCloudData(); renderAdminPanel();
-    }
-
-    function openRewardEditor(index = -1) {
-      lockScroll(true); editingRewardIndex = index;
-      const rewards = getChildRewards(adminSelectedChild), thumb = document.getElementById('r-preview-thumb');
-      if (index >= 0) {
-        let r = rewards[index];
-        document.getElementById('reward-modal-title').innerText = 'Saria Editatu';
-        document.getElementById('r-name').value = r.name;
-        document.getElementById('r-points').value = r.points;
-        document.getElementById('r-image-result').value = r.image || '';
-        if (r.image) { thumb.src = r.image; thumb.style.display = 'block'; } else { thumb.style.display = 'none'; }
-      } else {
-        document.getElementById('reward-modal-title').innerText = 'Sari Berria Gehitu';
-        document.getElementById('r-name').value = '';
-        document.getElementById('r-points').value = '50';
-        document.getElementById('r-image-result').value = '';
-        thumb.style.display = 'none';
-      }
-      document.getElementById('r-file-input').value = '';
-      document.getElementById('reward-modal').style.display = 'flex';
-    }
-
-    function closeRewardModal() { lockScroll(false); document.getElementById('reward-modal').style.display = 'none'; }
-
-    function saveRewardFromModal() {
-      const name = document.getElementById('r-name').value;
-      if (!name) return alert('Idatzi sariaren izena');
-      const points = parseInt(document.getElementById('r-points').value) || 50;
-      const image = document.getElementById('r-image-result').value;
-      let rewards = getChildRewards(adminSelectedChild);
-      if (editingRewardIndex >= 0) rewards[editingRewardIndex] = { ...rewards[editingRewardIndex], name, points, image };
-      else rewards.push({ id: 'r_' + Date.now(), name, points, image });
-      if (!cloudData.rewardsConfig) cloudData.rewardsConfig = {};
-      cloudData.rewardsConfig[adminSelectedChild] = rewards; saveCloudData(); closeRewardModal(); renderAdminRewards();
-    }
-
-    function deleteReward(index) {
-      if (!confirm('Ziur saria ezabatu nahi duzula?')) return;
-      let rewards = getChildRewards(adminSelectedChild);
-      rewards.splice(index, 1); cloudData.rewardsConfig[adminSelectedChild] = rewards; saveCloudData(); renderAdminRewards();
-    }
-
-    function renderAdminWeeklyView() {
-      const container = document.getElementById('admin-weekly-view-container');
-      if (adminSelectedChild) renderWeeklyView(container, adminSelectedChild, true);
-    }
-
-    function updatePassword() {
-      const newPass = document.getElementById('new-admin-pass').value;
-      if (!newPass) return alert('Idatzi pasahitz bat');
-      cloudData.adminPassword = newPass; saveCloudData();
-      alert('Pasahitza gorde da!');
-      document.getElementById('new-admin-pass').value = '';
-    }
-
-    // Inicializar
     SyncManager.init();
     initFirestoreSync();
   </script>
