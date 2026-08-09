@@ -3,148 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://*.firebasestorage.app; connect-src https://*.googleapis.com https://*.firebaseio.com https://*.firebasestorage.app; font-src 'self';">
   <title>Zereginak eta Sariak</title>
-
-  <!-- FIREBASE SDKs (CDN) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <!-- CHART.JS CDN FOR RADAR CHART -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
-    :root {
-      --primary: #3B82F6;
-      --warning: #F59E0B;
-      --secondary: #64748B;
-      --dark: #1E293B;
-      --success: #2ECC71;
-      --danger: #EF4444;
-      --special: #8B5CF6;
-      --bg: #F0F4F8;
-    }
-
+    :root { --primary: #3B82F6; --warning: #F59E0B; --secondary: #64748B; --dark: #1E293B; --success: #2ECC71; --danger: #EF4444; --special: #8B5CF6; --bg: #F0F4F8; }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; touch-action: manipulation; }
-    
     body { background-color: var(--bg); color: #333; padding-bottom: 90px; }
-
-    #profile-selection, #calendar-screen, #admin-screen, #rewards-screen {
-      display: none; padding: 15px; max-width: 600px; margin: 0 auto;
-    }
-
+    #profile-selection, #calendar-screen, #admin-screen, #rewards-screen { display: none; padding: 15px; max-width: 600px; margin: 0 auto; }
     .profile-header { text-align: center; margin-top: 40px; margin-bottom: 30px; }
     .profile-header h1 { font-size: 2.5rem; color: var(--dark); font-weight: 900; }
     .profile-buttons { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; }
-    .btn-profile {
-      background: white; border: 4px solid var(--primary); border-radius: 24px; padding: 15px 30px;
-      font-size: 1.5rem; font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-      display: flex; align-items: center; gap: 20px; width: 100%; max-width: 320px;
-    }
+    .btn-profile { background: white; border: 4px solid var(--primary); border-radius: 24px; padding: 15px 30px; font-size: 1.5rem; font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 20px; width: 100%; max-width: 320px; }
     .profile-avatar-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
-
     .app-title { font-size: 1.8rem; font-weight: 900; color: var(--dark); margin-bottom: 15px; padding-left: 5px; }
-    
     .top-buttons { display: flex; gap: 10px; margin-bottom: 25px; }
-    .btn-top {
-      flex: 1; padding: 15px 5px; border-radius: 16px; border: none; color: white;
-      font-weight: 800; font-size: 1.1rem; cursor: pointer; display: flex; flex-direction: column;
-      align-items: center; gap: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
+    .btn-top { flex: 1; padding: 15px 5px; border-radius: 16px; border: none; color: white; font-weight: 800; font-size: 1.1rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     .btn-sariak { background: var(--warning); }
     .btn-astea { background: var(--primary); }
     .btn-aldatu { background: var(--secondary); }
-
     .day-badge-wrap { text-align: center; margin-bottom: 25px; }
-    .day-badge {
-      background: var(--dark); color: white; display: inline-block; padding: 12px 30px;
-      border-radius: 25px; font-weight: 900; font-size: 1.2rem; text-transform: uppercase;
-      letter-spacing: 1px; box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-    .day-badge.special-mode {
-      background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
-    }
-
+    .day-badge { background: var(--dark); color: white; display: inline-block; padding: 12px 30px; border-radius: 25px; font-weight: 900; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    .day-badge.special-mode { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); }
     #view-container { display: flex; flex-direction: column; gap: 20px; }
-
-    .daily-task-card-large {
-      position: relative; width: 100%; min-height: 260px; border-radius: 24px;
-      overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.1); background-color: #CBD5E1;
-      display: flex; flex-direction: column;
-    }
-    
+    .daily-task-card-large { position: relative; width: 100%; min-height: 260px; border-radius: 24px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.1); background-color: #CBD5E1; display: flex; flex-direction: column; }
     .daily-task-img-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-    
-    .daily-task-overlay {
-      position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex;
-      flex-direction: column; justify-content: space-between;
-      background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 40%, rgba(0,0,0,0.25) 100%);
-    }
-
+    .daily-task-overlay { position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 40%, rgba(0,0,0,0.25) 100%); }
     .badges-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .badge-dark {
-      background: #1E293B; color: white; padding: 6px 14px; border-radius: 14px;
-      font-size: 0.9rem; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
+    .badge-dark { background: #1E293B; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .badge-shared { background: #8B5CF6; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; }
     .badge-special { background: #EC4899; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; }
     .star-icon { color: var(--warning); }
-
-    .task-title-large {
-      font-size: 2.3rem; font-weight: 900; color: #000; text-transform: uppercase;
-      margin-top: 10px; line-height: 1.1; letter-spacing: -1px;
-      text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0px 3px 0 #fff;
-    }
-
+    .task-title-large { font-size: 2.3rem; font-weight: 900; color: #000; text-transform: uppercase; margin-top: 10px; line-height: 1.1; letter-spacing: -1px; text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0px 3px 0 #fff; }
     .checks-container { margin-top: 20px; align-self: flex-end; display: flex; gap: 10px; }
-    .checkbox-large {
-      width: 60px; height: 60px; background: #FFFFFF; border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: transform 0.1s;
-    }
+    .checkbox-large { width: 60px; height: 60px; background: #FFFFFF; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; }
     .checkbox-large:active { transform: scale(0.9); }
     .checkbox-large.state-done { background: var(--success); }
     .checkbox-large.state-done::after { content: '✓'; color: white; font-size: 2.8rem; font-weight: 900; }
-
-    /* POPUP EMOJI GAMIFICACIÓN */
-    #emoji-popup {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
-      font-size: 7rem; z-index: 9999; pointer-events: none;
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
-      opacity: 0; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
-    }
+    #emoji-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 7rem; z-index: 9999; pointer-events: none; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; opacity: 0; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)); }
     #emoji-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-
-    /* VISTA DE PREMIOS */
     .rewards-grid { display: flex; flex-direction: column; gap: 20px; }
-    .reward-card {
-      position: relative; width: 100%; min-height: 220px; border-radius: 24px;
-      overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.1); background-color: #CBD5E1;
-      display: flex; flex-direction: column; cursor: pointer; transition: transform 0.1s;
-    }
+    .reward-card { position: relative; width: 100%; min-height: 220px; border-radius: 24px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.1); background-color: #CBD5E1; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.1s; }
     .reward-card:active { transform: scale(0.98); }
     .reward-card.locked { filter: grayscale(100%); opacity: 0.75; cursor: not-allowed; }
     .reward-img-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-    .reward-overlay {
-      position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex;
-      flex-direction: column; justify-content: space-between;
-      background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 50%, rgba(0,0,0,0.3) 100%);
-    }
-    .reward-title {
-      font-size: 2rem; font-weight: 900; color: #000; text-transform: uppercase;
-      margin-top: 10px; line-height: 1.1;
-      text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0px 3px 0 #fff;
-    }
-    .missing-points-box {
-      align-self: flex-end; background: rgba(239, 68, 68, 0.9); color: white;
-      padding: 10px 20px; border-radius: 16px; font-size: 2rem; font-weight: 900;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3); letter-spacing: -1px;
-    }
-    .available-badge-box {
-      align-self: flex-end; background: var(--success); color: white;
-      padding: 10px 20px; border-radius: 16px; font-size: 1.4rem; font-weight: 900;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-
-    /* VISTA SEMANAL */
+    .reward-overlay { position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 50%, rgba(0,0,0,0.3) 100%); }
+    .reward-title { font-size: 2rem; font-weight: 900; color: #000; text-transform: uppercase; margin-top: 10px; line-height: 1.1; text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0px 3px 0 #fff; }
+    .missing-points-box { align-self: flex-end; background: rgba(239, 68, 68, 0.9); color: white; padding: 10px 20px; border-radius: 16px; font-size: 2rem; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3); letter-spacing: -1px; }
+    .available-badge-box { align-self: flex-end; background: var(--success); color: white; padding: 10px 20px; border-radius: 16px; font-size: 1.4rem; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .weekly-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .weekly-table th, .weekly-table td { border: 1px solid #E2E8F0; padding: 10px; text-align: center; }
     .weekly-table th { background: var(--primary); color: white; font-size: 0.9rem; }
@@ -152,18 +61,10 @@
     .chk-weekly.editable { cursor: pointer; }
     .chk-weekly.done { background: var(--success); border-color: var(--success); color: white; font-weight: bold; }
     .chk-weekly.done::after { content: '✓'; font-size: 1.2rem; }
-
-    /* FOOTER */
-    #progress-footer {
-      position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 20px;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 8px; z-index: 1000;
-      border-top-left-radius: 20px; border-top-right-radius: 20px; max-width: 600px; margin: 0 auto;
-    }
+    #progress-footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 8px; z-index: 1000; border-top-left-radius: 20px; border-top-right-radius: 20px; max-width: 600px; margin: 0 auto; }
     .progress-info { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.05rem; color: var(--dark); }
     .progress-bar-bg { width: 100%; height: 12px; background: #E2E8F0; border-radius: 10px; overflow: hidden; }
     .progress-bar-fill { height: 100%; width: 0%; background: var(--warning); border-radius: 10px; transition: width 0.3s; }
-
-    /* MODALES Y ADMIN */
     .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; overflow-y: auto; }
     .modal-card { background: white; border-radius: 24px; padding: 25px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; text-align: center; max-height: 90vh; overflow-y: auto; }
     .form-input { padding: 12px; border: 2px solid #CBD5E1; border-radius: 12px; font-size: 1.1rem; outline: none; width: 100%; user-select: text; }
@@ -173,262 +74,79 @@
     .btn-purple { background: var(--special); }
     .admin-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .admin-card h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; color: var(--dark); }
-    
-    .task-admin-row {
-      display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #F1F5F9;
-      gap: 12px; text-align: left;
-    }
+    .task-admin-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #F1F5F9; gap: 12px; text-align: left; }
     .task-admin-img-col { width: 75px; height: 75px; flex-shrink: 0; }
     .task-admin-img-col img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; border: 1px solid #CBD5E1; }
-    .task-admin-placeholder {
-      width: 100%; height: 100%; border-radius: 12px; background: #E2E8F0;
-      display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #64748B; font-weight: bold;
-    }
+    .task-admin-placeholder { width: 100%; height: 100%; border-radius: 12px; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #64748B; font-weight: bold; }
     .task-admin-content-col { display: flex; flex-direction: column; flex: 1; gap: 8px; min-width: 0; }
     .task-admin-btns { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-
     .child-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
     .child-tab { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--primary); text-align: center; }
     .child-tab.active { background: var(--primary); color: white; }
-
     #crop-canvas-container { position: relative; width: 100%; height: 260px; overflow: hidden; background: #000; border-radius: 12px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
     #crop-canvas { cursor: grab; touch-action: none; }
     #crop-canvas:active { cursor: grabbing; }
     .zoom-controls { display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 5px; }
     .btn-zoom { background: var(--dark); color: white; border: none; width: 40px; height: 40px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
-    
     #loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999; font-weight: bold; font-size: 1.2rem; color: var(--dark); gap: 15px; }
+    #sync-status { position: fixed; top: 10px; right: 10px; z-index: 9999; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: none; pointer-events: none; }
+    .sync-ok { background: var(--success); color: white; }
+    .sync-pending { background: var(--warning); color: white; }
+    .sync-error { background: var(--danger); color: white; }
   </style>
+<base target="_blank">
 </head>
 <body>
-
-  <!-- LOADING INICIAL -->
-  <div id="loading-overlay">
-    <div>🔄 Hodeiarekin konektatzen...</div>
-  </div>
-
-  <!-- POPUP EMOJI GAMIFICACIÓN -->
+  <div id="loading-overlay"><div>🔄 Hodeiarekin konektatzen...</div></div>
+  <div id="sync-status"></div>
   <div id="emoji-popup">🎉</div>
-
-  <!-- PANTALLA 1: PERFILES -->
   <div id="profile-selection">
-    <div class="profile-header">
-      <h1>Zereginak</h1>
-      <p style="color: var(--secondary); font-size: 1.2rem; margin-top: 5px;">Aukeratu haurraren profil bat:</p>
-    </div>
+    <div class="profile-header"><h1>Zereginak</h1><p style="color: var(--secondary); font-size: 1.2rem; margin-top: 5px;">Aukeratu haurraren profil bat:</p></div>
     <div id="profile-buttons-container" class="profile-buttons"></div>
     <button class="btn-action" style="background: var(--secondary); margin-top: 25px;" onclick="showAdminScreen()">⚙️ Kudeaketa Panela</button>
   </div>
-
-  <!-- PANTALLA 2: CALENDARIO / TAREAS -->
   <div id="calendar-screen">
     <div class="app-title" id="app-subtitle">Zereginak</div>
-    
     <div class="top-buttons">
-      <button class="btn-top btn-sariak" onclick="showRewardsScreen()">
-        <span style="font-size: 1.4rem;">🏆</span> Sariak
-      </button>
-      <button class="btn-top btn-astea" id="btn-toggle-view" onclick="toggleView()">
-        Aste osoa<br>ikusi
-      </button>
-      <button class="btn-top btn-aldatu" onclick="showProfiles()">
-        <span style="font-size: 1.2rem;">👶</span> Profilak
-      </button>
+      <button class="btn-top btn-sariak" onclick="showRewardsScreen()"><span style="font-size: 1.4rem;">🏆</span> Sariak</button>
+      <button class="btn-top btn-astea" id="btn-toggle-view" onclick="toggleView()">Aste osoa<br>ikusi</button>
+      <button class="btn-top btn-aldatu" onclick="showProfiles()"><span style="font-size: 1.2rem;">👶</span> Profilak</button>
     </div>
-
     <div id="view-container"></div>
-
-    <!-- TARJETA CON GRÁFICA TIPO RADAR / ARAÑA -->
     <div id="radar-chart-card" class="admin-card" style="margin-top: 25px; text-align: center;">
       <h3 style="color: var(--dark); margin-bottom: 15px; font-size: 1.1rem;">🕸️ Hobetzeko Arloak (Aste honetan)</h3>
-      <div style="max-width: 380px; margin: 0 auto; position: relative; height: 320px;">
-        <canvas id="radarImprovementChart"></canvas>
-      </div>
+      <div style="max-width: 380px; margin: 0 auto; position: relative; height: 320px;"><canvas id="radarImprovementChart"></canvas></div>
     </div>
   </div>
-
-  <!-- PANTALLA DE PREMIOS -->
   <div id="rewards-screen">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h1 style="color: var(--dark);">🏆 Sariak</h1>
-      <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showCalendarScreen()">← Zereginak</button>
-    </div>
-
-    <div class="admin-card" style="text-align: center; background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 165%); color: white;">
-      <p style="font-size: 1.1rem; font-weight: bold; opacity: 0.9;">Zure Puntu Eskuragarriak</p>
-      <h2 id="rewards-available-points" style="font-size: 3rem; font-weight: 900; margin-top: 5px; border: none; color: white;">0 pts</h2>
-    </div>
-
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h1 style="color: var(--dark);">🏆 Sariak</h1><button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showCalendarScreen()">← Zereginak</button></div>
+    <div class="admin-card" style="text-align: center; background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 165%); color: white;"><p style="font-size: 1.1rem; font-weight: bold; opacity: 0.9;">Zure Puntu Eskuragarriak</p><h2 id="rewards-available-points" style="font-size: 3rem; font-weight: 900; margin-top: 5px; border: none; color: white;">0 pts</h2></div>
     <div id="rewards-grid-container" class="rewards-grid"></div>
   </div>
-
-  <!-- PANTALLA: KUDEAKETA PANELA (ADMIN) -->
   <div id="admin-screen">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h1>Kudeaketa Panela</h1>
-      <button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">👶 Profilak</button>
-    </div>
-
-    <div class="admin-card" style="border: 2px solid var(--special);">
-      <h2>🎉 Gaurko Eguna / Egoera</h2>
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-        <div>
-          <b style="font-size:1.05rem;">Egun Berezia (Elegitua / Evento):</b>
-          <p style="font-size:0.85rem; color:var(--secondary);">Markatu aktibatzeko zeregin bereziak gaurko egunean.</p>
-        </div>
-        <button id="btn-toggle-special-day" class="btn-action" style="width:auto; padding:10px 20px;" onclick="toggleSpecialDayMode()"></button>
-      </div>
-    </div>
-    
-    <div class="admin-card">
-      <h2>Haurrak eta Avatarrak</h2>
-      <div class="child-tabs" id="admin-child-tabs"></div>
-      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;">
-        <button class="btn-action" style="background: var(--primary); font-size:0.9rem; flex:1;" onclick="editCurrentChildAvatar()">📷 Aldatu Avatarra</button>
-        <button class="btn-action btn-red" style="font-size:0.9rem; flex:1;" onclick="deleteCurrentChild()">🗑️ Ezabatu Haurra</button>
-        <button class="btn-action btn-green" style="font-size:0.9rem; flex:1;" onclick="addNewChild()">+ Haur berria</button>
-      </div>
-    </div>
-
-    <div class="admin-card">
-      <h2>Zereginak Kudeatu</h2>
-      <div id="admin-task-list"></div>
-      <button class="btn-action btn-green" style="margin-top: 15px;" onclick="openTaskEditor()">+ Gehitu zeregina berria</button>
-    </div>
-
-    <div class="admin-card">
-      <h2>🏆 Sariak Kudeatu</h2>
-      <div id="admin-reward-list"></div>
-      <button class="btn-action btn-green" style="margin-top: 15px;" onclick="openRewardEditor()">+ Gehitu saria berria</button>
-    </div>
-
-    <div class="admin-card">
-      <h2>📅 Egutegi eta Historial Kudeaketa</h2>
-      <p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Markatu edo desmarkatu zereginak aste honetarako (Admin aldaketak).</p>
-      <div id="admin-weekly-view-container" style="overflow-x: auto;"></div>
-    </div>
-
-    <div class="admin-card">
-      <h2>Pasahitza Aldatu</h2>
-      <input type="password" id="new-admin-pass" class="form-input" placeholder="Pasahitz berria..." style="margin-bottom: 10px;">
-      <button class="btn-action" style="background: var(--dark);" onclick="updatePassword()">Gorde pasahitza</button>
-    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h1>Kudeaketa Panela</h1><button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">👶 Profilak</button></div>
+    <div class="admin-card" style="border: 2px solid var(--special);"><h2>🎉 Gaurko Eguna / Egoera</h2><div style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><div><b style="font-size:1.05rem;">Egun Berezia (Elegitua / Evento):</b><p style="font-size:0.85rem; color:var(--secondary);">Markatu aktibatzeko zeregin bereziak gaurko egunean.</p></div><button id="btn-toggle-special-day" class="btn-action" style="width:auto; padding:10px 20px;" onclick="toggleSpecialDayMode()"></button></div></div>
+    <div class="admin-card"><h2>Haurrak eta Avatarrak</h2><div class="child-tabs" id="admin-child-tabs"></div><div style="display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;"><button class="btn-action" style="background: var(--primary); font-size:0.9rem; flex:1;" onclick="editCurrentChildAvatar()">📷 Aldatu Avatarra</button><button class="btn-action btn-red" style="font-size:0.9rem; flex:1;" onclick="deleteCurrentChild()">🗑️ Ezabatu Haurra</button><button class="btn-action btn-green" style="font-size:0.9rem; flex:1;" onclick="addNewChild()">+ Haur berria</button></div></div>
+    <div class="admin-card"><h2>Zereginak Kudeatu</h2><div id="admin-task-list"></div><button class="btn-action btn-green" style="margin-top: 15px;" onclick="openTaskEditor()">+ Gehitu zeregina berria</button></div>
+    <div class="admin-card"><h2>🏆 Sariak Kudeatu</h2><div id="admin-reward-list"></div><button class="btn-action btn-green" style="margin-top: 15px;" onclick="openRewardEditor()">+ Gehitu saria berria</button></div>
+    <div class="admin-card"><h2>📅 Egutegi eta Historial Kudeaketa</h2><p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Markatu edo desmarkatu zereginak aste honetarako (Admin aldaketak).</p><div id="admin-weekly-view-container" style="overflow-x: auto;"></div></div>
+    <div class="admin-card"><h2>Pasahitza Aldatu</h2><input type="password" id="new-admin-pass" class="form-input" placeholder="Pasahitz berria..." style="margin-bottom: 10px;"><button class="btn-action" style="background: var(--dark);" onclick="updatePassword()">Gorde pasahitza</button></div>
   </div>
-
-  <!-- MODAL RECORTADOR Y ZOOM -->
   <div id="crop-modal" class="modal-overlay">
-    <div class="modal-card" style="max-width: 450px;">
-      <h3 id="crop-modal-title" style="color: var(--dark);">Irudia egokitu, mugitu eta zoom</h3>
-      <p style="font-size:0.85rem; color: var(--secondary);">Arrastratu irudia kokatzeko eta erabili botoiak zoometzeko.</p>
-      
-      <div id="crop-canvas-container">
-        <canvas id="crop-canvas"></canvas>
-      </div>
-
-      <div class="zoom-controls">
-        <button class="btn-zoom" onclick="adjustZoom(-0.1)">-</button>
-        <span style="font-weight: bold; font-size: 0.9rem; color: var(--secondary);">Zoom</span>
-        <button class="btn-zoom" onclick="adjustZoom(0.1)">+</button>
-      </div>
-
-      <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button class="btn-action" style="background: var(--secondary);" onclick="closeCropModal()">Utzi</button>
-        <button class="btn-action btn-green" onclick="confirmCropImage()">Gorde eta Konprimitu</button>
-      </div>
-    </div>
+    <div class="modal-card" style="max-width: 450px;"><h3 id="crop-modal-title" style="color: var(--dark);">Irudia egokitu, mugitu eta zoom</h3><p style="font-size:0.85rem; color: var(--secondary);">Arrastradu irudia kokatzeko eta erabili botoiak zoometzeko.</p><div id="crop-canvas-container"><canvas id="crop-canvas"></canvas></div><div class="zoom-controls"><button class="btn-zoom" onclick="adjustZoom(-0.1)">-</button><span style="font-weight: bold; font-size: 0.9rem; color: var(--secondary);">Zoom</span><button class="btn-zoom" onclick="adjustZoom(0.1)">+</button></div><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-action" style="background: var(--secondary);" onclick="closeCropModal()">Utzi</button><button class="btn-action btn-green" onclick="confirmCropImage()">Gorde eta Konprimitu</button></div></div>
   </div>
-
-  <!-- MODAL EDITOR DE TAREA -->
   <div id="task-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h3 id="task-modal-title" style="color: var(--dark);">Zeregina</h3>
-      <input type="text" id="t-name" class="form-input" placeholder="Zereginaren izena...">
-      <input type="number" id="t-points" class="form-input" placeholder="Puntu totalak..." value="10">
-      
-      <!-- DESPLEGABLE DE CATEGORÍAS -->
-      <div style="text-align: left; display: flex; flex-direction: column; gap: 5px;">
-        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Kategoria:</label>
-        <select id="t-category" class="form-input">
-          <option value="Higiene">Higiene</option>
-          <option value="Ordena">Ordena</option>
-          <option value="Ikasketak">Ikasketak (Estudios)</option>
-          <option value="Jokabidea">Jokabidea (Comportamiento)</option>
-          <option value="Besteak">Besteak (Otros)</option>
-        </select>
-      </div>
-
-      <input type="number" id="t-checks" class="form-input" placeholder="Check kopurua (adib. 3)..." value="1" min="1" max="10">
-      
-      <div style="text-align: left; display: flex; flex-direction: column; gap: 5px;">
-        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Noiz egin behar da?:</label>
-        <select id="t-schedule" class="form-input">
-          <option value="all">Egunero (Lunes a Domingo)</option>
-          <option value="weekdays">Eskola Egunak (Astelehena-Ostirala)</option>
-          <option value="weekend">Asteburua (Larunbata-Igandea)</option>
-          <option value="special">Egun Bereziak bakarrik (Eventos)</option>
-        </select>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px; text-align: left;">
-        <input type="checkbox" id="t-shared" style="width: 22px; height: 22px; cursor: pointer;">
-        <label for="t-shared" style="font-size: 0.95rem; font-weight: bold; color: var(--dark); cursor: pointer;">Tarea partekatua (x2 puntu denek egitean)</label>
-      </div>
-
-      <div style="text-align: left; display:flex; flex-direction:column; gap:5px;">
-        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Zereginaren Irudia:</label>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <input type="file" id="t-file-input" accept="image/*" class="form-input" style="padding: 8px; flex:1;" onchange="prepareImageForCrop(this, 'task')">
-          <img id="t-preview-thumb" src="" alt="" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #CBD5E1;">
-        </div>
-      </div>
-      <input type="hidden" id="t-image-result">
-
-      <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button class="btn-action" style="background: var(--secondary);" onclick="closeTaskModal()">Utzi</button>
-        <button class="btn-action btn-green" onclick="saveTaskFromModal()">Gorde zeregina</button>
-      </div>
-    </div>
+    <div class="modal-card"><h3 id="task-modal-title" style="color: var(--dark);">Zeregina</h3><input type="text" id="t-name" class="form-input" placeholder="Zereginaren izena..."><input type="number" id="t-points" class="form-input" placeholder="Puntu totalak..." value="10"><div style="text-align: left; display: flex; flex-direction: column; gap: 5px;"><label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Kategoria:</label><select id="t-category" class="form-input"><option value="Higiene">Higiene</option><option value="Ordena">Ordena</option><option value="Ikasketak">Ikasketak (Estudios)</option><option value="Jokabidea">Jokabidea (Comportamiento)</option><option value="Besteak">Besteak (Otros)</option></select></div><input type="number" id="t-checks" class="form-input" placeholder="Check kopurua (adib. 3)..." value="1" min="1" max="10"><div style="text-align: left; display: flex; flex-direction: column; gap: 5px;"><label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Noiz egin behar da?:</label><select id="t-schedule" class="form-input"><option value="all">Egunero (Lunes a Domingo)</option><option value="weekdays">Eskola Egunak (Astelehena-Ostirala)</option><option value="weekend">Asteburua (Larunbata-Igandea)</option><option value="special">Egun Bereziak bakarrik (Eventos)</option></select></div><div style="display: flex; align-items: center; gap: 10px; margin-top: 5px; text-align: left;"><input type="checkbox" id="t-shared" style="width: 22px; height: 22px; cursor: pointer;"><label for="t-shared" style="font-size: 0.95rem; font-weight: bold; color: var(--dark); cursor: pointer;">Tarea partekatua (x2 puntu denek egitean)</label></div><div style="text-align: left; display:flex; flex-direction:column; gap:5px;"><label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Zereginaren Irudia:</label><div style="display: flex; align-items: center; gap: 10px;"><input type="file" id="t-file-input" accept="image/*" class="form-input" style="padding: 8px; flex:1;" onchange="prepareImageForCrop(this, 'task')"><img id="t-preview-thumb" src="" alt="" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #CBD5E1;"></div></div><input type="hidden" id="t-image-result"><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-action" style="background: var(--secondary);" onclick="closeTaskModal()">Utzi</button><button class="btn-action btn-green" onclick="saveTaskFromModal()">Gorde zeregina</button></div></div>
   </div>
-
-  <!-- MODAL EDITOR DE PREMIO -->
   <div id="reward-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h3 id="reward-modal-title" style="color: var(--dark);">Saria</h3>
-      <input type="text" id="r-name" class="form-input" placeholder="Sariaren izena...">
-      <input type="number" id="r-points" class="form-input" placeholder="Behar diren puntuak..." value="50">
-      
-      <div style="text-align: left; display:flex; flex-direction:column; gap:5px;">
-        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Sariaren Irudia:</label>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <input type="file" id="r-file-input" accept="image/*" class="form-input" style="padding: 8px; flex:1;" onchange="prepareImageForCrop(this, 'reward')">
-          <img id="r-preview-thumb" src="" alt="" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #CBD5E1;">
-        </div>
-      </div>
-      <input type="hidden" id="r-image-result">
-
-      <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <button class="btn-action" style="background: var(--secondary);" onclick="closeRewardModal()">Utzi</button>
-        <button class="btn-action btn-green" onclick="saveRewardFromModal()">Gorde saria</button>
-      </div>
-    </div>
+    <div class="modal-card"><h3 id="reward-modal-title" style="color: var(--dark);">Saria</h3><input type="text" id="r-name" class="form-input" placeholder="Sariaren izena..."><input type="number" id="r-points" class="form-input" placeholder="Behar diren puntuak..." value="50"><div style="text-align: left; display:flex; flex-direction:column; gap:5px;"><label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Sariaren Irudia:</label><div style="display: flex; align-items: center; gap: 10px;"><input type="file" id="r-file-input" accept="image/*" class="form-input" style="padding: 8px; flex:1;" onchange="prepareImageForCrop(this, 'reward')"><img id="r-preview-thumb" src="" alt="" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #CBD5E1;"></div></div><input type="hidden" id="r-image-result"><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-action" style="background: var(--secondary);" onclick="closeRewardModal()">Utzi</button><button class="btn-action btn-green" onclick="saveRewardFromModal()">Gorde saria</button></div></div>
   </div>
-
-  <!-- INPUT OCULTO PARA AVATAR -->
   <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="prepareImageForCrop(this, 'avatar')">
-
-  <!-- FOOTER PROGRESO -->
   <div id="progress-footer">
-    <div class="progress-info">
-      <span>Gaurko Puntuak: <span id="today-points" style="color: var(--warning);">0 pts</span></span>
-      <span style="color: var(--success);">⚡ Bonus: <span id="bonus-points">0 pts</span></span>
-    </div>
-    <div class="progress-bar-bg">
-      <div id="progress-bar-fill" class="progress-bar-fill"></div>
-    </div>
+    <div class="progress-info"><span>Gaurko Puntuak: <span id="today-points" style="color: var(--warning);">0 pts</span></span><span style="color: var(--success);">⚡ Bonus: <span id="bonus-points">0 pts</span></span></div>
+    <div class="progress-bar-bg"><div id="progress-bar-fill" class="progress-bar-fill"></div></div>
   </div>
-
-  <script>
-    // --- CONFIGURACIÓN DE FIREBASE ---
+<script>
     const firebaseConfig = {
       apiKey: "AIzaSyCRiEwn8tzFTjtp19ExECeUgd6lsrOVa28",
       authDomain: "zereginak.firebaseapp.com",
@@ -438,92 +156,170 @@
       appId: "1:754897581210:web:eb53e3bfa2de888b679b23",
       measurementId: "G-MTQ517BD4Z"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ============================================
+    // SEGURIDAD: Rate Limiting para Admin Login
+    // ============================================
+    const SECURITY = {
+      MAX_ATTEMPTS: 5,
+      LOCKOUT_DURATION_MS: 5 * 60 * 1000,
+      getAttempts() {
+        const attempts = parseInt(localStorage.getItem('admin_attempts') || '0');
+        const lastAttempt = parseInt(localStorage.getItem('admin_last_attempt') || '0');
+        const now = Date.now();
+        if (attempts >= this.MAX_ATTEMPTS && now - lastAttempt > this.LOCKOUT_DURATION_MS) {
+          this.resetAttempts();
+          return { attempts: 0, locked: false };
+        }
+        return { attempts: attempts, locked: attempts >= this.MAX_ATTEMPTS, remainingTime: attempts >= this.MAX_ATTEMPTS ? this.LOCKOUT_DURATION_MS - (now - lastAttempt) : 0 };
+      },
+      recordFailedAttempt() {
+        const attempts = parseInt(localStorage.getItem('admin_attempts') || '0') + 1;
+        localStorage.setItem('admin_attempts', attempts);
+        localStorage.setItem('admin_last_attempt', Date.now());
+        return attempts;
+      },
+      resetAttempts() {
+        localStorage.removeItem('admin_attempts');
+        localStorage.removeItem('admin_last_attempt');
+      },
+      isLocked() { return this.getAttempts().locked; }
+    };
+
+    // ============================================
+    // SEGURIDAD: Validación de integridad de datos
+    // ============================================
+    const DataValidator = {
+      validateCloudData(data) {
+        if (!data) return false;
+        if (data.rewardsSpent) {
+          for (const child in data.rewardsSpent) {
+            if (typeof data.rewardsSpent[child] !== 'number' || data.rewardsSpent[child] < 0) {
+              console.error('Validación fallida: rewardsSpent negativo detectado para', child);
+              return false;
+            }
+          }
+        }
+        if (!Array.isArray(data.children)) { console.error('Validación fallida: children no es array'); return false; }
+        if (data.tasksConfig) {
+          for (const child in data.tasksConfig) {
+            if (!Array.isArray(data.tasksConfig[child])) { console.error('Validación fallida: tasksConfig no es array para', child); return false; }
+            for (const task of data.tasksConfig[child]) {
+              if (!task.id || !task.name || typeof task.points !== 'number') { console.error('Validación fallida: tarea inválida', task); return false; }
+              if (task.points < -50 || task.points > 500) { console.error('Validación fallida: puntos fuera de rango', task.points); return false; }
+            }
+          }
+        }
+        return true;
+      },
+      sanitizeBeforeSave(data) {
+        const clean = JSON.parse(JSON.stringify(data));
+        if (clean.rewardsSpent) {
+          for (const child in clean.rewardsSpent) {
+            clean.rewardsSpent[child] = Math.max(0, Math.round(clean.rewardsSpent[child] || 0));
+          }
+        }
+        clean._lastModified = firebase.firestore.FieldValue.serverTimestamp();
+        clean._modifiedByDevice = auth.currentUser ? auth.currentUser.uid : 'anonymous';
+        clean._appVersion = '2.0.0';
+        return clean;
+      }
+    };
+
+    // ============================================
+    // SINCRONIZACIÓN: Cola offline + indicador visual
+    // ============================================
+    const SyncManager = {
+      pendingChanges: [],
+      isOnline: navigator.onLine,
+      init() {
+        window.addEventListener('online', () => {
+          this.isOnline = true;
+          this.showStatus('sync-ok', '✓ Sincronizatuta', 2000);
+          this.flushPendingChanges();
+        });
+        window.addEventListener('offline', () => {
+          this.isOnline = false;
+          this.showStatus('sync-pending', '⚠️ Lineaz kanpo - aldaketak gordetzen...', 0);
+        });
+      },
+      showStatus(className, text, durationMs) {
+        const el = document.getElementById('sync-status');
+        if (!el) return;
+        el.className = '';
+        el.classList.add(className);
+        el.textContent = text;
+        el.style.display = 'block';
+        if (durationMs > 0) setTimeout(() => { el.style.display = 'none'; }, durationMs);
+      },
+      hideStatus() {
+        const el = document.getElementById('sync-status');
+        if (el) el.style.display = 'none';
+      },
+      queueChange(changeFn) {
+        if (!this.isOnline) {
+          this.pendingChanges.push(changeFn);
+          this.showStatus('sync-pending', `⏳ ${this.pendingChanges.length} aldaketa zain...`, 0);
+          try { localStorage.setItem('zereginak_pending_queue', JSON.stringify(this.pendingChanges.length)); } catch (e) {}
+          return false;
+        }
+        return true;
+      },
+      saveQueueToStorage() {
+        try { localStorage.setItem('zereginak_pending_queue', JSON.stringify(this.pendingChanges.length)); } catch (e) {}
+      },
+      async flushPendingChanges() {
+        if (this.pendingChanges.length === 0) { this.hideStatus(); return; }
+        this.showStatus('sync-pending', '🔄 Sincronizatzen...', 0);
+        const queue = [...this.pendingChanges];
+        this.pendingChanges = [];
+        for (const change of queue) {
+          try { await change(); } catch (err) { console.error('Error sincronizando:', err); this.pendingChanges.push(change); }
+        }
+        if (this.pendingChanges.length === 0) { this.showStatus('sync-ok', '✓ Sincronizatuta!', 3000); localStorage.removeItem('zereginak_pending_queue'); }
+        else { this.showStatus('sync-error', `❌ ${this.pendingChanges.length} errore`, 0); }
+      }
+    };
 
     const days = ['Astelehena', 'Asteartea', 'Asteazkena', 'Osteguna', 'Ostirala', 'Larunbata', 'Igandea'];
     const CATEGORIES = ['Higiene', 'Ordena', 'Ikasketak', 'Jokabidea', 'Besteak'];
-    
-    let cloudData = {
-      adminPassword: '1234',
-      isSpecialDayActive: false,
-      children: [
-        { name: 'Luke', avatar: '' },
-        { name: 'Marty', avatar: '' }
-      ],
-      tasksConfig: {},
-      rewardsConfig: {},
-      rewardsSpent: {},
-      tasksState: {}
-    };
-
+    let cloudData = { adminPassword: '1234', isSpecialDayActive: false, children: [{ name: 'Luke', avatar: '' }, { name: 'Marty', avatar: '' }], tasksConfig: {}, rewardsConfig: {}, rewardsSpent: {}, tasksState: {} };
     const defaultTasks = [
       { id: 'dientes', name: 'Hortzak garbitu', image: '', category: 'Higiene', points: 10, checks: 3, shared: false, schedule: 'all' },
       { id: 'habitacion', name: 'Gela jaso', image: '', category: 'Ordena', points: 15, checks: 1, shared: false, schedule: 'all' }
     ];
-
     const defaultRewards = [
       { id: 'r1', name: 'Marrazki libre bat', points: 40, image: '' },
       { id: 'r2', name: 'Txutxe bat', points: 80, image: '' }
     ];
+    let currentChild = '', adminSelectedChild = '', currentView = 'daily', editingTaskIndex = -1, editingRewardIndex = -1, radarChartInstance = null, isAuthenticated = false;
+    let cropTargetType = '', cropImageObj = new Image(), canvasCrop = document.getElementById('crop-canvas'), ctxCrop = canvasCrop.getContext('2d');
+    let imgPosX = 0, imgPosY = 0, imgScale = 1, isDragging = false, startX = 0, startY = 0;
 
-    let currentChild = '';
-    let adminSelectedChild = '';
-    let currentView = 'daily';
-    let editingTaskIndex = -1;
-    let editingRewardIndex = -1;
-    let radarChartInstance = null;
-
-    // Recorte y Zoom
-    let cropTargetType = ''; 
-    let cropImageObj = new Image();
-    let canvasCrop = document.getElementById('crop-canvas');
-    let ctxCrop = canvasCrop.getContext('2d');
-    
-    let imgPosX = 0, imgPosY = 0;
-    let imgScale = 1;
-    let isDragging = false;
-    let startX = 0, startY = 0;
-
-    function lockScroll(lock) {
-      document.body.style.overflow = lock ? 'hidden' : '';
-    }
-
-    function getCurrentDayIndex() {
-      return (new Date().getDay() + 6) % 7;
-    }
-
-    function isWeekend(dayIndex) {
-      return dayIndex === 5 || dayIndex === 6; // Larunbata o Igandea
-    }
-
+    function lockScroll(lock) { document.body.style.overflow = lock ? 'hidden' : ''; }
+    function getCurrentDayIndex() { return (new Date().getDay() + 6) % 7; }
+    function isWeekend(dayIndex) { return dayIndex === 5 || dayIndex === 6; }
     function isTaskActiveForDay(task, dayIndex) {
-      if (cloudData.isSpecialDayActive) {
-        return task.schedule === 'special' || task.schedule === 'all';
-      }
-
+      if (cloudData.isSpecialDayActive) return task.schedule === 'special' || task.schedule === 'all';
       if (task.schedule === 'special') return false;
       if (!task.schedule || task.schedule === 'all') return true;
       if (task.schedule === 'weekdays' && !isWeekend(dayIndex)) return true;
       if (task.schedule === 'weekend' && isWeekend(dayIndex)) return true;
-
       return false;
     }
-
     function getCurrentWeekStamp() {
-      let d = new Date();
-      let date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      let d = new Date(), date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
       let dayNum = date.getUTCDay() || 7;
       date.setUTCDate(date.getUTCDate() + 4 - dayNum);
       let yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
       let weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
       return `${date.getUTCFullYear()}-W${weekNo}`;
     }
-
     function getRecentWeeks() {
-      let weeks = [];
-      let d = new Date();
+      let weeks = [], d = new Date();
       for (let i = 0; i < 4; i++) {
         let date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
         let dayNum = date.getUTCDay() || 7;
@@ -536,111 +332,96 @@
       return weeks;
     }
 
-    // --- SINCRONIZACIÓN FIRESTORE EN TIEMPO REAL ---
+    async function initAuth() {
+      try { await auth.signInAnonymously(); isAuthenticated = true; console.log('Auth OK, UID:', auth.currentUser.uid); }
+      catch (err) { console.error('Auth error:', err); isAuthenticated = false; }
+    }
+
     function initFirestoreSync() {
-      db.collection("familia").doc("app_state").onSnapshot((doc) => {
-        if (doc.exists) {
-          cloudData = doc.data();
-        } else {
-          cloudData = {
-            adminPassword: '1234',
-            isSpecialDayActive: false,
-            children: [{ name: 'Luke', avatar: '' }, { name: 'Marty', avatar: '' }],
-            tasksConfig: {},
-            rewardsConfig: {},
-            rewardsSpent: {},
-            tasksState: {}
-          };
-          db.collection("familia").doc("app_state").set(cloudData);
-        }
-
-        document.getElementById('loading-overlay').style.display = 'none';
-        
-        const kids = getChildrenList();
-        if (kids.length > 0) {
-          if (!adminSelectedChild || !kids.some(k => k.name === adminSelectedChild)) adminSelectedChild = kids[0].name;
-          if (!currentChild || !kids.some(k => k.name === currentChild)) currentChild = kids[0].name;
-        }
-
-        refreshCurrentView();
-      }, (error) => {
-        console.error("Errorea datuak kargatzean:", error);
-        document.getElementById('loading-overlay').innerHTML = `<div style="color:var(--danger)">Ezin izan da hodeiarekin konektatu. Egiaztatu konfigurazioa.</div>`;
+      initAuth().then(() => {
+        db.collection("familia").doc("app_state").onSnapshot((doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            if (DataValidator.validateCloudData(data)) cloudData = data;
+            else { console.error('Datos inválidos recibidos'); SyncManager.showStatus('sync-error', '❌ Datu baliogabeak', 3000); }
+          } else {
+            cloudData = { adminPassword: '1234', isSpecialDayActive: false, children: [{ name: 'Luke', avatar: '' }, { name: 'Marty', avatar: '' }], tasksConfig: {}, rewardsConfig: {}, rewardsSpent: {}, tasksState: {} };
+            db.collection("familia").doc("app_state").set(cloudData);
+          }
+          document.getElementById('loading-overlay').style.display = 'none';
+          const kids = getChildrenList();
+          if (kids.length > 0) {
+            if (!adminSelectedChild || !kids.some(k => k.name === adminSelectedChild)) adminSelectedChild = kids[0].name;
+            if (!currentChild || !kids.some(k => k.name === currentChild)) currentChild = kids[0].name;
+          }
+          refreshCurrentView();
+        }, (error) => {
+          console.error("Errorea kargatzean:", error);
+          document.getElementById('loading-overlay').innerHTML = `<div style="color:var(--danger)">Ezin izan da hodeiarekin konektatu. Egiaztatu konfigurazioa.</div>`;
+        });
       });
     }
 
     function saveCloudData() {
-      db.collection("familia").doc("app_state").set(cloudData).catch((err) => {
+      if (!DataValidator.validateCloudData(cloudData)) {
+        console.error('Datos locales inválidos');
+        SyncManager.showStatus('sync-error', '❌ Ezin da gorde: datu baliogabeak', 3000);
+        return Promise.reject('Datos inválidos');
+      }
+      const dataToSave = DataValidator.sanitizeBeforeSave(cloudData);
+      if (!SyncManager.isOnline) {
+        SyncManager.queueChange(() => saveCloudData());
+        return Promise.resolve();
+      }
+      return db.collection("familia").doc("app_state").set(dataToSave).catch((err) => {
         console.error("Errorea gordetzean:", err);
+        SyncManager.showStatus('sync-error', '❌ Errorea gordetzean', 3000);
+        SyncManager.queueChange(() => saveCloudData());
       });
     }
 
     function getChildrenList() { return cloudData.children || []; }
     function getAdminPass() { return cloudData.adminPassword || '1234'; }
-
     function getChildTasks(childName) {
-      if (cloudData.tasksConfig && cloudData.tasksConfig[childName]) {
-        return cloudData.tasksConfig[childName];
-      }
+      if (cloudData.tasksConfig && cloudData.tasksConfig[childName]) return cloudData.tasksConfig[childName];
       return JSON.parse(JSON.stringify(defaultTasks));
     }
-
     function getChildRewards(childName) {
       let rawList = (cloudData.rewardsConfig && cloudData.rewardsConfig[childName]) || JSON.parse(JSON.stringify(defaultRewards));
-      return [...rawList].sort((a, b) => {
-        if (a.points !== b.points) {
-          return a.points - b.points;
-        }
-        return a.name.localeCompare(b.name);
-      });
+      return [...rawList].sort((a, b) => { if (a.points !== b.points) return a.points - b.points; return a.name.localeCompare(b.name); });
     }
-
-    function getChildState(childName) {
-      return (cloudData.tasksState && cloudData.tasksState[childName]) || {};
-    }
-
+    function getChildState(childName) { return (cloudData.tasksState && cloudData.tasksState[childName]) || {}; }
     function saveChildStateToCloud(childName, stateObj) {
-      let recent = getRecentWeeks();
-      let cleaned = {};
-      recent.forEach(w => {
-        if (stateObj[w]) cleaned[w] = stateObj[w];
-      });
+      let recent = getRecentWeeks(), cleaned = {};
+      recent.forEach(w => { if (stateObj[w]) cleaned[w] = stateObj[w]; });
       if (!cloudData.tasksState) cloudData.tasksState = {};
       cloudData.tasksState[childName] = cleaned;
       saveCloudData();
     }
 
-    // --- EFECTOS DE GAMIFICACIÓN ---
     function playBellSound() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
-        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12); 
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12);
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.9);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.9);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.9);
       } catch (e) {}
     }
 
     function triggerGamificationEffect() {
-      if (navigator.vibrate) {
-        try { navigator.vibrate(150); } catch (e) {}
-      }
+      if (navigator.vibrate) { try { navigator.vibrate(150); } catch (e) {} }
       playBellSound();
       const happyEmojis = ['🎉', '🥳', '😄', '🌟', '🚀', '✨', '🏆', '🙌', '🔥', '💪', '⭐', '😃'];
       const randomEmoji = happyEmojis[Math.floor(Math.random() * happyEmojis.length)];
       const popup = document.getElementById('emoji-popup');
       popup.innerText = randomEmoji;
       popup.classList.add('show');
-      setTimeout(() => {
-        popup.classList.remove('show');
-      }, 1000);
+      setTimeout(() => { popup.classList.remove('show'); }, 1000);
     }
 
     function toggleSpecialDayMode() {
@@ -650,12 +431,22 @@
     }
 
     function showAdminScreen() {
+      const securityStatus = SECURITY.getAttempts();
+      if (securityStatus.locked) {
+        const remainingSeconds = Math.ceil(securityStatus.remainingTime / 1000);
+        alert(`Saiakera gehiegi. Saiatu berriro ${remainingSeconds} segundotan.`);
+        return;
+      }
       const pass = prompt("Sartu Kudeaketa Panelaren pasahitza:");
       if (pass === null) return;
       if (pass !== getAdminPass()) {
-        alert("Pasahitz okerra!");
+        const attempts = SECURITY.recordFailedAttempt();
+        const remaining = SECURITY.MAX_ATTEMPTS - attempts;
+        if (remaining <= 0) alert('Saiakera gehiegi! Panela blokeatuta dago 5 minutuz.');
+        else alert(`Pasahitz okerra! ${remaining} saiakera geratzen dira.`);
         return;
       }
+      SECURITY.resetAttempts();
       document.getElementById('profile-selection').style.display = 'none';
       document.getElementById('calendar-screen').style.display = 'none';
       document.getElementById('rewards-screen').style.display = 'none';
@@ -671,11 +462,7 @@
         const btn = document.createElement('button');
         btn.className = 'btn-profile';
         btn.onclick = () => selectProfile(child.name);
-        
-        let avatarHtml = child.avatar ? 
-          `<img class="profile-avatar-img" src="${child.avatar}" alt="avatar">` : 
-          `<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#E2E8F0"/><circle cx="50" cy="40" r="20" fill="#94A3B8"/><path d="M 20 85 Q 50 50 80 85" fill="#94A3B8"/></svg>`;
-        
+        let avatarHtml = child.avatar ? `<img class="profile-avatar-img" src="${child.avatar}" alt="avatar">` : `<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#E2E8F0"/><circle cx="50" cy="40" r="20" fill="#94A3B8"/><path d="M 20 85 Q 50 50 80 85" fill="#94A3B8"/></svg>`;
         btn.innerHTML = `${avatarHtml}<span>${child.name.toUpperCase()}</span>`;
         container.appendChild(btn);
       });
@@ -724,122 +511,63 @@
     }
 
     function refreshCurrentView() {
-      if (document.getElementById('calendar-screen').style.display === 'block') {
-        renderView();
-      } else if (document.getElementById('rewards-screen').style.display === 'block') {
-        renderRewardsView();
-      } else if (document.getElementById('admin-screen').style.display === 'block') {
-        renderAdminPanel();
-      } else {
-        showProfiles();
-      }
+      if (document.getElementById('calendar-screen').style.display === 'block') renderView();
+      else if (document.getElementById('rewards-screen').style.display === 'block') renderRewardsView();
+      else if (document.getElementById('admin-screen').style.display === 'block') renderAdminPanel();
+      else showProfiles();
     }
 
     function renderView() {
       const container = document.getElementById('view-container');
       const toggleBtn = document.getElementById('btn-toggle-view');
-      
-      if (currentView === 'daily') {
-        toggleBtn.innerHTML = 'Aste osoa<br>ikusi';
-        renderDailyView(container);
-      } else {
-        toggleBtn.innerHTML = 'Gaurko eguna<br>ikusi';
-        renderWeeklyView(container, currentChild, false); 
-      }
+      if (currentView === 'daily') { toggleBtn.innerHTML = 'Aste osoa<br>ikusi'; renderDailyView(container); }
+      else { toggleBtn.innerHTML = 'Gaurko eguna<br>ikusi'; renderWeeklyView(container, currentChild, false); }
       updateFooter();
       updateRadarChart();
     }
 
     function renderDailyView(container) {
-      const dayIndex = getCurrentDayIndex();
-      const currentDayName = days[dayIndex];
-      const allTasks = getChildTasks(currentChild);
-      const stateObj = getChildState(currentChild);
-      const currentWeek = getCurrentWeekStamp();
-      const weekState = stateObj[currentWeek] || {};
-
+      const dayIndex = getCurrentDayIndex(), currentDayName = days[dayIndex];
+      const allTasks = getChildTasks(currentChild), stateObj = getChildState(currentChild);
+      const currentWeek = getCurrentWeekStamp(), weekState = stateObj[currentWeek] || {};
       const tasks = allTasks.filter(t => isTaskActiveForDay(t, dayIndex));
-
       const isSpecial = cloudData.isSpecialDayActive;
       let badgeLabel = isSpecial ? '🎉 GAUR EGUN BEREZIA DA!' : `Gaur: ${currentDayName}`;
-
-      let html = `
-        <div class="day-badge-wrap">
-          <div class="day-badge ${isSpecial ? 'special-mode' : ''}">${badgeLabel}</div>
-        </div>
-      `;
-
-      if (tasks.length === 0) {
-        html += `<div style="text-align:center; padding: 40px; color: var(--secondary); font-weight: bold;">Egun honetarako ez dago zereginik pentsatuta! 🎈</div>`;
-      }
-
+      let html = `<div class="day-badge-wrap"><div class="day-badge ${isSpecial ? 'special-mode' : ''}">${badgeLabel}</div></div>`;
+      if (tasks.length === 0) html += `<div style="text-align:center; padding: 40px; color: var(--secondary); font-weight: bold;">Egun honetarako ez dago zereginik pentsatuta! 🎈</div>`;
       tasks.forEach(task => {
         const numChecks = task.checks || 1;
         let checksHtml = '';
         for (let i = 1; i <= numChecks; i++) {
-          const key = `${task.id}_${currentDayName}_chk${i}`;
-          const isDone = weekState[key] === true;
+          const key = `${task.id}_${currentDayName}_chk${i}`, isDone = weekState[key] === true;
           checksHtml += `<div class="checkbox-large ${isDone ? 'state-done' : ''}" onclick="toggleCheck('${currentChild}', '${key}')"></div>`;
         }
-
         const imgSrc = task.image && task.image.trim() !== '' ? task.image : '';
         const imgTag = imgSrc ? `<img class="daily-task-img-bg" src="${imgSrc}" alt="bg" onerror="this.style.display='none'">` : '';
-
-        html += `
-          <div class="daily-task-card-large">
-            ${imgTag}
-            <div class="daily-task-overlay">
-              <div>
-                <div class="badges-row">
-                  <div class="badge-dark">🏷️ ${task.category || 'Zeregina'}</div>
-                  <div class="badge-dark"><span class="star-icon">⭐</span> ${task.points} pts</div>
-                  ${task.shared ? `<div class="badge-shared">👥 Partekatua (x2)</div>` : ''}
-                  ${task.schedule === 'special' ? `<div class="badge-special">🎉 Berezia</div>` : ''}
-                  ${numChecks > 1 ? `<div class="badge-dark">Checks: ${numChecks}</div>` : ''}
-                </div>
-                <div class="task-title-large">${task.name}</div>
-              </div>
-              <div class="checks-container">
-                ${checksHtml}
-              </div>
-            </div>
-          </div>
-        `;
+        html += `<div class="daily-task-card-large">${imgTag}<div class="daily-task-overlay"><div><div class="badges-row"><div class="badge-dark">🏷️ ${task.category || 'Zeregina'}</div><div class="badge-dark"><span class="star-icon">⭐</span> ${task.points} pts</div>${task.shared ? `<div class="badge-shared">👥 Partekatua (x2)</div>` : ''}${task.schedule === 'special' ? `<div class="badge-special">🎉 Berezia</div>` : ''}${numChecks > 1 ? `<div class="badge-dark">Checks: ${numChecks}</div>` : ''}</div><div class="task-title-large">${task.name}</div></div><div class="checks-container">${checksHtml}</div></div></div>`;
       });
       container.innerHTML = html;
     }
 
     function renderWeeklyView(container, childName, isEditable = false) {
-      const tasks = getChildTasks(childName);
-      const stateObj = getChildState(childName);
-      const currentWeek = getCurrentWeekStamp();
-      const weekState = stateObj[currentWeek] || {};
-
-      let html = `<h3 style="margin-bottom: 10px; color: var(--dark);">${childName} - Egutegi Astea</h3>`;
-      html += `<table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>`;
+      const tasks = getChildTasks(childName), stateObj = getChildState(childName);
+      const currentWeek = getCurrentWeekStamp(), weekState = stateObj[currentWeek] || {};
+      let html = `<h3 style="margin-bottom: 10px; color: var(--dark);">${childName} - Egutegi Astea</h3><table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>`;
       days.forEach(d => html += `<th>${d.substring(0,3)}</th>`);
       html += `</tr></thead><tbody>`;
-
       tasks.forEach(task => {
         html += `<tr><td style="font-weight:bold; text-align:left; font-size: 0.9rem;">${task.name}<br><span style="font-size:0.75rem; color:var(--secondary);">${task.points}pts ${task.shared ? '👥' : ''}</span></td>`;
         days.forEach((day, dayIdx) => {
           const appliesToday = isTaskActiveForDay(task, dayIdx);
           html += `<td style="${!appliesToday ? 'background:#F8FAFC;' : ''}">`;
-          
           if (appliesToday) {
             const numChecks = task.checks || 1;
             for (let i = 1; i <= numChecks; i++) {
-              const key = `${task.id}_${day}_chk${i}`;
-              const isDone = weekState[key] === true;
-              if (isEditable) {
-                html += `<div class="chk-weekly editable ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}')"></div>`;
-              } else {
-                html += `<div class="chk-weekly ${isDone ? 'done' : ''}"></div>`;
-              }
+              const key = `${task.id}_${day}_chk${i}`, isDone = weekState[key] === true;
+              if (isEditable) html += `<div class="chk-weekly editable ${isDone ? 'done' : ''}" onclick="toggleWeeklyCheckFromAdmin('${childName}', '${key}')"></div>`;
+              else html += `<div class="chk-weekly ${isDone ? 'done' : ''}"></div>`;
             }
-          } else {
-            html += `<span style="color:#CBD5E1; font-size:0.8rem;">-</span>`;
-          }
+          } else html += `<span style="color:#CBD5E1; font-size:0.8rem;">-</span>`;
           html += `</td>`;
         });
         html += `</tr>`;
@@ -848,185 +576,80 @@
       container.innerHTML = html;
     }
 
-    // --- CÁLCULO Y RENDERIZADO DEL GRÁFICO DE RADAR ---
     function updateRadarChart() {
       const canvas = document.getElementById('radarImprovementChart');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
-
       const categoryTotals = { 'Higiene': 0, 'Ordena': 0, 'Ikasketak': 0, 'Jokabidea': 0, 'Besteak': 0 };
-
-      const allTasks = getChildTasks(currentChild);
-      const stateObj = getChildState(currentChild);
-      const currentWeek = getCurrentWeekStamp();
-      const weekState = stateObj[currentWeek] || {};
-
+      const allTasks = getChildTasks(currentChild), stateObj = getChildState(currentChild);
+      const currentWeek = getCurrentWeekStamp(), weekState = stateObj[currentWeek] || {};
       days.forEach((day, dayIdx) => {
         allTasks.forEach(task => {
           if (isTaskActiveForDay(task, dayIdx)) {
             const numChecks = task.checks || 1;
-            const rawCat = task.category || 'Besteak';
-            const cat = CATEGORIES.includes(rawCat) ? rawCat : 'Besteak';
-            
-            for (let i = 1; i <= numChecks; i++) {
-              const key = `${task.id}_${day}_chk${i}`;
-              if (!weekState[key]) {
-                categoryTotals[cat] += 1; // Suma 1 por cada check/tarea no cumplida
-              }
-            }
+            const rawCat = task.category || 'Besteak', cat = CATEGORIES.includes(rawCat) ? rawCat : 'Besteak';
+            for (let i = 1; i <= numChecks; i++) { const key = `${task.id}_${day}_chk${i}`; if (!weekState[key]) categoryTotals[cat] += 1; }
           }
         });
       });
-
       const chartData = CATEGORIES.map(cat => categoryTotals[cat]);
-
-      if (radarChartInstance) {
-        radarChartInstance.destroy();
-      }
-
+      if (radarChartInstance) radarChartInstance.destroy();
       radarChartInstance = new Chart(ctx, {
         type: 'radar',
-        data: {
-          labels: ['Higiene', 'Ordena', 'Ikasketak', 'Jokabidea', 'Besteak'],
-          datasets: [{
-            label: 'Falta diren zereginak (Pendientes)',
-            data: chartData,
-            backgroundColor: 'rgba(239, 68, 68, 0.25)',
-            borderColor: 'rgba(239, 68, 68, 1)',
-            pointBackgroundColor: 'rgba(239, 68, 68, 1)',
-            pointBorderColor: '#fff',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: 'rgba(239, 68, 68, 1)',
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              angleLines: { color: '#E2E8F0' },
-              grid: { color: '#CBD5E1' },
-              pointLabels: {
-                font: { size: 12, weight: 'bold' },
-                color: '#1E293B'
-              },
-              ticks: { beginAtZero: true, stepSize: 1, precision: 0 }
-            }
-          },
-          plugins: {
-            legend: { display: false }
-          }
-        }
+        data: { labels: ['Higiene', 'Ordena', 'Ikasketak', 'Jokabidea', 'Besteak'], datasets: [{ label: 'Falta diren zereginak (Pendientes)', data: chartData, backgroundColor: 'rgba(239, 68, 68, 0.25)', borderColor: 'rgba(239, 68, 68, 1)', pointBackgroundColor: 'rgba(239, 68, 68, 1)', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(239, 68, 68, 1)', borderWidth: 2 }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: '#E2E8F0' }, grid: { color: '#CBD5E1' }, pointLabels: { font: { size: 12, weight: 'bold' }, color: '#1E293B' }, ticks: { beginAtZero: true, stepSize: 1, precision: 0 } } }, plugins: { legend: { display: false } } }
       });
     }
 
     function calculateChildPointsDetails(childName) {
-      let stateObj = getChildState(childName);
-      let recentWeeks = getRecentWeeks();
-      let totalEarned = 0;
-      let totalBonus = 0;
-      let kidsList = getChildrenList();
-
+      let stateObj = getChildState(childName), recentWeeks = getRecentWeeks();
+      let totalEarned = 0, totalBonus = 0, kidsList = getChildrenList();
       recentWeeks.forEach(week => {
-        let weekState = stateObj[week] || {};
-        let tasks = getChildTasks(childName);
-
+        let weekState = stateObj[week] || {}, tasks = getChildTasks(childName);
         tasks.forEach(task => {
           const numChecks = task.checks || 1;
-
           days.forEach(day => {
             let allChecksDone = true;
-            for (let i = 1; i <= numChecks; i++) {
-              if (!weekState[`${task.id}_${day}_chk${i}`]) {
-                allChecksDone = false;
-                break;
-              }
-            }
-
+            for (let i = 1; i <= numChecks; i++) { if (!weekState[`${task.id}_${day}_chk${i}`]) { allChecksDone = false; break; } }
             if (allChecksDone && numChecks > 0) {
-              let basePts = task.points;
-              let multiplier = 1;
-
+              let basePts = task.points, multiplier = 1;
               if (task.shared) {
                 let allKidsCompleted = true;
-                if (kidsList.length <= 1) {
-                  allKidsCompleted = false;
-                } else {
+                if (kidsList.length <= 1) allKidsCompleted = false;
+                else {
                   kidsList.forEach(otherChild => {
-                    let otherTasks = getChildTasks(otherChild.name);
-                    let matchingTask = otherTasks.find(ot => ot.name === task.name);
-                    if (!matchingTask) {
-                      allKidsCompleted = false;
-                    } else {
-                      let otherState = getChildState(otherChild.name);
-                      let otherWeekState = otherState[week] || {};
-                      let otherNumChecks = matchingTask.checks || 1;
-                      for (let i = 1; i <= otherNumChecks; i++) {
-                        if (!otherWeekState[`${matchingTask.id}_${day}_chk${i}`]) {
-                          allKidsCompleted = false;
-                          break;
-                        }
-                      }
+                    let otherTasks = getChildTasks(otherChild.name), matchingTask = otherTasks.find(ot => ot.name === task.name);
+                    if (!matchingTask) allKidsCompleted = false;
+                    else {
+                      let otherState = getChildState(otherChild.name), otherWeekState = otherState[week] || {}, otherNumChecks = matchingTask.checks || 1;
+                      for (let i = 1; i <= otherNumChecks; i++) { if (!otherWeekState[`${matchingTask.id}_${day}_chk${i}`]) { allKidsCompleted = false; break; } }
                     }
                   });
                 }
-
                 if (allKidsCompleted) multiplier = 2;
               }
-
               let earnedForThis = basePts * multiplier;
               totalEarned += earnedForThis;
-              if (multiplier > 1) {
-                totalBonus += basePts * (multiplier - 1);
-              }
+              if (multiplier > 1) totalBonus += basePts * (multiplier - 1);
             }
           });
         });
       });
-
-      let spentMap = cloudData.rewardsSpent || {};
-      const spent = spentMap[childName] || 0;
-      return {
-        available: Math.max(0, Math.round(totalEarned - spent)),
-        bonus: Math.round(totalBonus)
-      };
+      let spentMap = cloudData.rewardsSpent || {}, spent = spentMap[childName] || 0;
+      return { available: Math.max(0, Math.round(totalEarned - spent)), bonus: Math.round(totalBonus) };
     }
 
     function renderRewardsView() {
       const pointsData = calculateChildPointsDetails(currentChild);
       document.getElementById('rewards-available-points').innerText = `${pointsData.available} pts`;
-
-      const container = document.getElementById('rewards-grid-container');
-      const rewards = getChildRewards(currentChild);
-
+      const container = document.getElementById('rewards-grid-container'), rewards = getChildRewards(currentChild);
       let html = '';
       rewards.forEach(reward => {
-        const canAfford = pointsData.available >= reward.points;
-        const missing = reward.points - pointsData.available;
+        const canAfford = pointsData.available >= reward.points, missing = reward.points - pointsData.available;
         const imgSrc = reward.image && reward.image.trim() !== '' ? reward.image : '';
         const imgTag = imgSrc ? `<img class="reward-img-bg" src="${imgSrc}" alt="reward" onerror="this.style.display='none'">` : '';
-
-        const actionIndicator = canAfford ? 
-          `<div class="available-badge-box">Eskuragarri! Sakatu trukatzeko ⭐</div>` : 
-          `<div class="missing-points-box">-${missing} pts</div>`;
-
-        html += `
-          <div class="reward-card ${canAfford ? '' : 'locked'}" onclick="${canAfford ? `redeemReward('${reward.id}', ${reward.points}, '${reward.name}')` : `alert('Ez dituzu nahikoa puntu saria lortzeko. Falta zaizkizu: ${missing} pts')`}">
-            ${imgTag}
-            <div class="reward-overlay">
-              <div class="badges-row">
-                <div class="badge-dark"><span class="star-icon">⭐</span> ${reward.points} pts</div>
-              </div>
-              <div>
-                <div class="reward-title">${reward.name}</div>
-                <div style="margin-top: 15px;">
-                  ${actionIndicator}
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
+        const actionIndicator = canAfford ? `<div class="available-badge-box">Eskuragarri! Sakatu trukatzeko ⭐</div>` : `<div class="missing-points-box">-${missing} pts</div>`;
+        html += `<div class="reward-card ${canAfford ? '' : 'locked'}" onclick="${canAfford ? `redeemReward('${reward.id}', ${reward.points}, '${reward.name}')` : `alert('Ez dituzu nahikoa puntu saria lortzeko. Falta zaizkizu: ${missing} pts')`}">${imgTag}<div class="reward-overlay"><div class="badges-row"><div class="badge-dark"><span class="star-icon">⭐</span> ${reward.points} pts</div></div><div><div class="reward-title">${reward.name}</div><div style="margin-top: 15px;">${actionIndicator}</div></div></div></div>`;
       });
       container.innerHTML = html;
     }
@@ -1043,25 +666,17 @@
     }
 
     function toggleCheck(child, key) {
-      let stateObj = getChildState(child);
-      let currentWeek = getCurrentWeekStamp();
+      let stateObj = getChildState(child), currentWeek = getCurrentWeekStamp();
       if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
-
-      const isDone = stateObj[currentWeek][key] === true;
-      const newState = !isDone;
+      const isDone = stateObj[currentWeek][key] === true, newState = !isDone;
       stateObj[currentWeek][key] = newState;
       saveChildStateToCloud(child, stateObj);
-
-      if (newState) {
-        triggerGamificationEffect();
-      }
+      if (newState) triggerGamificationEffect();
     }
 
     function toggleWeeklyCheckFromAdmin(childName, key) {
-      let stateObj = getChildState(childName);
-      let currentWeek = getCurrentWeekStamp();
+      let stateObj = getChildState(childName), currentWeek = getCurrentWeekStamp();
       if (!stateObj[currentWeek]) stateObj[currentWeek] = {};
-
       const isDone = stateObj[currentWeek][key] === true;
       stateObj[currentWeek][key] = !isDone;
       saveChildStateToCloud(childName, stateObj);
@@ -1069,41 +684,29 @@
     }
 
     function updateFooter() {
-      const dayIndex = getCurrentDayIndex();
-      const currentDayName = days[dayIndex];
-      const allTasks = getChildTasks(currentChild);
-      const stateObj = getChildState(currentChild);
-      const currentWeek = getCurrentWeekStamp();
-      const weekState = stateObj[currentWeek] || {};
-      
+      const dayIndex = getCurrentDayIndex(), currentDayName = days[dayIndex];
+      const allTasks = getChildTasks(currentChild), stateObj = getChildState(currentChild);
+      const currentWeek = getCurrentWeekStamp(), weekState = stateObj[currentWeek] || {};
       const tasks = allTasks.filter(t => isTaskActiveForDay(t, dayIndex));
-
-      let earnedToday = 0; let totalToday = 0;
+      let earnedToday = 0, totalToday = 0;
       tasks.forEach(task => {
         totalToday += task.points;
         const ptsPerCheck = task.points / (task.checks || 1);
-        for (let i = 1; i <= (task.checks || 1); i++) {
-          if (weekState[`${task.id}_${currentDayName}_chk${i}`]) earnedToday += ptsPerCheck;
-        }
+        for (let i = 1; i <= (task.checks || 1); i++) { if (weekState[`${task.id}_${currentDayName}_chk${i}`]) earnedToday += ptsPerCheck; }
       });
-      
       document.getElementById('today-points').innerText = `${Math.round(earnedToday)} pts`;
       const pct = totalToday > 0 ? (earnedToday / totalToday) * 100 : 0;
       document.getElementById('progress-bar-fill').style.width = `${pct}%`;
-
       const pointsData = calculateChildPointsDetails(currentChild);
       document.getElementById('bonus-points').innerText = `${pointsData.bonus} pts`;
     }
 
-    // Recorte y Zoom
     function prepareImageForCrop(input, targetType) {
       if (input.files && input.files[0]) {
         cropTargetType = targetType;
         const reader = new FileReader();
         reader.onload = function(e) {
-          cropImageObj.onload = function() {
-            openCropModal();
-          };
+          cropImageObj.onload = function() { openCropModal(); };
           cropImageObj.src = e.target.result;
         };
         reader.readAsDataURL(input.files[0]);
@@ -1115,14 +718,10 @@
       document.getElementById('crop-modal').style.display = 'flex';
       canvasCrop.width = 320;
       canvasCrop.height = cropTargetType === 'avatar' ? 320 : 180;
-
-      let hRatio = canvasCrop.width / cropImageObj.width;
-      let vRatio = canvasCrop.height / cropImageObj.height;
+      let hRatio = canvasCrop.width / cropImageObj.width, vRatio = canvasCrop.height / cropImageObj.height;
       imgScale = Math.max(hRatio, vRatio);
-      
       imgPosX = (canvasCrop.width - cropImageObj.width * imgScale) / 2;
       imgPosY = (canvasCrop.height - cropImageObj.height * imgScale) / 2;
-
       redrawCropCanvas();
     }
 
@@ -1133,7 +732,6 @@
       ctxCrop.scale(imgScale, imgScale);
       ctxCrop.drawImage(cropImageObj, 0, 0);
       ctxCrop.restore();
-
       ctxCrop.fillStyle = 'rgba(0, 0, 0, 0.5)';
       if (cropTargetType === 'avatar') {
         ctxCrop.beginPath();
@@ -1141,30 +739,21 @@
         let radius = canvasCrop.width / 2;
         ctxCrop.arc(radius, radius, radius, 0, Math.PI * 2, true);
         ctxCrop.fill();
-
-        ctxCrop.strokeStyle = '#3B82F6';
-        ctxCrop.lineWidth = 3;
-        ctxCrop.beginPath();
-        ctxCrop.arc(radius, radius, radius, 0, Math.PI * 2);
-        ctxCrop.stroke();
+        ctxCrop.strokeStyle = '#3B82F6'; ctxCrop.lineWidth = 3;
+        ctxCrop.beginPath(); ctxCrop.arc(radius, radius, radius, 0, Math.PI * 2); ctxCrop.stroke();
       } else {
-        ctxCrop.strokeStyle = '#3B82F6';
-        ctxCrop.lineWidth = 3;
+        ctxCrop.strokeStyle = '#3B82F6'; ctxCrop.lineWidth = 3;
         ctxCrop.strokeRect(0, 0, canvasCrop.width, canvasCrop.height);
       }
     }
 
-    function adjustZoom(delta) {
-      imgScale = Math.max(0.2, imgScale + delta);
-      redrawCropCanvas();
-    }
+    function adjustZoom(delta) { imgScale = Math.max(0.2, imgScale + delta); redrawCropCanvas(); }
 
     canvasCrop.onmousedown = canvasCrop.ontouchstart = function(e) {
       isDragging = true;
       let clientX = e.touches ? e.touches[0].clientX : e.clientX;
       let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      startX = clientX - imgPosX;
-      startY = clientY - imgPosY;
+      startX = clientX - imgPosX; startY = clientY - imgPosY;
       if (e.type === 'touchstart') e.preventDefault();
     };
 
@@ -1172,94 +761,62 @@
       if (!isDragging) return;
       let clientX = e.touches ? e.touches[0].clientX : e.clientX;
       let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      imgPosX = clientX - startX;
-      imgPosY = clientY - startY;
+      imgPosX = clientX - startX; imgPosY = clientY - startY;
       redrawCropCanvas();
       if (e.type === 'touchmove') e.preventDefault();
     };
 
-    window.onmouseup = window.ontouchend = function() {
-      isDragging = false;
-    };
+    window.onmouseup = window.ontouchend = function() { isDragging = false; };
 
-    function closeCropModal() {
-      lockScroll(false);
-      document.getElementById('crop-modal').style.display = 'none';
-    }
+    function closeCropModal() { lockScroll(false); document.getElementById('crop-modal').style.display = 'none'; }
 
     function confirmCropImage() {
-      let finalCanvas = document.createElement('canvas');
-      let finalCtx = finalCanvas.getContext('2d');
-      
+      let finalCanvas = document.createElement('canvas'), finalCtx = finalCanvas.getContext('2d');
       let outputW = cropTargetType === 'avatar' ? 200 : 450;
       let outputH = Math.round(outputW * (canvasCrop.height / canvasCrop.width));
-      
-      finalCanvas.width = outputW;
-      finalCanvas.height = outputH;
-
-      finalCtx.fillStyle = '#FFFFFF';
-      finalCtx.fillRect(0, 0, outputW, outputH);
-
+      finalCanvas.width = outputW; finalCanvas.height = outputH;
+      finalCtx.fillStyle = '#FFFFFF'; finalCtx.fillRect(0, 0, outputW, outputH);
       let ratio = outputW / canvasCrop.width;
-
       finalCtx.save();
       finalCtx.translate(imgPosX * ratio, imgPosY * ratio);
       finalCtx.scale(imgScale * ratio, imgScale * ratio);
       finalCtx.drawImage(cropImageObj, 0, 0);
       finalCtx.restore();
-
       let compressedDataUrl = finalCanvas.toDataURL('image/jpeg', 0.65);
-
       if (cropTargetType === 'avatar') {
-        let kids = getChildrenList();
-        let childObj = kids.find(c => c.name === adminSelectedChild);
-        if (childObj) {
-          childObj.avatar = compressedDataUrl;
-          cloudData.children = kids;
-          saveCloudData();
-        }
+        let kids = getChildrenList(), childObj = kids.find(c => c.name === adminSelectedChild);
+        if (childObj) { childObj.avatar = compressedDataUrl; cloudData.children = kids; saveCloudData(); }
       } else if (cropTargetType === 'task') {
         document.getElementById('t-image-result').value = compressedDataUrl;
         let thumb = document.getElementById('t-preview-thumb');
-        thumb.src = compressedDataUrl;
-        thumb.style.display = 'block';
-
+        thumb.src = compressedDataUrl; thumb.style.display = 'block';
         let tasks = getChildTasks(adminSelectedChild);
         if (editingTaskIndex >= 0 && tasks[editingTaskIndex]) {
           tasks[editingTaskIndex].image = compressedDataUrl;
           if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
-          cloudData.tasksConfig[adminSelectedChild] = tasks;
-          saveCloudData();
+          cloudData.tasksConfig[adminSelectedChild] = tasks; saveCloudData();
         }
       } else if (cropTargetType === 'reward') {
         document.getElementById('r-image-result').value = compressedDataUrl;
         let thumb = document.getElementById('r-preview-thumb');
-        thumb.src = compressedDataUrl;
-        thumb.style.display = 'block';
-
+        thumb.src = compressedDataUrl; thumb.style.display = 'block';
         let rewards = getChildRewards(adminSelectedChild);
         if (editingRewardIndex >= 0 && rewards[editingRewardIndex]) {
           rewards[editingRewardIndex].image = compressedDataUrl;
           if (!cloudData.rewardsConfig) cloudData.rewardsConfig = {};
-          cloudData.rewardsConfig[adminSelectedChild] = rewards;
-          saveCloudData();
+          cloudData.rewardsConfig[adminSelectedChild] = rewards; saveCloudData();
         }
       }
       closeCropModal();
     }
 
-    // --- ADMIN Y GESTIÓN ---
     function renderAdminPanel() {
       const isSpec = !!cloudData.isSpecialDayActive;
       const btnSpec = document.getElementById('btn-toggle-special-day');
       btnSpec.innerText = isSpec ? '🎉 Aktibatuta (Desaktibatu)' : '⚪ Desaktibatuta (Aktibatu)';
       btnSpec.className = `btn-action ${isSpec ? 'btn-purple' : ''}`;
       if (!isSpec) btnSpec.style.background = 'var(--secondary)';
-
-      renderAdminChildTabs();
-      renderAdminTasks();
-      renderAdminRewards();
-      renderAdminWeeklyView();
+      renderAdminChildTabs(); renderAdminTasks(); renderAdminRewards(); renderAdminWeeklyView();
     }
 
     function renderAdminChildTabs() {
@@ -1272,142 +829,70 @@
       tabsContainer.innerHTML = html;
     }
 
-    function selectAdminChild(name) {
-      adminSelectedChild = name;
-      renderAdminPanel();
-    }
-
-    function editCurrentChildAvatar() {
-      document.getElementById('avatar-file-input').click();
-    }
+    function selectAdminChild(name) { adminSelectedChild = name; renderAdminPanel(); }
+    function editCurrentChildAvatar() { document.getElementById('avatar-file-input').click(); }
 
     function addNewChild() {
       const name = prompt('Haurraren izena:');
       if (!name) return;
       let kids = getChildrenList();
       kids.push({ name, avatar: '' });
-      cloudData.children = kids;
-      saveCloudData();
-      adminSelectedChild = name;
-      renderAdminPanel();
+      cloudData.children = kids; saveCloudData();
+      adminSelectedChild = name; renderAdminPanel();
     }
 
     function deleteCurrentChild() {
       let kids = getChildrenList();
-      if (kids.length <= 1) {
-        alert('Ezin da haur bakarra ezabatu. Gutxienez perfil bat egon behar da.');
-        return;
-      }
+      if (kids.length <= 1) { alert('Ezin da haur bakarra ezabatu. Gutxienez perfil bat egon behar da.'); return; }
       if (!adminSelectedChild) return;
       if (!confirm(`Ziur zaude "${adminSelectedChild}" haurra eta bere datu guztiak ezabatu nahi dituzula?`)) return;
-
       const removedChild = adminSelectedChild;
-      kids = kids.filter(c => c.name !== removedChild);
-      cloudData.children = kids;
-
+      kids = kids.filter(c => c.name !== removedChild); cloudData.children = kids;
       if (cloudData.tasksConfig) delete cloudData.tasksConfig[removedChild];
       if (cloudData.rewardsConfig) delete cloudData.rewardsConfig[removedChild];
       if (cloudData.rewardsSpent) delete cloudData.rewardsSpent[removedChild];
       if (cloudData.tasksState) delete cloudData.tasksState[removedChild];
-
       adminSelectedChild = kids[0].name;
       if (currentChild === removedChild) currentChild = kids[0].name;
-
-      saveCloudData();
-      renderAdminPanel();
+      saveCloudData(); renderAdminPanel();
     }
 
     function moveTask(index, direction) {
-      let tasks = getChildTasks(adminSelectedChild);
-      let targetIndex = index + direction;
+      let tasks = getChildTasks(adminSelectedChild), targetIndex = index + direction;
       if (targetIndex < 0 || targetIndex >= tasks.length) return;
-      
-      let temp = tasks[index];
-      tasks[index] = tasks[targetIndex];
-      tasks[targetIndex] = temp;
-      
+      let temp = tasks[index]; tasks[index] = tasks[targetIndex]; tasks[targetIndex] = temp;
       if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
-      cloudData.tasksConfig[adminSelectedChild] = tasks;
-      saveCloudData();
-      renderAdminPanel();
+      cloudData.tasksConfig[adminSelectedChild] = tasks; saveCloudData(); renderAdminPanel();
     }
 
     function renderAdminTasks() {
-      const listContainer = document.getElementById('admin-task-list');
-      const tasks = getChildTasks(adminSelectedChild);
+      const listContainer = document.getElementById('admin-task-list'), tasks = getChildTasks(adminSelectedChild);
       let html = '';
       tasks.forEach((task, index) => {
-        const thumbHtml = task.image && task.image.trim() !== '' ? 
-          `<img src="${task.image}" alt="thumb">` :
-          `<div class="task-admin-placeholder">Ez dago</div>`;
-
-        const isFirst = index === 0;
-        const isLast = index === tasks.length - 1;
-
+        const thumbHtml = task.image && task.image.trim() !== '' ? `<img src="${task.image}" alt="thumb">` : `<div class="task-admin-placeholder">Ez dago</div>`;
+        const isFirst = index === 0, isLast = index === tasks.length - 1;
         let schedLabel = 'Egunero';
         if (task.schedule === 'weekdays') schedLabel = 'Eskola (L-V)';
         if (task.schedule === 'weekend') schedLabel = 'Asteburua (S-D)';
         if (task.schedule === 'special') schedLabel = '🎉 Berezia';
-
-        html += `
-          <div class="task-admin-row">
-            <div class="task-admin-img-col">
-              ${thumbHtml}
-            </div>
-            <div class="task-admin-content-col">
-              <div>
-                <b style="font-size: 1.05rem; color: var(--dark);">${task.name}</b> ${task.shared ? '👥' : ''}<br>
-                <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | 📅 ${schedLabel} | 🏷️ ${task.category || 'Gabe'}</span>
-              </div>
-              <div class="task-admin-btns">
-                <button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isFirst ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isFirst ? '' : `moveTask(${index}, -1)`}">⬆️</button>
-                <button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isLast ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isLast ? '' : `moveTask(${index}, 1)`}">⬇️</button>
-                <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.85rem;" onclick="openTaskEditor(${index})">Editatu</button>
-                <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.85rem;" onclick="deleteTask(${index})">Ezabatu</button>
-              </div>
-            </div>
-          </div>
-        `;
+        html += `<div class="task-admin-row"><div class="task-admin-img-col">${thumbHtml}</div><div class="task-admin-content-col"><div><b style="font-size: 1.05rem; color: var(--dark);">${task.name}</b> ${task.shared ? '👥' : ''}<br><span style="font-size:0.8rem; color:var(--secondary);">⭐ ${task.points} pts | 📅 ${schedLabel} | 🏷️ ${task.category || 'Gabe'}</span></div><div class="task-admin-btns"><button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isFirst ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isFirst ? '' : `moveTask(${index}, -1)`}">⬆️</button><button class="btn-action" style="padding: 6px 8px; width: auto; background: var(--secondary); font-size:0.8rem; ${isLast ? 'opacity:0.3; cursor:default;' : ''}" onclick="${isLast ? '' : `moveTask(${index}, 1)`}">⬇️</button><button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.85rem;" onclick="openTaskEditor(${index})">Editatu</button><button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.85rem;" onclick="deleteTask(${index})">Ezabatu</button></div></div></div>`;
       });
       listContainer.innerHTML = html;
     }
 
     function renderAdminRewards() {
-      const listContainer = document.getElementById('admin-reward-list');
-      const rewards = getChildRewards(adminSelectedChild);
+      const listContainer = document.getElementById('admin-reward-list'), rewards = getChildRewards(adminSelectedChild);
       let html = '';
       rewards.forEach((reward, index) => {
-        const thumbHtml = reward.image && reward.image.trim() !== '' ? 
-          `<img src="${reward.image}" alt="thumb">` :
-          `<div class="task-admin-placeholder">Ez dago</div>`;
-
-        html += `
-          <div class="task-admin-row">
-            <div class="task-admin-img-col">
-              ${thumbHtml}
-            </div>
-            <div class="task-admin-content-col">
-              <div>
-                <b style="font-size: 1.05rem; color: var(--dark);">${reward.name}</b><br>
-                <span style="font-size:0.8rem; color:var(--secondary);">⭐ ${reward.points} pts</span>
-              </div>
-              <div class="task-admin-btns">
-                <button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.85rem;" onclick="openRewardEditor(${index})">Editatu</button>
-                <button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.85rem;" onclick="deleteReward(${index})">Ezabatu</button>
-              </div>
-            </div>
-          </div>
-        `;
+        const thumbHtml = reward.image && reward.image.trim() !== '' ? `<img src="${reward.image}" alt="thumb">` : `<div class="task-admin-placeholder">Ez dago</div>`;
+        html += `<div class="task-admin-row"><div class="task-admin-img-col">${thumbHtml}</div><div class="task-admin-content-col"><div><b style="font-size: 1.05rem; color: var(--dark);">${reward.name}</b><br><span style="font-size:0.8rem; color:var(--secondary);">⭐ ${reward.points} pts</span></div><div class="task-admin-btns"><button class="btn-action" style="padding: 6px 10px; width: auto; background: var(--primary); font-size:0.85rem;" onclick="openRewardEditor(${index})">Editatu</button><button class="btn-action btn-red" style="padding: 6px 10px; width: auto; font-size:0.85rem;" onclick="deleteReward(${index})">Ezabatu</button></div></div></div>`;
       });
       listContainer.innerHTML = html;
     }
 
     function openTaskEditor(index = -1) {
-      lockScroll(true);
-      editingTaskIndex = index;
-      const tasks = getChildTasks(adminSelectedChild);
-      let thumb = document.getElementById('t-preview-thumb');
-      
+      lockScroll(true); editingTaskIndex = index;
+      const tasks = getChildTasks(adminSelectedChild), thumb = document.getElementById('t-preview-thumb');
       if (index >= 0) {
         let t = tasks[index];
         document.getElementById('task-modal-title').innerText = 'Zeregina Editatu';
@@ -1418,12 +903,7 @@
         document.getElementById('t-schedule').value = t.schedule || 'all';
         document.getElementById('t-shared').checked = !!t.shared;
         document.getElementById('t-image-result').value = t.image || '';
-        if (t.image) {
-          thumb.src = t.image;
-          thumb.style.display = 'block';
-        } else {
-          thumb.style.display = 'none';
-        }
+        if (t.image) { thumb.src = t.image; thumb.style.display = 'block'; } else { thumb.style.display = 'none'; }
       } else {
         document.getElementById('task-modal-title').innerText = 'Zeregin Berria Gehitu';
         document.getElementById('t-name').value = '';
@@ -1439,10 +919,7 @@
       document.getElementById('task-modal').style.display = 'flex';
     }
 
-    function closeTaskModal() {
-      lockScroll(false);
-      document.getElementById('task-modal').style.display = 'none';
-    }
+    function closeTaskModal() { lockScroll(false); document.getElementById('task-modal').style.display = 'none'; }
 
     function saveTaskFromModal() {
       const name = document.getElementById('t-name').value;
@@ -1453,49 +930,29 @@
       const schedule = document.getElementById('t-schedule').value || 'all';
       const shared = document.getElementById('t-shared').checked;
       const image = document.getElementById('t-image-result').value;
-
       let tasks = getChildTasks(adminSelectedChild);
-
-      if (editingTaskIndex >= 0) {
-        tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, schedule, shared, image };
-      } else {
-        tasks.push({ id: 't_' + Date.now(), name, points, category, checks, schedule, shared, image });
-      }
-
+      if (editingTaskIndex >= 0) tasks[editingTaskIndex] = { ...tasks[editingTaskIndex], name, points, category, checks, schedule, shared, image };
+      else tasks.push({ id: 't_' + Date.now(), name, points, category, checks, schedule, shared, image });
       if (!cloudData.tasksConfig) cloudData.tasksConfig = {};
-      cloudData.tasksConfig[adminSelectedChild] = tasks;
-      saveCloudData();
-      closeTaskModal();
-      renderAdminPanel();
+      cloudData.tasksConfig[adminSelectedChild] = tasks; saveCloudData(); closeTaskModal(); renderAdminPanel();
     }
 
     function deleteTask(index) {
       if (!confirm('Ziur zeregin hau ezabatu nahi duzula?')) return;
       let tasks = getChildTasks(adminSelectedChild);
-      tasks.splice(index, 1);
-      cloudData.tasksConfig[adminSelectedChild] = tasks;
-      saveCloudData();
-      renderAdminPanel();
+      tasks.splice(index, 1); cloudData.tasksConfig[adminSelectedChild] = tasks; saveCloudData(); renderAdminPanel();
     }
 
     function openRewardEditor(index = -1) {
-      lockScroll(true);
-      editingRewardIndex = index;
-      const rewards = getChildRewards(adminSelectedChild);
-      let thumb = document.getElementById('r-preview-thumb');
-      
+      lockScroll(true); editingRewardIndex = index;
+      const rewards = getChildRewards(adminSelectedChild), thumb = document.getElementById('r-preview-thumb');
       if (index >= 0) {
         let r = rewards[index];
         document.getElementById('reward-modal-title').innerText = 'Saria Editatu';
         document.getElementById('r-name').value = r.name;
         document.getElementById('r-points').value = r.points;
         document.getElementById('r-image-result').value = r.image || '';
-        if (r.image) {
-          thumb.src = r.image;
-          thumb.style.display = 'block';
-        } else {
-          thumb.style.display = 'none';
-        }
+        if (r.image) { thumb.src = r.image; thumb.style.display = 'block'; } else { thumb.style.display = 'none'; }
       } else {
         document.getElementById('reward-modal-title').innerText = 'Sari Berria Gehitu';
         document.getElementById('r-name').value = '';
@@ -1507,58 +964,41 @@
       document.getElementById('reward-modal').style.display = 'flex';
     }
 
-    function closeRewardModal() {
-      lockScroll(false);
-      document.getElementById('reward-modal').style.display = 'none';
-    }
+    function closeRewardModal() { lockScroll(false); document.getElementById('reward-modal').style.display = 'none'; }
 
     function saveRewardFromModal() {
       const name = document.getElementById('r-name').value;
       if (!name) return alert('Idatzi sariaren izena');
       const points = parseInt(document.getElementById('r-points').value) || 50;
       const image = document.getElementById('r-image-result').value;
-
       let rewards = getChildRewards(adminSelectedChild);
-
-      if (editingRewardIndex >= 0) {
-        rewards[editingRewardIndex] = { ...rewards[editingRewardIndex], name, points, image };
-      } else {
-        rewards.push({ id: 'r_' + Date.now(), name, points, image });
-      }
-
+      if (editingRewardIndex >= 0) rewards[editingRewardIndex] = { ...rewards[editingRewardIndex], name, points, image };
+      else rewards.push({ id: 'r_' + Date.now(), name, points, image });
       if (!cloudData.rewardsConfig) cloudData.rewardsConfig = {};
-      cloudData.rewardsConfig[adminSelectedChild] = rewards;
-      saveCloudData();
-      closeRewardModal();
-      renderAdminRewards();
+      cloudData.rewardsConfig[adminSelectedChild] = rewards; saveCloudData(); closeRewardModal(); renderAdminRewards();
     }
 
     function deleteReward(index) {
       if (!confirm('Ziur saria ezabatu nahi duzula?')) return;
       let rewards = getChildRewards(adminSelectedChild);
-      rewards.splice(index, 1);
-      cloudData.rewardsConfig[adminSelectedChild] = rewards;
-      saveCloudData();
-      renderAdminRewards();
+      rewards.splice(index, 1); cloudData.rewardsConfig[adminSelectedChild] = rewards; saveCloudData(); renderAdminRewards();
     }
 
     function renderAdminWeeklyView() {
       const container = document.getElementById('admin-weekly-view-container');
-      if (adminSelectedChild) {
-        renderWeeklyView(container, adminSelectedChild, true); 
-      }
+      if (adminSelectedChild) renderWeeklyView(container, adminSelectedChild, true);
     }
 
     function updatePassword() {
       const newPass = document.getElementById('new-admin-pass').value;
       if (!newPass) return alert('Idatzi pasahitz bat');
-      cloudData.adminPassword = newPass;
-      saveCloudData();
+      cloudData.adminPassword = newPass; saveCloudData();
       alert('Pasahitza gorde da!');
       document.getElementById('new-admin-pass').value = '';
     }
 
-    // Inicializar conexión
+    // Inicializar
+    SyncManager.init();
     initFirestoreSync();
   </script>
 </body>
