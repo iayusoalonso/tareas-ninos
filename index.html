@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Umeen Tasiak - Task Manager</title>
+  <title>Umeen Zereginak - Task Manager</title>
   <style>
     :root {
       --primary: #4A90E2;
@@ -12,8 +12,9 @@
       --light: #F4F7F6;
       --card-bg: #FFFFFF;
       --accent: #FF7043;
-      --disabled: #BDC3C7;
-      --radius: 12px;
+      --success: #2ECC71;
+      --disabled: #95A5A6;
+      --radius: 16px;
     }
 
     * {
@@ -29,44 +30,119 @@
       padding: 15px;
       max-width: 600px;
       margin: 0 auto;
+      min-height: 100vh;
     }
 
+    /* PANTALLAS */
+    .screen {
+      display: none;
+    }
+    .screen.active {
+      display: block;
+    }
+
+    /* ENCABEZADOS Y HEADER */
     header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      position: relative;
     }
 
     h1 {
       color: var(--secondary);
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      color: #7F8C8D;
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+
+    .btn-back {
+      position: absolute;
+      left: 0;
+      top: 0;
+      background: none;
+      border: none;
       font-size: 1.5rem;
-      margin-bottom: 10px;
-    }
-
-    /* Tabs de Niños */
-    .child-tabs {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    .tab-btn {
-      padding: 8px 16px;
-      border: 2px solid var(--primary);
-      border-radius: 20px;
-      background: white;
-      color: var(--primary);
-      font-weight: bold;
       cursor: pointer;
-      transition: all 0.2s;
+      color: var(--secondary);
     }
 
-    .tab-btn.active {
+    /* LANDING SCREEN */
+    .landing-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .profile-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .profile-card:active {
+      transform: scale(0.98);
+    }
+
+    .profile-card.admin {
+      background: #EBF5FB;
+      border-color: var(--primary);
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .avatar-circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
       background: var(--primary);
       color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: bold;
     }
 
-    /* Lista de Tareas */
+    .profile-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .profile-points {
+      font-size: 0.9rem;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .special-day-box {
+      margin-top: 25px;
+      background: #FFF8E1;
+      border: 1px solid #FFE082;
+      border-radius: var(--radius);
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* VISTA NIÑO */
     .task-list {
       display: flex;
       flex-direction: column;
@@ -76,19 +152,19 @@
     .task-card {
       background: var(--card-bg);
       border-radius: var(--radius);
-      padding: 12px;
+      padding: 12px 15px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 15px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
 
     .task-img {
-      width: 55px;
-      height: 55px;
-      border-radius: 8px;
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
       object-fit: cover;
-      background-color: #eee;
+      background-color: #EEE;
       flex-shrink: 0;
     }
 
@@ -98,42 +174,62 @@
 
     .task-title {
       font-weight: bold;
-      font-size: 1rem;
+      font-size: 1.05rem;
       color: var(--dark);
     }
 
     .task-meta {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: #7F8C8D;
-      margin-top: 3px;
+      margin-top: 4px;
     }
 
     .task-points {
       background: #FFF3E0;
       color: var(--accent);
       font-weight: bold;
-      padding: 4px 8px;
-      border-radius: 8px;
-      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 0.9rem;
     }
 
-    /* Botones de acción */
-    .btn-add {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: white;
+    /* ADMIN PANEL */
+    .admin-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      margin-right: 4px;
+    }
+
+    .badge-child { background: #E1F5FE; color: #0288D1; }
+    .badge-disabled { background: #FFEBEE; color: #C62828; }
+    .badge-date { background: #E8F5E9; color: #2E7D32; }
+
+    /* BOTONES */
+    .btn {
+      padding: 10px 18px;
+      border-radius: 10px;
       border: none;
-      font-size: 28px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      font-weight: bold;
       cursor: pointer;
+      font-size: 0.95rem;
     }
 
-    /* Modal */
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-accent { background: var(--accent); color: white; }
+    .btn-secondary { background: #E0E0E0; color: var(--dark); }
+    .btn-danger { background: #E74C3C; color: white; margin-right: auto; }
+
+    /* MODAL */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -142,7 +238,7 @@
       justify-content: center;
       align-items: center;
       padding: 15px;
-      z-index: 100;
+      z-index: 1000;
     }
 
     .modal-overlay.active {
@@ -152,9 +248,9 @@
     .modal {
       background: white;
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 22px;
       width: 100%;
-      max-width: 450px;
+      max-width: 480px;
       max-height: 90vh;
       overflow-y: auto;
       display: flex;
@@ -163,7 +259,7 @@
     }
 
     .modal-title {
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       color: var(--secondary);
       font-weight: bold;
     }
@@ -171,18 +267,18 @@
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
       text-align: left;
     }
 
     .form-group label {
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       font-weight: bold;
       color: var(--secondary);
     }
 
     .form-input, .form-select {
-      padding: 10px;
+      padding: 10px 12px;
       border: 1px solid #DDD;
       border-radius: 8px;
       font-size: 0.95rem;
@@ -199,7 +295,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       cursor: pointer;
     }
 
@@ -207,37 +303,76 @@
       display: flex;
       justify-content: flex-end;
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 15px;
     }
-
-    .btn {
-      padding: 10px 18px;
-      border-radius: 8px;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-secondary { background: #E0E0E0; color: var(--dark); }
-    .btn-danger { background: #E74C3C; color: white; margin-right: auto; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Umeen Tasiak</h1>
-    <div class="child-tabs" id="child-tabs"></div>
-  </header>
+  <!-- PANTALLA 1: LANDING (SELECCIÓN DE PERFIL) -->
+  <div id="screen-landing" class="screen active">
+    <header>
+      <h1>Umeen Zereginak</h1>
+      <p class="subtitle">Aukeratu profila sartzeko</p>
+    </header>
 
-  <main class="task-list" id="task-list-container"></main>
+    <div class="landing-grid" id="profile-container">
+      <!-- Generado dinámicamente -->
+    </div>
 
-  <button class="btn-add" onclick="openTaskModal()">+</button>
+    <div class="special-day-box">
+      <div>
+        <strong style="color: var(--dark); font-size: 0.95rem;">Egun Berezia (Día Especial)</strong>
+        <div style="font-size: 0.8rem; color: #7F8C8D;">Aktibatu jai egunetako zereginak erakusteko</div>
+      </div>
+      <input type="checkbox" id="toggle-special-day" style="width: 24px; height: 24px; cursor: pointer;" onchange="toggleSpecialDay(this.checked)">
+    </div>
 
-  <!-- MODAL DE TAREA -->
+    <div style="margin-top: 20px;">
+      <div class="profile-card admin" onclick="showAdminScreen()">
+        <div class="profile-info">
+          <div class="avatar-circle" style="background: var(--secondary);">⚙️</div>
+          <div>
+            <div class="profile-name">Administrazioa</div>
+            <div class="subtitle" style="font-size: 0.8rem;">Kudeatu zereginak eta umeak</div>
+          </div>
+        </div>
+        <span>➔</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: VISTA DEL NIÑO -->
+  <div id="screen-child" class="screen">
+    <header>
+      <button class="btn-back" onclick="showLandingScreen()">←</button>
+      <h1 id="child-view-title">Umearen Zereginak</h1>
+      <p class="subtitle" id="child-view-points">Puntuak: 0 pt</p>
+    </header>
+
+    <main class="task-list" id="child-task-container"></main>
+  </div>
+
+  <!-- PANTALLA 3: PANEL DE ADMINISTRACIÓN -->
+  <div id="screen-admin" class="screen">
+    <header>
+      <button class="btn-back" onclick="showLandingScreen()">←</button>
+      <h1>Administrazioa</h1>
+      <p class="subtitle">Zereginen katalogo orokorra</p>
+    </header>
+
+    <div class="admin-actions">
+      <strong style="font-size: 1.1rem;">Zeregin guztiak</strong>
+      <button class="btn btn-primary" onclick="openTaskModal()">+ Zeregin Berria</button>
+    </div>
+
+    <main class="task-list" id="admin-task-container"></main>
+  </div>
+
+  <!-- MODAL DE EDICIÓN / CREACIÓN DE TAREA -->
   <div class="modal-overlay" id="task-modal">
     <div class="modal">
-      <div class="modal-title" id="modal-title-text">Tarea berria / Editatu</div>
+      <div class="modal-title" id="modal-title-text">Zeregin Berria / Editatu</div>
 
       <input type="hidden" id="t-id">
 
@@ -278,7 +413,7 @@
         <div class="checkbox-group" id="t-assigned-children-container"></div>
       </div>
 
-      <!-- FECHA DE ACTIVACIÓN Y ESTADO -->
+      <!-- FECHA DE ACTIVACIÓN Y DESACTIVACIÓN -->
       <div class="form-group">
         <label for="t-active-from">Aktibazio data (Activar desde - Opcional):</label>
         <input type="date" id="t-active-from" class="form-input">
@@ -286,14 +421,15 @@
 
       <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px;">
         <input type="checkbox" id="t-disabled" style="width:20px; height:20px; cursor:pointer;">
-        <label for="t-disabled" style="cursor:pointer; font-size: 0.95rem;">Desaktibatuta (Desactivar tarea)</label>
+        <label for="t-disabled" style="cursor:pointer; font-size: 0.95rem;">Desaktibatuta (Desactivar zeregina)</label>
       </div>
 
+      <!-- IMAGEN / FOTO -->
       <div class="form-group">
-        <label for="t-image">Irudia / Foto (Base64 edo URL):</label>
+        <label for="t-file-input">Irudia / Foto (Base64 edo URL):</label>
         <input type="file" id="t-file-input" accept="image/*" class="form-input" onchange="handleImageUpload(event)">
         <input type="hidden" id="t-image">
-        <img id="t-preview-img" style="max-height: 80px; width: auto; object-fit: contain; margin-top: 5px; display: none; border-radius: 6px;">
+        <img id="t-preview-img" style="max-height: 90px; width: auto; object-fit: contain; margin-top: 8px; display: none; border-radius: 8px;">
       </div>
 
       <div class="modal-actions">
@@ -305,48 +441,44 @@
   </div>
 
   <script>
-    // Objeto global de datos
+    // ESTADO GLOBAL
     let cloudData = JSON.parse(localStorage.getItem('cloudData')) || {
       children: ["Luke", "Marty"],
       isSpecialDayActive: false,
-      // Formato antiguo guardado provisionalmente si existe:
-      tasksConfig: {
-        "Luke": [
-          { id: "t1", name: "Hortzak garbitu", category: "Higiene", points: 10, checks: 1, schedule: "all", image: "" }
-        ],
-        "Marty": [
-          { id: "t1", name: "Hortzak garbitu", category: "Higiene", points: 10, checks: 1, schedule: "all", image: "" }
-        ]
-      }
+      points: { "Luke": 0, "Marty": 0 },
+      tasksConfig: {}
     };
 
-    let currentChild = cloudData.children[0] || "Luke";
+    let currentChild = null;
 
-    // 1. SCRIPT DE MIGRACIÓN AUTOMÁTICA (CONSERVA TAREAS Y FOTOS)
+    // 1. MIGRACIÓN AUTOMÁTICA TRANSPARENTE
     function migrateExistingTasks() {
       if (!cloudData.globalTasks) {
         const globalTasksMap = new Map();
 
-        if (cloudData.tasksConfig) {
+        if (cloudData.tasksConfig && typeof cloudData.tasksConfig === 'object') {
           Object.entries(cloudData.tasksConfig).forEach(([childName, tasks]) => {
-            tasks.forEach(task => {
-              const key = task.id || task.name;
-              if (globalTasksMap.has(key)) {
-                const existingTask = globalTasksMap.get(key);
-                if (!existingTask.assignedChildren.includes(childName)) {
-                  existingTask.assignedChildren.push(childName);
+            if (Array.isArray(tasks)) {
+              tasks.forEach(task => {
+                const key = task.id || task.name;
+
+                if (globalTasksMap.has(key)) {
+                  const existingTask = globalTasksMap.get(key);
+                  if (!existingTask.assignedChildren.includes(childName)) {
+                    existingTask.assignedChildren.push(childName);
+                  }
+                } else {
+                  globalTasksMap.set(key, {
+                    ...task,
+                    id: task.id || "task_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+                    assignedChildren: [childName],
+                    activeFrom: task.activeFrom || null,
+                    activeUntil: task.activeUntil || null,
+                    disabled: !!task.disabled
+                  });
                 }
-              } else {
-                globalTasksMap.set(key, {
-                  ...task,
-                  id: task.id || "task_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
-                  assignedChildren: [childName],
-                  activeFrom: task.activeFrom || null,
-                  activeUntil: task.activeUntil || null,
-                  disabled: task.disabled || false
-                });
-              }
-            });
+              });
+            }
           });
         }
 
@@ -357,31 +489,43 @@
 
     function saveCloudData() {
       localStorage.setItem('cloudData', JSON.stringify(cloudData));
+      if (typeof syncWithFirestore === 'function') {
+        syncWithFirestore(cloudData);
+      }
     }
 
-    // 2. RENDERING DE INTERFAZ
-    function initApp() {
-      migrateExistingTasks();
-      renderChildrenTabs();
-      renderTasks();
+    // 2. NAVEGACIÓN Y VISIBILIDAD DE PANTALLAS
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
     }
 
-    function renderChildrenTabs() {
-      const container = document.getElementById('child-tabs');
-      container.innerHTML = '';
-      cloudData.children.forEach(child => {
-        const btn = document.createElement('button');
-        btn.className = `tab-btn ${child === currentChild ? 'active' : ''}`;
-        btn.innerText = child;
-        btn.onclick = () => {
-          currentChild = child;
-          renderChildrenTabs();
-          renderTasks();
-        };
-        container.appendChild(btn);
-      });
+    function showLandingScreen() {
+      currentChild = null;
+      renderLanding();
+      showScreen('screen-landing');
     }
 
+    function showChildScreen(childName) {
+      currentChild = childName;
+      document.getElementById('child-view-title').innerText = `${childName} - Zereginak`;
+      const points = (cloudData.points && cloudData.points[childName]) || 0;
+      document.getElementById('child-view-points').innerText = `Puntuak: ${points} pt`;
+      renderChildTasks();
+      showScreen('screen-child');
+    }
+
+    function showAdminScreen() {
+      renderAdminTasks();
+      showScreen('screen-admin');
+    }
+
+    function toggleSpecialDay(checked) {
+      cloudData.isSpecialDayActive = checked;
+      saveCloudData();
+    }
+
+    // 3. LÓGICA DE FILTRADO DE ZEREGINAK
     function isTaskActiveForChildAndDate(task, childName, targetDate = new Date()) {
       if (task.disabled) return false;
       if (task.assignedChildren && !task.assignedChildren.includes(childName)) return false;
@@ -400,29 +544,57 @@
       return true;
     }
 
-    function renderTasks() {
-      const container = document.getElementById('task-list-container');
+    // 4. RENDERING DE PANTALLAS
+    function renderLanding() {
+      const container = document.getElementById('profile-container');
+      container.innerHTML = '';
+
+      document.getElementById('toggle-special-day').checked = !!cloudData.isSpecialDayActive;
+
+      cloudData.children.forEach(child => {
+        const points = (cloudData.points && cloudData.points[child]) || 0;
+        const card = document.createElement('div');
+        card.className = 'profile-card';
+        card.onclick = () => showChildScreen(child);
+
+        card.innerHTML = `
+          <div class="profile-info">
+            <div class="avatar-circle">${child.charAt(0).toUpperCase()}</div>
+            <div>
+              <div class="profile-name">${child}</div>
+              <div class="profile-points">${points} pt</div>
+            </div>
+          </div>
+          <span>➔</span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderChildTasks() {
+      const container = document.getElementById('child-task-container');
       container.innerHTML = '';
 
       const activeTasks = cloudData.globalTasks.filter(t => isTaskActiveForChildAndDate(t, currentChild));
 
       if (activeTasks.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 20px; color: #95A5A6;">Ez dago tasiarik egunean.</div>`;
+        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #95A5A6;">Gaurkoz ez dago zereginik gertu! 🎉</div>`;
         return;
       }
 
       activeTasks.forEach(task => {
         const card = document.createElement('div');
         card.className = 'task-card';
-        card.onclick = () => openTaskModal(task.id);
 
-        const img = task.image ? `<img src="${task.image}" class="task-img">` : `<div class="task-img"></div>`;
+        const imgHtml = task.image 
+          ? `<img src="${task.image}" class="task-img">` 
+          : `<div class="task-img" style="display:flex;align-items:center;justify-content:center;color:#BDC3C7;font-size:1.5rem;">📋</div>`;
 
         card.innerHTML = `
-          ${img}
+          ${imgHtml}
           <div class="task-info">
             <div class="task-title">${task.name}</div>
-            <div class="task-meta">${task.category} • ${task.schedule}</div>
+            <div class="task-meta">${task.category || 'Orokorra'}</div>
           </div>
           <div class="task-points">+${task.points} pt</div>
         `;
@@ -430,19 +602,58 @@
       });
     }
 
-    // 3. GESTIÓN DEL MODAL Y FORMULARIO
+    function renderAdminTasks() {
+      const container = document.getElementById('admin-task-container');
+      container.innerHTML = '';
+
+      if (!cloudData.globalTasks || cloudData.globalTasks.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 30px; color: #95A5A6;">Ez dago zereginik kargatuta.</div>`;
+        return;
+      }
+
+      cloudData.globalTasks.forEach(task => {
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.style.cursor = 'pointer';
+        card.onclick = () => openTaskModal(task.id);
+
+        const imgHtml = task.image 
+          ? `<img src="${task.image}" class="task-img">` 
+          : `<div class="task-img" style="display:flex;align-items:center;justify-content:center;color:#BDC3C7;font-size:1.5rem;">📋</div>`;
+
+        const childrenBadges = (task.assignedChildren || [])
+          .map(c => `<span class="badge badge-child">${c}</span>`)
+          .join('');
+
+        const disabledBadge = task.disabled ? `<span class="badge badge-disabled">Desaktibatuta</span>` : '';
+        const dateBadge = task.activeFrom ? `<span class="badge badge-date">Desde: ${task.activeFrom}</span>` : '';
+
+        card.innerHTML = `
+          ${imgHtml}
+          <div class="task-info">
+            <div class="task-title">${task.name}</div>
+            <div style="margin-top: 4px;">
+              ${childrenBadges}
+              ${disabledBadge}
+              ${dateBadge}
+            </div>
+          </div>
+          <div class="task-points">${task.points} pt</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 5. GESTIÓN DEL MODAL
     function openTaskModal(taskId = null) {
       const modal = document.getElementById('task-modal');
       const childrenContainer = document.getElementById('t-assigned-children-container');
       
-      // Cargar checkboxes de niños
       childrenContainer.innerHTML = '';
       cloudData.children.forEach(child => {
         const label = document.createElement('label');
         label.className = 'checkbox-label';
-        label.innerHTML = `
-          <input type="checkbox" value="${child}" class="child-checkbox"> ${child}
-        `;
+        label.innerHTML = `<input type="checkbox" value="${child}" class="child-checkbox"> ${child}`;
         childrenContainer.appendChild(label);
       });
 
@@ -450,23 +661,21 @@
         const task = cloudData.globalTasks.find(t => t.id === taskId);
         if (!task) return;
 
-        document.getElementById('modal-title-text').innerText = "Editatu Tasia";
+        document.getElementById('modal-title-text').innerText = "Editatu Zeregina";
         document.getElementById('t-id').value = task.id;
         document.getElementById('t-name').value = task.name;
-        document.getElementById('t-category').value = task.category;
+        document.getElementById('t-category').value = task.category || '';
         document.getElementById('t-points').value = task.points;
         document.getElementById('t-checks').value = task.checks || 1;
-        document.getElementById('t-schedule').value = task.schedule;
+        document.getElementById('t-schedule').value = task.schedule || 'all';
         document.getElementById('t-active-from').value = task.activeFrom || '';
         document.getElementById('t-disabled').checked = !!task.disabled;
         document.getElementById('t-image').value = task.image || '';
 
-        // Marcar checkboxes asignados
         document.querySelectorAll('.child-checkbox').forEach(cb => {
           cb.checked = task.assignedChildren && task.assignedChildren.includes(cb.value);
         });
 
-        // Vista previa de imagen
         const preview = document.getElementById('t-preview-img');
         if (task.image) {
           preview.src = task.image;
@@ -477,7 +686,7 @@
 
         document.getElementById('btn-delete-task').style.display = 'block';
       } else {
-        document.getElementById('modal-title-text').innerText = "Tarea Berria";
+        document.getElementById('modal-title-text').innerText = "Zeregin Berria";
         document.getElementById('t-id').value = '';
         document.getElementById('t-name').value = '';
         document.getElementById('t-category').value = '';
@@ -489,11 +698,7 @@
         document.getElementById('t-image').value = '';
         document.getElementById('t-preview-img').style.display = 'none';
 
-        // Por defecto marcar el niño actual
-        document.querySelectorAll('.child-checkbox').forEach(cb => {
-          cb.checked = (cb.value === currentChild);
-        });
-
+        document.querySelectorAll('.child-checkbox').forEach(cb => cb.checked = true);
         document.getElementById('btn-delete-task').style.display = 'none';
       }
 
@@ -532,7 +737,7 @@
       const assignedChildren = Array.from(document.querySelectorAll('.child-checkbox:checked')).map(cb => cb.value);
 
       if (!name) {
-        alert("Sartu tasiaren izena, mesedez.");
+        alert("Sartu zereginaren izena, mesedez.");
         return;
       }
 
@@ -559,22 +764,26 @@
 
       saveCloudData();
       closeTaskModal();
-      renderTasks();
+      renderAdminTasks();
     }
 
     function deleteTask() {
       const id = document.getElementById('t-id').value;
       if (!id) return;
 
-      if (confirm("Ziur zaude tasia hau ezabatu nahi duzula?")) {
+      if (confirm("Ziur zaude zeregin hau ezabatu nahi duzula?")) {
         cloudData.globalTasks = cloudData.globalTasks.filter(t => t.id !== id);
         saveCloudData();
         closeTaskModal();
-        renderTasks();
+        renderAdminTasks();
       }
     }
 
-    window.onload = initApp;
+    // INICIALIZACIÓN
+    window.onload = function() {
+      migrateExistingTasks();
+      showLandingScreen();
+    };
   </script>
 </body>
 </html>
