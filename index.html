@@ -2,788 +2,1171 @@
 <html lang="eu">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Umeen Zereginak - Task Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://*.firebasestorage.app; connect-src https://*.googleapis.com https://*.firebaseio.com https://*.firebasestorage.app; font-src 'self';">
+  <title>Zereginak eta Sariak</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root {
-      --primary: #4A90E2;
-      --secondary: #5C6BC0;
-      --dark: #2C3E50;
-      --light: #F4F7F6;
-      --card-bg: #FFFFFF;
-      --accent: #FF7043;
-      --success: #2ECC71;
-      --disabled: #95A5A6;
-      --radius: 16px;
-    }
+    :root { --primary: #3B82F6; --warning: #F59E0B; --secondary: #64748B; --dark: #1E293B; --success: #2ECC71; --danger: #EF4444; --special: #8B5CF6; --bg: #F0F4F8; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; touch-action: manipulation; }
+    body { background-color: var(--bg); color: #333; padding-bottom: 90px; }
+    #profile-selection, #calendar-screen, #admin-screen, #rewards-screen, #badges-screen { display: none; padding: 15px; max-width: 600px; margin: 0 auto; }
+    .profile-header { text-align: center; margin-top: 40px; margin-bottom: 30px; }
+    .profile-header h1 { font-size: 2.5rem; color: var(--dark); font-weight: 900; }
+    .profile-buttons { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; }
+    .btn-profile { background: white; border: 4px solid var(--primary); border-radius: 24px; padding: 15px 30px; font-size: 1.5rem; font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 20px; width: 100%; max-width: 320px; }
+    .profile-avatar-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+    .app-title { font-size: 1.8rem; font-weight: 900; color: var(--dark); margin-bottom: 15px; padding-left: 5px; }
+    .top-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+    .btn-top { padding: 12px 5px; border-radius: 16px; border: none; color: white; font-weight: 800; font-size: 1rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .btn-sariak { background: var(--warning); }
+    .btn-dominak { background: var(--special); }
+    .btn-astea { background: var(--primary); }
+    .btn-aldatu { background: var(--secondary); }
+    .day-badge-wrap { text-align: center; margin-bottom: 25px; }
+    .day-badge { background: var(--dark); color: white; display: inline-block; padding: 12px 30px; border-radius: 25px; font-weight: 900; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    .day-badge.special-mode { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); }
+    #view-container { display: flex; flex-direction: column; gap: 20px; }
+    .daily-task-card-large { position: relative; width: 100%; min-height: 260px; border-radius: 24px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.1); background-color: #CBD5E1; display: flex; flex-direction: column; }
+    .daily-task-img-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+    .daily-task-overlay { position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 40%, rgba(0,0,0,0.25) 100%); }
+    .badges-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge-dark { background: #1E293B; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .badge-shared { background: #8B5CF6; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; }
+    .badge-special { background: #EC4899; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; }
+    .badge-date { background: #059669; color: white; padding: 6px 14px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; }
+    .star-icon { color: var(--warning); }
+    .task-title-large { font-size: 2.3rem; font-weight: 900; color: #000; text-transform: uppercase; margin-top: 10px; line-height: 1.1; letter-spacing: -1px; text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0px 3px 0 #fff; }
+    .checks-container { margin-top: 20px; align-self: flex-end; display: flex; gap: 10px; }
+    .checkbox-large { width: 60px; height: 60px; background: #FFFFFF; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; }
+    .checkbox-large:active { transform: scale(0.9); }
+    .checkbox-large.state-done { background: var(--success); }
+    .checkbox-large.state-done::after { content: '✓'; color: white; font-size: 2.8rem; font-weight: 900; }
+    #emoji-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 7rem; z-index: 9999; pointer-events: none; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; opacity: 0; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)); }
+    #emoji-popup.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    .rewards-grid { display: flex; flex-direction: column; gap: 20px; }
+    .reward-card { position: relative; width: 100%; min-height: 220px; border-radius: 24px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.1); background-color: #CBD5E1; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.1s; }
+    .reward-card:active { transform: scale(0.98); }
+    .reward-card.locked { filter: grayscale(100%); opacity: 0.75; cursor: not-allowed; }
+    .reward-img-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+    .reward-overlay { position: relative; z-index: 2; padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 50%, rgba(0,0,0,0.3) 100%); }
+    .reward-title { font-size: 2rem; font-weight: 900; color: #000; text-transform: uppercase; margin-top: 10px; line-height: 1.1; text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff, 0px 3px 0 #fff; }
+    .missing-points-box { align-self: flex-end; background: rgba(239, 68, 68, 0.9); color: white; padding: 10px 20px; border-radius: 16px; font-size: 2rem; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3); letter-spacing: -1px; }
+    .available-badge-box { align-self: flex-end; background: var(--success); color: white; padding: 10px 20px; border-radius: 16px; font-size: 1.4rem; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .weekly-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .weekly-table th, .weekly-table td { border: 1px solid #E2E8F0; padding: 10px; text-align: center; }
+    .weekly-table th { background: var(--primary); color: white; font-size: 0.9rem; }
+    .chk-weekly { width: 32px; height: 32px; border-radius: 8px; background: #F1F5F9; margin: 4px auto; display: flex; align-items: center; justify-content: center; border: 2px solid #CBD5E1; }
+    .chk-weekly.editable { cursor: pointer; }
+    .chk-weekly.done { background: var(--success); border-color: var(--success); color: white; font-weight: bold; }
+    .chk-weekly.done::after { content: '✓'; font-size: 1.2rem; }
+    #progress-footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); display: none; flex-direction: column; gap: 8px; z-index: 1000; border-top-left-radius: 20px; border-top-right-radius: 20px; max-width: 600px; margin: 0 auto; }
+    .progress-info { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.05rem; color: var(--dark); }
+    .progress-bar-bg { width: 100%; height: 12px; background: #E2E8F0; border-radius: 10px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 0%; background: var(--warning); border-radius: 10px; transition: width 0.3s; }
+    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; overflow-y: auto; }
+    .modal-card { background: white; border-radius: 24px; padding: 25px; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; text-align: center; max-height: 90vh; overflow-y: auto; }
+    .form-input { padding: 12px; border: 2px solid #CBD5E1; border-radius: 12px; font-size: 1.1rem; outline: none; width: 100%; user-select: text; }
+    .btn-action { padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; color: white; width: 100%; }
+    .btn-green { background: #10B981; }
+    .btn-red { background: var(--danger); }
+    .btn-purple { background: var(--special); }
+    .admin-card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .admin-card h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; color: var(--dark); }
+    .task-admin-row { display: flex; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid #F1F5F9; gap: 12px; text-align: left; }
+    .task-admin-img-col { width: 75px; height: 75px; flex-shrink: 0; }
+    .task-admin-img-col img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; border: 1px solid #CBD5E1; }
+    .task-admin-placeholder { width: 100%; height: 100%; border-radius: 12px; background: #E2E8F0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #64748B; font-weight: bold; text-align: center; }
+    .task-admin-content-col { display: flex; flex-direction: column; flex: 1; gap: 8px; min-width: 0; }
+    .task-admin-btns { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+    .child-pills-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .child-pill { font-size: 0.78rem; font-weight: 800; padding: 4px 10px; border-radius: 12px; cursor: pointer; border: 2px solid #CBD5E1; background: #F1F5F9; color: var(--secondary); transition: all 0.2s; }
+    .child-pill.active { background: #3B82F6; border-color: #3B82F6; color: white; }
+    .child-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    .child-tab { flex: 1; padding: 10px; border: 2px solid var(--primary); background: white; border-radius: 12px; font-weight: bold; cursor: pointer; color: var(--primary); text-align: center; }
+    .child-tab.active { background: var(--primary); color: white; }
+    #crop-canvas-container { position: relative; width: 100%; height: 260px; overflow: hidden; background: #000; border-radius: 12px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
+    #crop-canvas { cursor: grab; touch-action: none; }
+    #crop-canvas:active { cursor: grabbing; }
+    .zoom-controls { display: flex; justify-content: center; gap: 10px; align-items: center; margin-top: 5px; }
+    .btn-zoom { background: var(--dark); color: white; border: none; width: 40px; height: 40px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+    #loading-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999; font-weight: bold; font-size: 1.2rem; color: var(--dark); gap: 15px; }
+    #sync-status { position: fixed; top: 10px; right: 10px; z-index: 9999; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: none; pointer-events: none; }
+    .sync-ok { background: var(--success); color: white; }
+    .sync-pending { background: var(--warning); color: white; }
+    .sync-error { background: var(--danger); color: white; }
+    #auth-fallback-banner { position: fixed; top: 0; left: 0; right: 0; background: var(--danger); color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 0.9rem; z-index: 10000; display: none; }
 
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--light);
-      color: var(--dark);
-      padding: 15px;
-      max-width: 600px;
-      margin: 0 auto;
-      min-height: 100vh;
-    }
-
-    /* PANTALLAS */
-    .screen {
-      display: none;
-    }
-    .screen.active {
-      display: block;
-    }
-
-    /* ENCABEZADOS Y HEADER */
-    header {
-      text-align: center;
-      margin-bottom: 25px;
-      position: relative;
-    }
-
-    h1 {
-      color: var(--secondary);
-      font-size: 1.8rem;
-      font-weight: 800;
-    }
-
-    .subtitle {
-      color: #7F8C8D;
-      font-size: 0.95rem;
-      margin-top: 4px;
-    }
-
-    .btn-back {
-      position: absolute;
-      left: 0;
-      top: 0;
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--secondary);
-    }
-
-    /* LANDING SCREEN */
-    .landing-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      margin-top: 30px;
-    }
-
-    .profile-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      border: 2px solid transparent;
-    }
-
-    .profile-card:active {
-      transform: scale(0.98);
-    }
-
-    .profile-card.admin {
-      background: #EBF5FB;
-      border-color: var(--primary);
-    }
-
-    .profile-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .avatar-circle {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      font-weight: bold;
-    }
-
-    .profile-name {
-      font-size: 1.2rem;
-      font-weight: bold;
-    }
-
-    .profile-points {
-      font-size: 0.9rem;
-      color: var(--accent);
-      font-weight: bold;
-    }
-
-    .special-day-box {
-      margin-top: 25px;
-      background: #FFF8E1;
-      border: 1px solid #FFE082;
-      border-radius: var(--radius);
-      padding: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    /* VISTA NIÑO */
-    .task-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .task-card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 12px 15px;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .task-img {
-      width: 60px;
-      height: 60px;
-      border-radius: 12px;
-      object-fit: cover;
-      background-color: #EEE;
-      flex-shrink: 0;
-    }
-
-    .task-info {
-      flex: 1;
-    }
-
-    .task-title {
-      font-weight: bold;
-      font-size: 1.05rem;
-      color: var(--dark);
-    }
-
-    .task-meta {
-      font-size: 0.82rem;
-      color: #7F8C8D;
-      margin-top: 4px;
-    }
-
-    .task-points {
-      background: #FFF3E0;
-      color: var(--accent);
-      font-weight: bold;
-      padding: 6px 10px;
-      border-radius: 10px;
-      font-size: 0.9rem;
-    }
-
-    /* ADMIN PANEL */
-    .admin-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      margin-right: 4px;
-    }
-
-    .badge-child { background: #E1F5FE; color: #0288D1; }
-    .badge-disabled { background: #FFEBEE; color: #C62828; }
-    .badge-date { background: #E8F5E9; color: #2E7D32; }
-
-    /* BOTONES */
-    .btn {
-      padding: 10px 18px;
-      border-radius: 10px;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-accent { background: var(--accent); color: white; }
-    .btn-secondary { background: #E0E0E0; color: var(--dark); }
-    .btn-danger { background: #E74C3C; color: white; margin-right: auto; }
-
-    /* MODAL */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      padding: 15px;
-      z-index: 1000;
-    }
-
-    .modal-overlay.active {
-      display: flex;
-    }
-
-    .modal {
-      background: white;
-      border-radius: var(--radius);
-      padding: 22px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 90vh;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .modal-title {
-      font-size: 1.25rem;
-      color: var(--secondary);
-      font-weight: bold;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      text-align: left;
-    }
-
-    .form-group label {
-      font-size: 0.88rem;
-      font-weight: bold;
-      color: var(--secondary);
-    }
-
-    .form-input, .form-select {
-      padding: 10px 12px;
-      border: 1px solid #DDD;
-      border-radius: 8px;
-      font-size: 0.95rem;
-    }
-
-    .checkbox-group {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 4px;
-    }
-
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.95rem;
-      cursor: pointer;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 15px;
-    }
+    /* ESTILOS DE MEDALLAS / LOGROS */
+    .badges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; margin-top: 15px; }
+    .badge-item-card { background: white; border-radius: 20px; padding: 15px 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid #E2E8F0; transition: transform 0.2s; }
+    .badge-item-card.unlocked { border-color: var(--warning); background: linear-gradient(135deg, #FFFBEB 0%, #FFFFFF 100%); }
+    .badge-item-card.locked { filter: grayscale(100%); opacity: 0.45; }
+    .badge-item-icon { font-size: 2.8rem; margin-bottom: 8px; }
+    .badge-item-title { font-weight: 900; font-size: 0.95rem; color: var(--dark); margin-bottom: 4px; line-height: 1.1; }
+    .badge-item-desc { font-size: 0.75rem; color: var(--secondary); line-height: 1.2; }
+    .checkbox-chip-wrap { display: flex; align-items: center; gap: 8px; background: #F1F5F9; padding: 8px 12px; border-radius: 12px; cursor: pointer; border: 2px solid #CBD5E1; }
+    .checkbox-chip-wrap input { width: 18px; height: 18px; cursor: pointer; }
   </style>
+<base target="_blank">
 </head>
 <body>
-
-  <!-- PANTALLA 1: LANDING (SELECCIÓN DE PERFIL) -->
-  <div id="screen-landing" class="screen active">
-    <header>
-      <h1>Umeen Zereginak</h1>
-      <p class="subtitle">Aukeratu profila sartzeko</p>
-    </header>
-
-    <div class="landing-grid" id="profile-container">
-      <!-- Generado dinámicamente -->
+  <div id="auth-fallback-banner">⚠️ Ezin da hodeiarekin konektatu. Modu lokalean ari gara.</div>
+  <div id="loading-overlay"><div id="loading-text">🔄 Hodeiarekin konektatzen...</div></div>
+  <div id="sync-status"></div>
+  <div id="emoji-popup">🎉</div>
+  <div id="profile-selection">
+    <div class="profile-header"><h1>Zereginak</h1><p style="color: var(--secondary); font-size: 1.2rem; margin-top: 5px;">Aukeratu haurraren profil bat:</p></div>
+    <div id="profile-buttons-container" class="profile-buttons"></div>
+    <button class="btn-action" style="background: var(--secondary); margin-top: 25px;" onclick="showAdminScreen()">⚙️ Kudeaketa Panela</button>
+  </div>
+  <div id="calendar-screen">
+    <div class="app-title" id="app-subtitle">Zereginak</div>
+    <div class="top-buttons">
+      <button class="btn-top btn-sariak" onclick="showRewardsScreen()"><span style="font-size: 1.3rem;">🏆</span> Sariak</button>
+      <button class="btn-top btn-dominak" onclick="showBadgesScreen()"><span style="font-size: 1.3rem;">🎖️</span> Dominak</button>
+      <button class="btn-top btn-astea" id="btn-toggle-view" onclick="toggleView()">Aste osoa<br>ikusi</button>
+      <button class="btn-top btn-aldatu" onclick="showProfiles()"><span style="font-size: 1.1rem;">👶</span> Profilak</button>
     </div>
-
-    <div class="special-day-box">
-      <div>
-        <strong style="color: var(--dark); font-size: 0.95rem;">Egun Berezia (Día Especial)</strong>
-        <div style="font-size: 0.8rem; color: #7F8C8D;">Aktibatu jai egunetako zereginak erakusteko</div>
-      </div>
-      <input type="checkbox" id="toggle-special-day" style="width: 24px; height: 24px; cursor: pointer;" onchange="toggleSpecialDay(this.checked)">
+    <div id="view-container"></div>
+    <div id="radar-chart-card" class="admin-card" style="margin-top: 25px; text-align: center;">
+      <h3 style="color: var(--dark); margin-bottom: 15px; font-size: 1.1rem;">🕸️ Hobetzeko Arloak (Aste honetan)</h3>
+      <div style="max-width: 380px; margin: 0 auto; position: relative; height: 320px;"><canvas id="radarImprovementChart"></canvas></div>
     </div>
+  </div>
+  <div id="rewards-screen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h1 style="color: var(--dark);">🏆 Sariak</h1><button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showCalendarScreen()">← Zereginak</button></div>
+    <div class="admin-card" style="text-align: center; background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 165%); color: white;"><p style="font-size: 1.1rem; font-weight: bold; opacity: 0.9;">Zure Puntu Eskuragarriak</p><h2 id="rewards-available-points" style="font-size: 3rem; font-weight: 900; margin-top: 5px; border: none; color: white;">0 pts</h2></div>
+    <div id="rewards-grid-container" class="rewards-grid"></div>
+  </div>
+  <div id="badges-screen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h1 style="color: var(--dark);">🎖️ Dominak</h1><button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showCalendarScreen()">← Zereginak</button></div>
+    <div class="admin-card" style="text-align: center; background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); color: white;"><p style="font-size: 1.1rem; font-weight: bold; opacity: 0.9;">Lortutako Dominak</p><h2 id="badges-count-text" style="font-size: 2.8rem; font-weight: 900; margin-top: 5px; border: none; color: white;">0 / 0</h2></div>
+    <div id="badges-grid-container" class="badges-grid"></div>
+  </div>
+  <div id="admin-screen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h1>Kudeaketa Panela</h1><button class="btn-action" style="width: auto; background: var(--secondary); padding: 8px 15px;" onclick="showProfiles()">👶 Profilak</button></div>
+    <div class="admin-card" style="border: 2px solid var(--special);"><h2>🎉 Gaurko Eguna / Egoera</h2><div style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><div><b style="font-size:1.05rem;">Egun Berezia (Elegitua / Evento):</b><p style="font-size:0.85rem; color:var(--secondary);">Markatu aktibatzeko zeregin bereziak gaurko egunean.</p></div><button id="btn-toggle-special-day" class="btn-action" style="width:auto; padding:10px 20px;" onclick="toggleSpecialDayMode()"></button></div></div>
+    <div class="admin-card"><h2>Haurrak eta Avatarrak</h2><div class="child-tabs" id="admin-child-tabs"></div><div style="display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;"><button class="btn-action" style="background: var(--primary); font-size:0.9rem; flex:1;" onclick="editCurrentChildAvatar()">📷 Aldatu Avatarra</button><button class="btn-action btn-red" style="font-size:0.9rem; flex:1;" onclick="deleteCurrentChild()">🗑️ Ezabatu Haurra</button><button class="btn-action btn-green" style="font-size:0.9rem; flex:1;" onclick="addNewChild()">+ Haur berria</button></div></div>
+    <div class="admin-card">
+      <h2>Zereginak Kudeatu (Banku Nagusia)</h2>
+      <p style="font-size: 0.85rem; color: var(--secondary); margin-bottom: 12px;">Sortu zereginak behin bakarrik eta aktibatu/desaktibatu haur bakoitzarentzat edo orokoruki.</p>
+      <div id="admin-task-list"></div>
+      <button class="btn-action btn-green" style="margin-top: 15px;" onclick="openTaskEditor()">+ Gehitu zeregin berria</button>
+    </div>
+    <div class="admin-card"><h2>🏆 Sariak Kudeatu</h2><div id="admin-reward-list"></div><button class="btn-action btn-green" style="margin-top: 15px;" onclick="openRewardEditor()">+ Gehitu saria berria</button></div>
+    <div class="admin-card"><h2>📅 Egutegi eta Historial Kudeaketa</h2><p style="font-size: 0.9rem; color: var(--secondary); margin-bottom: 12px;">Markatu edo desmarkatu zereginak aste honetarako (Admin aldaketak).</p><div id="admin-weekly-view-container" style="overflow-x: auto;"></div></div>
+    <div class="admin-card"><h2>Pasahitza Aldatu</h2><input type="password" id="new-admin-pass" class="form-input" placeholder="Pasahitz berria..." style="margin-bottom: 10px;"><button class="btn-action" style="background: var(--dark);" onclick="updatePassword()">Gorde pasahitza</button></div>
+  </div>
 
-    <div style="margin-top: 20px;">
-      <div class="profile-card admin" onclick="showAdminScreen()">
-        <div class="profile-info">
-          <div class="avatar-circle" style="background: var(--secondary);">⚙️</div>
-          <div>
-            <div class="profile-name">Administrazioa</div>
-            <div class="subtitle" style="font-size: 0.8rem;">Kudeatu zereginak eta umeak</div>
-          </div>
-        </div>
-        <span>➔</span>
-      </div>
+  <div id="badge-unlocked-modal" class="modal-overlay">
+    <div class="modal-card" style="text-align: center;">
+      <div id="unlock-badge-icon" style="font-size: 5rem; margin-bottom: 10px;">🎖️</div>
+      <h2 style="color: var(--dark); font-weight: 900; margin-bottom: 5px;">DOMINA BERRIA!</h2>
+      <h3 id="unlock-badge-title" style="color: var(--special); font-size: 1.4rem; margin-bottom: 10px;"></h3>
+      <p id="unlock-badge-desc" style="color: var(--secondary); font-size: 1rem; margin-bottom: 20px;"></p>
+      <button class="btn-action btn-green" onclick="closeBadgeUnlockedModal()">Oso ondo! 🎉</button>
     </div>
   </div>
 
-  <!-- PANTALLA 2: VISTA DEL NIÑO -->
-  <div id="screen-child" class="screen">
-    <header>
-      <button class="btn-back" onclick="showLandingScreen()">←</button>
-      <h1 id="child-view-title">Umearen Zereginak</h1>
-      <p class="subtitle" id="child-view-points">Puntuak: 0 pt</p>
-    </header>
-
-    <main class="task-list" id="child-task-container"></main>
+  <div id="crop-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 450px;"><h3 id="crop-modal-title" style="color: var(--dark);">Irudia egokitu, mugitu eta zoom</h3><p style="font-size:0.85rem; color: var(--secondary);">Arrastradu irudia kokatzeko eta erabili botoiak zoometzeko.</p><div id="crop-canvas-container"><canvas id="crop-canvas"></canvas></div><div class="zoom-controls"><button class="btn-zoom" onclick="adjustZoom(-0.1)">-</button><span style="font-weight: bold; font-size: 0.9rem; color: var(--secondary);">Zoom</span><button class="btn-zoom" onclick="adjustZoom(0.1)">+</button></div><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-action" style="background: var(--secondary);" onclick="closeCropModal()">Utzi</button><button class="btn-action btn-green" onclick="confirmCropImage()">Gorde eta Konprimitu</button></div></div>
   </div>
 
-  <!-- PANTALLA 3: PANEL DE ADMINISTRACIÓN -->
-  <div id="screen-admin" class="screen">
-    <header>
-      <button class="btn-back" onclick="showLandingScreen()">←</button>
-      <h1>Administrazioa</h1>
-      <p class="subtitle">Zereginen katalogo orokorra</p>
-    </header>
-
-    <div class="admin-actions">
-      <strong style="font-size: 1.1rem;">Zeregin guztiak</strong>
-      <button class="btn btn-primary" onclick="openTaskModal()">+ Zeregin Berria</button>
-    </div>
-
-    <main class="task-list" id="admin-task-container"></main>
-  </div>
-
-  <!-- MODAL DE EDICIÓN / CREACIÓN DE TAREA -->
-  <div class="modal-overlay" id="task-modal">
-    <div class="modal">
-      <div class="modal-title" id="modal-title-text">Zeregin Berria / Editatu</div>
-
-      <input type="hidden" id="t-id">
-
-      <div class="form-group">
-        <label for="t-name">Izena (Nombre):</label>
-        <input type="text" id="t-name" class="form-input" placeholder="Ej: Hortzak garbitu">
+  <div id="task-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 id="task-modal-title" style="color: var(--dark);">Zeregina</h3>
+      <input type="text" id="t-name" class="form-input" placeholder="Zereginaren izena...">
+      <input type="number" id="t-points" class="form-input" placeholder="Puntu totalak..." value="10">
+      <div style="text-align: left; display: flex; flex-direction: column; gap: 5px;">
+        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Kategoria:</label>
+        <select id="t-category" class="form-input">
+          <option value="Higiene">Higiene</option>
+          <option value="Ordena">Ordena</option>
+          <option value="Ikasketak">Ikasketak (Estudios)</option>
+          <option value="Jokabidea">Jokabidea (Comportamiento)</option>
+          <option value="Besteak">Besteak (Otros)</option>
+        </select>
       </div>
-
-      <div class="form-group">
-        <label for="t-category">Kategoria (Categoría):</label>
-        <input type="text" id="t-category" class="form-input" placeholder="Ej: Higiene">
-      </div>
-
-      <div style="display: flex; gap: 10px;">
-        <div class="form-group" style="flex:1;">
-          <label for="t-points">Puntuak (Puntos):</label>
-          <input type="number" id="t-points" class="form-input" value="10">
-        </div>
-        <div class="form-group" style="flex:1;">
-          <label for="t-checks">Txekeak (Checks):</label>
-          <input type="number" id="t-checks" class="form-input" value="1">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="t-schedule">Maiztasuna (Horario):</label>
-        <select id="t-schedule" class="form-select">
-          <option value="all">Egunero (Todos los días)</option>
-          <option value="weekdays">Eskola Egunak (Entre semana)</option>
-          <option value="weekend">Asteburua (Fin de semana)</option>
-          <option value="special">Egun Bereziak (Días especiales)</option>
+      <input type="number" id="t-checks" class="form-input" placeholder="Check kopurua (adib. 3)..." value="1" min="1" max="10">
+      
+      <div style="text-align: left; display: flex; flex-direction: column; gap: 5px;">
+        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Noiz egin behar da?:</label>
+        <select id="t-schedule" class="form-input" onchange="onScheduleChange()">
+          <option value="all">Egunero (Lunes a Domingo)</option>
+          <option value="weekdays">Eskola Egunak (Astelehena-Ostirala)</option>
+          <option value="weekend">Asteburua (Larunbata-Igandea)</option>
+          <option value="special">Egun Bereziak bakarrik (Eventos)</option>
+          <option value="specific_date">Egun zehatz bat (Fecha concreta)</option>
         </select>
       </div>
 
-      <!-- ASIGNACIÓN DE NIÑOS -->
-      <div class="form-group">
-        <label>Nori dagokio? (Asignar a):</label>
-        <div class="checkbox-group" id="t-assigned-children-container"></div>
+      <div id="t-specific-date-wrap" style="display:none; text-align: left; flex-direction: column; gap: 5px;">
+        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Data zehatza:</label>
+        <input type="date" id="t-specific-date" class="form-input">
       </div>
 
-      <!-- FECHA DE ACTIVACIÓN Y DESACTIVACIÓN -->
-      <div class="form-group">
-        <label for="t-active-from">Aktibazio data (Activar desde - Opcional):</label>
-        <input type="date" id="t-active-from" class="form-input">
+      <div style="text-align: left; display: flex; flex-direction: column; gap: 5px;">
+        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Zein haurrentzat aktibatu?:</label>
+        <div id="t-assigned-children-container" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
       </div>
 
-      <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px;">
-        <input type="checkbox" id="t-disabled" style="width:20px; height:20px; cursor:pointer;">
-        <label for="t-disabled" style="cursor:pointer; font-size: 0.95rem;">Desaktibatuta (Desactivar zeregina)</label>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px; text-align: left;">
+        <input type="checkbox" id="t-shared" style="width: 22px; height: 22px; cursor: pointer;">
+        <label for="t-shared" style="font-size: 0.95rem; font-weight: bold; color: var(--dark); cursor: pointer;">Tarea partekatua (x2 puntu denek egitean)</label>
       </div>
 
-      <!-- IMAGEN / FOTO -->
-      <div class="form-group">
-        <label for="t-file-input">Irudia / Foto (Base64 edo URL):</label>
-        <input type="file" id="t-file-input" accept="image/*" class="form-input" onchange="handleImageUpload(event)">
-        <input type="hidden" id="t-image">
-        <img id="t-preview-img" style="max-height: 90px; width: auto; object-fit: contain; margin-top: 8px; display: none; border-radius: 8px;">
+      <div style="text-align: left; display:flex; flex-direction:column; gap:5px;">
+        <label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Zereginaren Irudia:</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="file" id="t-file-input" accept="image/*" class="form-input" style="padding: 8px; flex:1;" onchange="prepareImageForCrop(this, 'task')">
+          <img id="t-preview-thumb" src="" alt="" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #CBD5E1;">
+        </div>
       </div>
-
-      <div class="modal-actions">
-        <button class="btn btn-danger" id="btn-delete-task" onclick="deleteTask()" style="display:none;">Ezabatu</button>
-        <button class="btn btn-secondary" onclick="closeTaskModal()">Utzi</button>
-        <button class="btn btn-primary" onclick="saveTask()">Gorde</button>
+      <input type="hidden" id="t-image-result">
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="btn-action" style="background: var(--secondary);" onclick="closeTaskModal()">Utzi</button>
+        <button class="btn-action btn-green" onclick="saveTaskFromModal()">Gorde zeregina</button>
       </div>
     </div>
   </div>
 
-  <script>
-    // ESTADO GLOBAL
-    let cloudData = JSON.parse(localStorage.getItem('cloudData')) || {
-      children: ["Luke", "Marty"],
-      isSpecialDayActive: false,
-      points: { "Luke": 0, "Marty": 0 },
-      tasksConfig: {}
+  <div id="reward-modal" class="modal-overlay">
+    <div class="modal-card"><h3 id="reward-modal-title" style="color: var(--dark);">Saria</h3><input type="text" id="r-name" class="form-input" placeholder="Sariaren izena..."><input type="number" id="r-points" class="form-input" placeholder="Behar diren puntuak..." value="50"><div style="text-align: left; display:flex; flex-direction:column; gap:5px;"><label style="font-size: 0.9rem; font-weight: bold; color: var(--secondary);">Sariaren Irudia:</label><div style="display: flex; align-items: center; gap: 10px;"><input type="file" id="r-file-input" accept="image/*" class="form-input" style="padding: 8px; flex:1;" onchange="prepareImageForCrop(this, 'reward')"><img id="r-preview-thumb" src="" alt="" style="width: 50px; height: 35px; border-radius: 6px; object-fit: cover; display: none; border: 1px solid #CBD5E1;"></div></div><input type="hidden" id="r-image-result"><div style="display: flex; gap: 10px; margin-top: 10px;"><button class="btn-action" style="background: var(--secondary);" onclick="closeRewardModal()">Utzi</button><button class="btn-action btn-green" onclick="saveRewardFromModal()">Gorde saria</button></div></div>
+  </div>
+  <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="prepareImageForCrop(this, 'avatar')">
+  <div id="progress-footer">
+    <div class="progress-info"><span>Gaurko Puntuak: <span id="today-points" style="color: var(--warning);">0 pts</span></span><span style="color: var(--success);">⚡ Bonus: <span id="bonus-points">0 pts</span></span></div>
+    <div class="progress-bar-bg"><div id="progress-bar-fill" class="progress-bar-fill"></div></div>
+  </div>
+
+<script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCRiEwn8tzFTjtp19ExECeUgd6lsrOVa28",
+      authDomain: "zereginak.firebaseapp.com",
+      projectId: "zereginak",
+      storageBucket: "zereginak.firebasestorage.app",
+      messagingSenderId: "754897581210",
+      appId: "1:754897581210:web:eb53e3bfa2de888b679b23",
+      measurementId: "G-MTQ517BD4Z"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // CATÁLOGO DE DOMINAK / LOGROS
+    const BADGES = [
+      { id: 'first_task', name: 'Lehen Zeregina', icon: '🥉', desc: 'Bete zure lehenengo zeregina', check: (stats) => stats.totalDone >= 1 },
+      { id: 'streak_3', name: 'Trenez Antzera', icon: '🔥', desc: '3 egun jarraian zereginak betetzen', check: (stats) => stats.streak >= 3 },
+      { id: 'streak_7', name: 'Txapeldun Astebete', icon: '⚡', desc: '7 egun jarraian zereginak betetzen', check: (stats) => stats.streak >= 7 },
+      { id: 'total_10', name: 'Super Langilea', icon: '🌟', desc: '10 zeregin osatu guztira', check: (stats) => stats.totalDone >= 10 },
+      { id: 'total_50', name: 'Mendiko Gainan', icon: '🏆', desc: '50 zeregin osatu guztira', check: (stats) => stats.totalDone >= 50 },
+      { id: 'shared_task', name: 'Talde Lana', icon: '🤝', desc: 'Bete zeregin partekatu bat', check: (stats) => stats.hasSharedDone },
+      { id: 'special_day', name: 'Egun Berezia', icon: '🎆', desc: 'Egun berezi batean zeregina osatu', check: (stats) => stats.hasSpecialDone }
+    ];
+
+    const SECURITY = {
+      MAX_ATTEMPTS: 5, LOCKOUT_DURATION_MS: 5 * 60 * 1000,
+      getAttempts() {
+        const attempts = parseInt(localStorage.getItem('admin_attempts') || '0');
+        const lastAttempt = parseInt(localStorage.getItem('admin_last_attempt') || '0');
+        const now = Date.now();
+        if (attempts >= this.MAX_ATTEMPTS && now - lastAttempt > this.LOCKOUT_DURATION_MS) { this.resetAttempts(); return { attempts: 0, locked: false }; }
+        return { attempts, locked: attempts >= this.MAX_ATTEMPTS, remainingTime: attempts >= this.MAX_ATTEMPTS ? this.LOCKOUT_DURATION_MS - (now - lastAttempt) : 0 };
+      },
+      recordFailedAttempt() { const a = parseInt(localStorage.getItem('admin_attempts') || '0') + 1; localStorage.setItem('admin_attempts', a); localStorage.setItem('admin_last_attempt', Date.now()); return a; },
+      resetAttempts() { localStorage.removeItem('admin_attempts'); localStorage.removeItem('admin_last_attempt'); },
+      isLocked() { return this.getAttempts().locked; }
     };
 
-    let currentChild = null;
+    const DataValidator = {
+      validateCloudData(data) {
+        if (!data) return false;
+        if (data.rewardsSpent) { for (const c in data.rewardsSpent) { if (typeof data.rewardsSpent[c] !== 'number' || data.rewardsSpent[c] < 0) { console.error('rewardsSpent negativo:', c); return false; } } }
+        if (!Array.isArray(data.children)) return false;
+        if (data.tasksMaster && !Array.isArray(data.tasksMaster)) return false;
+        return true;
+      },
+      sanitizeBeforeSave(data) {
+        const clean = JSON.parse(JSON.stringify(data));
+        if (clean.rewardsSpent) { for (const c in clean.rewardsSpent) clean.rewardsSpent[c] = Math.max(0, Math.round(clean.rewardsSpent[c] || 0)); }
+        clean._lastModified = firebase.firestore.FieldValue.serverTimestamp();
+        clean._modifiedByDevice = auth.currentUser ? auth.currentUser.uid : 'anonymous';
+        clean._appVersion = '2.2.0';
+        return clean;
+      }
+    };
 
-    // 1. MIGRACIÓN AUTOMÁTICA TRANSPARENTE
-    function migrateExistingTasks() {
-      if (!cloudData.globalTasks) {
-        const globalTasksMap = new Map();
+    const OfflineDB = {
+      DB_NAME: 'ZereginakDB', DB_VERSION: 1, STORE_NAME: 'pendingChanges',
+      async openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+          req.onerror = () => reject(req.error);
+          req.onsuccess = () => resolve(req.result);
+          req.onupgradeneeded = (e) => { const db = e.target.result; if (!db.objectStoreNames.contains(this.STORE_NAME)) db.createObjectStore(this.STORE_NAME, { keyPath: 'id', autoIncrement: true }); };
+        });
+      },
+      async queueChange(changeData) {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(this.STORE_NAME, 'readwrite');
+          const store = tx.objectStore(this.STORE_NAME);
+          const req = store.add({ timestamp: Date.now(), data: changeData, synced: false });
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      },
+      async getPendingChanges() {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(this.STORE_NAME, 'readonly');
+          const store = tx.objectStore(this.STORE_NAME);
+          const req = store.getAll();
+          req.onsuccess = () => resolve(req.result.filter(c => !c.synced));
+          req.onerror = () => reject(req.error);
+        });
+      },
+      async markAsSynced(id) {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(this.STORE_NAME, 'readwrite');
+          const store = tx.objectStore(this.STORE_NAME);
+          const req = store.delete(id);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      },
+      async clearAll() {
+        const db = await this.openDB();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(this.STORE_NAME, 'readwrite');
+          const store = tx.objectStore(this.STORE_NAME);
+          const req = store.clear();
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
+    };
 
-        if (cloudData.tasksConfig && typeof cloudData.tasksConfig === 'object') {
-          Object.entries(cloudData.tasksConfig).forEach(([childName, tasks]) => {
-            if (Array.isArray(tasks)) {
-              tasks.forEach(task => {
-                const key = task.id || task.name;
-
-                if (globalTasksMap.has(key)) {
-                  const existingTask = globalTasksMap.get(key);
-                  if (!existingTask.assignedChildren.includes(childName)) {
-                    existingTask.assignedChildren.push(childName);
-                  }
-                } else {
-                  globalTasksMap.set(key, {
-                    ...task,
-                    id: task.id || "task_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
-                    assignedChildren: [childName],
-                    activeFrom: task.activeFrom || null,
-                    activeUntil: task.activeUntil || null,
-                    disabled: !!task.disabled
-                  });
-                }
-              });
-            }
-          });
+    const SyncManager = {
+      isOnline: navigator.onLine,
+      isSyncing: false,
+      init() {
+        window.addEventListener('online', () => {
+          this.isOnline = true;
+          this.showStatus('sync-ok', 'Sincronizatuta', 2000);
+          this.flushPendingChanges();
+        });
+        window.addEventListener('offline', () => {
+          this.isOnline = false;
+          this.showStatus('sync-pending', 'Lineaz kanpo', 0);
+        });
+      },
+      showStatus(cls, text, dur) {
+        const el = document.getElementById('sync-status');
+        if (!el) return;
+        el.className = cls;
+        el.textContent = text;
+        el.style.display = 'block';
+        if (dur > 0) setTimeout(() => { if (el.className === cls) el.style.display = 'none'; }, dur);
+      },
+      hideStatus() { const el = document.getElementById('sync-status'); if (el) el.style.display = 'none'; },
+      async queueChange(changeData) {
+        if (!this.isOnline) {
+          await OfflineDB.queueChange(changeData);
+          const pending = await OfflineDB.getPendingChanges();
+          this.showStatus('sync-pending', pending.length + ' aldaketa zain...', 0);
+          return false;
         }
+        return true;
+      },
+      async flushPendingChanges() {
+        if (this.isSyncing) return;
+        this.isSyncing = true;
+        const pending = await OfflineDB.getPendingChanges();
+        if (!pending.length) { this.hideStatus(); this.isSyncing = false; return; }
+        this.showStatus('sync-pending', 'Sincronizatzen ' + pending.length + '...', 0);
+        let successCount = 0, failCount = 0;
+        for (const change of pending) {
+          try { this.applyPendingChange(change.data); await OfflineDB.markAsSynced(change.id); successCount++; }
+          catch (e) { console.error('Error aplicando cambio:', e); failCount++; }
+        }
+        try {
+          const dataToSave = DataValidator.sanitizeBeforeSave(cloudData);
+          await db.collection("familia").doc("app_state").set(dataToSave);
+          saveLocalBackup();
+          if (failCount === 0) { this.showStatus('sync-ok', 'Sincronizatuta!', 3000); }
+          else { this.showStatus('sync-error', failCount + ' errore', 0); }
+        } catch (e) {
+          console.error('Error guardando en Firestore:', e);
+          this.showStatus('sync-error', 'Errorea gordetzean', 3000);
+        }
+        this.isSyncing = false;
+      },
+      applyPendingChange(changeData) {
+        if (changeData.type === 'toggleCheck') {
+          if (!cloudData.tasksState) cloudData.tasksState = {};
+          if (!cloudData.tasksState[changeData.child]) cloudData.tasksState[changeData.child] = {};
+          if (!cloudData.tasksState[changeData.child][changeData.week]) cloudData.tasksState[changeData.child][changeData.week] = {};
+          cloudData.tasksState[changeData.child][changeData.week][changeData.key] = changeData.value;
+        } else if (changeData.type === 'redeemReward') {
+          if (!cloudData.rewardsSpent) cloudData.rewardsSpent = {};
+          cloudData.rewardsSpent[changeData.child] = (cloudData.rewardsSpent[changeData.child] || 0) + changeData.cost;
+        } else if (changeData.type === 'updateData') {
+          Object.assign(cloudData, changeData.data);
+        }
+      }
+    };
 
-        cloudData.globalTasks = Array.from(globalTasksMap.values());
+    const days = ['Astelehena','Asteartea','Asteazkena','Osteguna','Ostirala','Larunbata','Igandea'];
+    const CATEGORIES = ['Higiene','Ordena','Ikasketak','Jokabidea','Besteak'];
+    
+    let cloudData = { 
+      adminPassword:'1234', 
+      isSpecialDayActive:false, 
+      children:[{name:'Luke',avatar:''},{name:'Marty',avatar:''}], 
+      tasksMaster:[], 
+      rewardsConfig:{}, 
+      rewardsSpent:{}, 
+      tasksState:{}, 
+      childBadges:{} 
+    };
+
+    const defaultTasks = [
+      {id:'dientes',name:'Hortzak garbitu',image:'',category:'Higiene',points:10,checks:3,shared:false,schedule:'all',specificDate:'',active:true,assignedChildren:['Luke','Marty']},
+      {id:'habitacion',name:'Gela jaso',image:'',category:'Ordena',points:15,checks:1,shared:false,schedule:'all',specificDate:'',active:true,assignedChildren:['Luke','Marty']}
+    ];
+    const defaultRewards = [{id:'r1',name:'Marrazki libre bat',points:40,image:''},{id:'r2',name:'Txutxe bat',points:80,image:''}];
+    let currentChild='', adminSelectedChild='', currentView='daily', editingTaskIndex=-1, editingRewardIndex=-1, radarChartInstance=null, isAuthenticated=false, authFallbackMode=false;
+    let cropTargetType='', cropImageObj=new Image(), canvasCrop=document.getElementById('crop-canvas'), ctxCrop=canvasCrop.getContext('2d');
+    let imgPosX=0, imgPosY=0, imgScale=1, isDragging=false, startX=0, startY=0;
+
+    function lockScroll(lock) { document.body.style.overflow = lock ? 'hidden' : ''; }
+    function getCurrentDayIndex() { return (new Date().getDay()+6)%7; }
+    function isWeekend(d) { return d===5||d===6; }
+
+    function getFormattedDateForDayIndex(dayIndex) {
+      const d = new Date();
+      const currentDay = getCurrentDayIndex();
+      const diff = dayIndex - currentDay;
+      const target = new Date(d);
+      target.setDate(d.getDate() + diff);
+      const yyyy = target.getFullYear();
+      const mm = String(target.getMonth() + 1).padStart(2, '0');
+      const dd = String(target.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function isTaskActiveForDay(t, d) {
+      if (t.active === false) return false;
+      if (cloudData.isSpecialDayActive) return t.schedule === 'special' || t.schedule === 'all';
+      if (t.schedule === 'special') return false;
+      if (!t.schedule || t.schedule === 'all') return true;
+      if (t.schedule === 'weekdays' && !isWeekend(d)) return true;
+      if (t.schedule === 'weekend' && isWeekend(d)) return true;
+      if (t.schedule === 'specific_date') {
+        if (!t.specificDate) return false;
+        const targetDateStr = getFormattedDateForDayIndex(d);
+        return t.specificDate === targetDateStr;
+      }
+      return false;
+    }
+
+    function getCurrentWeekStamp() { let d=new Date(), date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); let dayNum=date.getUTCDay()||7; date.setUTCDate(date.getUTCDate()+4-dayNum); let ys=new Date(Date.UTC(date.getUTCFullYear(),0,1)); let wn=Math.ceil((((date-ys)/86400000)+1)/7); return date.getUTCFullYear()+'-W'+wn; }
+    function getRecentWeeks() { let weeks=[], d=new Date(); for(let i=0;i<4;i++){ let date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); let dayNum=date.getUTCDay()||7; date.setUTCDate(date.getUTCDate()+4-dayNum); let ys=new Date(Date.UTC(date.getUTCFullYear(),0,1)); let wn=Math.ceil((((date-ys)/86400000)+1)/7); weeks.push(date.getUTCFullYear()+'-W'+wn); d.setDate(d.getDate()-7); } return weeks; }
+
+    function migrateTasksIfNeeded() {
+      if (!cloudData.tasksMaster || !Array.isArray(cloudData.tasksMaster)) {
+        cloudData.tasksMaster = [];
+        if (cloudData.tasksConfig && typeof cloudData.tasksConfig === 'object') {
+          Object.keys(cloudData.tasksConfig).forEach(childName => {
+            (cloudData.tasksConfig[childName] || []).forEach(oldTask => {
+              let existing = cloudData.tasksMaster.find(m => m.id === oldTask.id || (m.name === oldTask.name && m.category === oldTask.category));
+              if (existing) {
+                if (!existing.assignedChildren.includes(childName)) {
+                  existing.assignedChildren.push(childName);
+                }
+              } else {
+                cloudData.tasksMaster.push({
+                  id: oldTask.id || ('t_' + Math.random().toString(36).substr(2, 9)),
+                  name: oldTask.name,
+                  image: oldTask.image || '',
+                  category: oldTask.category || 'Ordena',
+                  points: typeof oldTask.points === 'number' ? oldTask.points : 10,
+                  checks: typeof oldTask.checks === 'number' ? oldTask.checks : 1,
+                  shared: !!oldTask.shared,
+                  schedule: oldTask.schedule || 'all',
+                  specificDate: oldTask.specificDate || '',
+                  active: oldTask.active !== false,
+                  assignedChildren: [childName]
+                });
+              }
+            });
+          });
+        } else {
+          const kids = (cloudData.children || []).map(c => c.name);
+          cloudData.tasksMaster = defaultTasks.map(dt => ({
+            ...dt,
+            specificDate: '',
+            active: true,
+            assignedChildren: [...kids]
+          }));
+        }
+      }
+    }
+
+    async function initAuth() {
+      const loadingText = document.getElementById('loading-text');
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try { await auth.signInAnonymously(); isAuthenticated = true; console.log('Auth OK intento', attempt, 'UID:', auth.currentUser.uid); return true; }
+        catch (err) { console.error('Auth intento', attempt, 'fallido:', err.code, err.message); if (attempt < 3) { loadingText.innerText = 'Auth saiatzen... ('+attempt+'/3)'; await new Promise(r => setTimeout(r, 1000 * attempt)); } }
+      }
+      console.warn('Auth fallo tras 3 intentos. Activando modo fallback local.');
+      authFallbackMode = true; isAuthenticated = false;
+      document.getElementById('auth-fallback-banner').style.display = 'block';
+      loadingText.innerText = 'Modu lokala (hodeia ez dago erabilgarri)';
+      try { const saved = localStorage.getItem('zereginak_local_backup'); if (saved) { const parsed = JSON.parse(saved); if (DataValidator.validateCloudData(parsed)) { cloudData = parsed; migrateTasksIfNeeded(); } } } catch(e) {}
+      return false;
+    }
+
+    function saveLocalBackup() { try { localStorage.setItem('zereginak_local_backup', JSON.stringify(cloudData)); } catch(e) {} }
+
+    function initFirestoreSync() {
+      initAuth().then((authOk) => {
+        if (!authOk) {
+          document.getElementById('loading-overlay').style.display = 'none';
+          const kids = getChildrenList();
+          if (kids.length > 0) { if (!adminSelectedChild || !kids.some(k=>k.name===adminSelectedChild)) adminSelectedChild = kids[0].name; if (!currentChild || !kids.some(k=>k.name===currentChild)) currentChild = kids[0].name; }
+          refreshCurrentView();
+          return;
+        }
+        db.collection("familia").doc("app_state").onSnapshot((doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            if (DataValidator.validateCloudData(data)) { 
+              cloudData = data; 
+              if(!cloudData.childBadges) cloudData.childBadges={}; 
+              migrateTasksIfNeeded();
+              saveLocalBackup(); 
+            }
+            else { console.error('Datos invalidos recibidos'); SyncManager.showStatus('sync-error','Datu baliogabeak',3000); }
+          } else {
+            cloudData = { adminPassword:'1234', isSpecialDayActive:false, children:[{name:'Luke',avatar:''},{name:'Marty',avatar:''}], tasksMaster:defaultTasks, rewardsConfig:{}, rewardsSpent:{}, tasksState:{}, childBadges:{} };
+            db.collection("familia").doc("app_state").set(cloudData);
+          }
+          document.getElementById('loading-overlay').style.display = 'none';
+          const kids = getChildrenList();
+          if (kids.length > 0) { if (!adminSelectedChild || !kids.some(k=>k.name===adminSelectedChild)) adminSelectedChild = kids[0].name; if (!currentChild || !kids.some(k=>k.name===currentChild)) currentChild = kids[0].name; }
+          refreshCurrentView();
+          SyncManager.flushPendingChanges();
+        }, (error) => {
+          console.error("Firestore error:", error);
+          document.getElementById('loading-overlay').innerHTML = '<div style="color:var(--danger)">Ezin izan da hodeiarekin konektatu.<br><small>'+error.message+'</small><br><br><button onclick="location.reload()" class="btn-action" style="background:var(--primary);width:auto;padding:10px 20px;">Berriz saiatu</button></div>';
+        });
+      });
+    }
+
+    async function saveCloudData() {
+      if (authFallbackMode) { saveLocalBackup(); SyncManager.showStatus('sync-pending', 'Modu lokala', 2000); return Promise.resolve(); }
+      if (!DataValidator.validateCloudData(cloudData)) { SyncManager.showStatus('sync-error','Datu baliogabeak',3000); return Promise.reject('Datos invalidos'); }
+      if (!SyncManager.isOnline) { await SyncManager.queueChange({ type: 'updateData', data: JSON.parse(JSON.stringify(cloudData)) }); return Promise.resolve(); }
+      const dataToSave = DataValidator.sanitizeBeforeSave(cloudData);
+      return db.collection("familia").doc("app_state").set(dataToSave).then(()=>{ saveLocalBackup(); }).catch((err)=>{ console.error("Save error:",err); SyncManager.showStatus('sync-error','Errorea gordetzean',3000); SyncManager.queueChange({ type: 'updateData', data: JSON.parse(JSON.stringify(cloudData)) }); });
+    }
+
+    function getChildrenList() { return cloudData.children||[]; }
+    function getAdminPass() { return cloudData.adminPassword||'1234'; }
+    
+    function getChildTasks(childName) {
+      if (!cloudData.tasksMaster || !Array.isArray(cloudData.tasksMaster)) return [];
+      return cloudData.tasksMaster.filter(t => t.active !== false && Array.isArray(t.assignedChildren) && t.assignedChildren.includes(childName));
+    }
+
+    function getChildRewards(n) { let raw=(cloudData.rewardsConfig&&cloudData.rewardsConfig[n])||JSON.parse(JSON.stringify(defaultRewards)); return [...raw].sort((a,b)=>a.points!==b.points?a.points-b.points:a.name.localeCompare(b.name)); }
+    function getChildState(n) { return (cloudData.tasksState&&cloudData.tasksState[n])||{}; }
+
+    async function saveChildStateToCloud(childName, stateObj) {
+      let recent=getRecentWeeks(), cleaned={}; recent.forEach(w=>{if(stateObj[w])cleaned[w]=stateObj[w]}); if(!cloudData.tasksState)cloudData.tasksState={}; cloudData.tasksState[childName]=cleaned;
+      if (!SyncManager.isOnline) {
+        await SyncManager.queueChange({ type: 'updateData', data: { tasksState: cloudData.tasksState } });
+        saveLocalBackup();
+        return;
+      }
+      await saveCloudData();
+    }
+
+    function playBellSound() { try { const a=new(window.AudioContext||window.webkitAudioContext)(), o=a.createOscillator(), g=a.createGain(); o.type='sine'; o.frequency.setValueAtTime(587.33,a.currentTime); o.frequency.exponentialRampToValueAtTime(880,a.currentTime+0.12); g.gain.setValueAtTime(0.3,a.currentTime); g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.9); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+0.9); } catch(e){} }
+    function triggerGamificationEffect() { if(navigator.vibrate){try{navigator.vibrate(150);}catch(e){}} playBellSound(); const em=['🎉','🥳','😄','🌟','🚀','✨','🏆','🙌','🔥','💪','⭐','😃']; const r=em[Math.floor(Math.random()*em.length)]; const p=document.getElementById('emoji-popup'); p.innerText=r; p.classList.add('show'); setTimeout(()=>p.classList.remove('show'),1000); }
+    function toggleSpecialDayMode() { cloudData.isSpecialDayActive=!cloudData.isSpecialDayActive; saveCloudData(); renderAdminPanel(); }
+
+    function getChildStats(childName) {
+      const stateObj = getChildState(childName);
+      const tasks = getChildTasks(childName);
+      let totalDone = 0, hasSharedDone = false, hasSpecialDone = false;
+      const activeDays = new Set();
+
+      Object.keys(stateObj).forEach(week => {
+        const ws = stateObj[week] || {};
+        Object.keys(ws).forEach(k => {
+          if (ws[k] === true) {
+            totalDone++;
+            const parts = k.split('_');
+            if (parts.length >= 2) activeDays.add(week + '_' + parts[1]);
+            const taskId = parts[0];
+            const t = tasks.find(x => x.id === taskId);
+            if (t) {
+              if (t.shared) hasSharedDone = true;
+              if (t.schedule === 'special' || cloudData.isSpecialDayActive) hasSpecialDone = true;
+            }
+          }
+        });
+      });
+
+      let streak = 0, currentStreak = 0;
+      days.forEach(d => {
+        const cw = getCurrentWeekStamp();
+        if (activeDays.has(cw + '_' + d)) { currentStreak++; if (currentStreak > streak) streak = currentStreak; }
+        else { currentStreak = 0; }
+      });
+
+      return { totalDone, streak, hasSharedDone, hasSpecialDone };
+    }
+
+    function checkAndGrantBadges(childName) {
+      if (!cloudData.childBadges) cloudData.childBadges = {};
+      if (!cloudData.childBadges[childName]) cloudData.childBadges[childName] = [];
+      const stats = getChildStats(childName);
+      const newlyUnlocked = [];
+
+      BADGES.forEach(badge => {
+        const unlocked = cloudData.childBadges[childName].includes(badge.id);
+        if (!unlocked && badge.check(stats)) {
+          cloudData.childBadges[childName].push(badge.id);
+          newlyUnlocked.push(badge);
+        }
+      });
+
+      if (newlyUnlocked.length > 0) {
         saveCloudData();
+        newlyUnlocked.forEach(b => showBadgeUnlockedModal(b));
       }
     }
 
-    function saveCloudData() {
-      localStorage.setItem('cloudData', JSON.stringify(cloudData));
-      if (typeof syncWithFirestore === 'function') {
-        syncWithFirestore(cloudData);
-      }
+    function showBadgeUnlockedModal(badge) {
+      document.getElementById('unlock-badge-icon').innerText = badge.icon;
+      document.getElementById('unlock-badge-title').innerText = badge.name;
+      document.getElementById('unlock-badge-desc').innerText = badge.desc;
+      lockScroll(true);
+      document.getElementById('badge-unlocked-modal').style.display = 'flex';
+      triggerGamificationEffect();
     }
 
-    // 2. NAVEGACIÓN Y VISIBILIDAD DE PANTALLAS
-    function showScreen(screenId) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(screenId).classList.add('active');
-    }
-
-    function showLandingScreen() {
-      currentChild = null;
-      renderLanding();
-      showScreen('screen-landing');
-    }
-
-    function showChildScreen(childName) {
-      currentChild = childName;
-      document.getElementById('child-view-title').innerText = `${childName} - Zereginak`;
-      const points = (cloudData.points && cloudData.points[childName]) || 0;
-      document.getElementById('child-view-points').innerText = `Puntuak: ${points} pt`;
-      renderChildTasks();
-      showScreen('screen-child');
+    function closeBadgeUnlockedModal() {
+      lockScroll(false);
+      document.getElementById('badge-unlocked-modal').style.display = 'none';
     }
 
     function showAdminScreen() {
-      renderAdminTasks();
-      showScreen('screen-admin');
+      const sec=SECURITY.getAttempts();
+      if(sec.locked){alert('Saiakera gehiegi. Saiatu berriro '+Math.ceil(sec.remainingTime/1000)+' segundotan.'); return;}
+      const pass=prompt("Sartu Kudeaketa Panelaren pasahitza:"); if(pass===null)return;
+      if(pass!==getAdminPass()){const a=SECURITY.recordFailedAttempt(); if(a>=SECURITY.MAX_ATTEMPTS)alert('Saiakera gehiegi! Panela blokeatuta 5 minutuz.'); else alert('Pasahitz okerra! '+(SECURITY.MAX_ATTEMPTS-a)+' saiakera geratzen dira.'); return;}
+      SECURITY.resetAttempts();
+      document.getElementById('profile-selection').style.display='none'; document.getElementById('calendar-screen').style.display='none'; document.getElementById('rewards-screen').style.display='none'; document.getElementById('badges-screen').style.display='none'; document.getElementById('progress-footer').style.display='none'; document.getElementById('admin-screen').style.display='block'; renderAdminPanel();
     }
 
-    function toggleSpecialDay(checked) {
-      cloudData.isSpecialDayActive = checked;
-      saveCloudData();
-    }
+    function renderProfileSelection() { const c=document.getElementById('profile-buttons-container'); c.innerHTML=''; getChildrenList().forEach(child=>{const b=document.createElement('button'); b.className='btn-profile'; b.onclick=()=>selectProfile(child.name); let ah=child.avatar?'<img class="profile-avatar-img" src="'+child.avatar+'" alt="avatar">':'<svg width="60" height="60" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#E2E8F0"/><circle cx="50" cy="40" r="20" fill="#94A3B8"/><path d="M 20 85 Q 50 50 80 85" fill="#94A3B8"/></svg>'; b.innerHTML=ah+'<span>'+child.name.toUpperCase()+'</span>'; c.appendChild(b);}); }
+    function selectProfile(name) { currentChild=name; document.getElementById('profile-selection').style.display='none'; document.getElementById('admin-screen').style.display='none'; document.getElementById('rewards-screen').style.display='none'; document.getElementById('badges-screen').style.display='none'; document.getElementById('calendar-screen').style.display='block'; document.getElementById('progress-footer').style.display='flex'; document.getElementById('app-subtitle').innerText='Zereginak - '+currentChild; currentView='daily'; renderView(); }
+    function showProfiles() { document.getElementById('calendar-screen').style.display='none'; document.getElementById('rewards-screen').style.display='none'; document.getElementById('badges-screen').style.display='none'; document.getElementById('admin-screen').style.display='none'; document.getElementById('progress-footer').style.display='none'; document.getElementById('profile-selection').style.display='block'; renderProfileSelection(); }
+    function showCalendarScreen() { document.getElementById('rewards-screen').style.display='none'; document.getElementById('badges-screen').style.display='none'; document.getElementById('admin-screen').style.display='none'; document.getElementById('calendar-screen').style.display='block'; document.getElementById('progress-footer').style.display='flex'; renderView(); }
+    function showRewardsScreen() { document.getElementById('calendar-screen').style.display='none'; document.getElementById('badges-screen').style.display='none'; document.getElementById('admin-screen').style.display='none'; document.getElementById('rewards-screen').style.display='block'; document.getElementById('progress-footer').style.display='flex'; renderRewardsView(); }
+    function showBadgesScreen() { document.getElementById('calendar-screen').style.display='none'; document.getElementById('rewards-screen').style.display='none'; document.getElementById('admin-screen').style.display='none'; document.getElementById('badges-screen').style.display='block'; document.getElementById('progress-footer').style.display='flex'; renderBadgesView(); }
+    function toggleView() { currentView=currentView==='daily'?'weekly':'daily'; renderView(); }
+    function refreshCurrentView() { if(document.getElementById('calendar-screen').style.display==='block')renderView(); else if(document.getElementById('rewards-screen').style.display==='block')renderRewardsView(); else if(document.getElementById('badges-screen').style.display==='block')renderBadgesView(); else if(document.getElementById('admin-screen').style.display==='block')renderAdminPanel(); else showProfiles(); }
 
-    // 3. LÓGICA DE FILTRADO DE ZEREGINAK
-    function isTaskActiveForChildAndDate(task, childName, targetDate = new Date()) {
-      if (task.disabled) return false;
-      if (task.assignedChildren && !task.assignedChildren.includes(childName)) return false;
+    function renderView() { const c=document.getElementById('view-container'), tb=document.getElementById('btn-toggle-view'); if(currentView==='daily'){tb.innerHTML='Aste osoa<br>ikusi'; renderDailyView(c);} else {tb.innerHTML='Gaurko eguna<br>ikusi'; renderWeeklyView(c,currentChild,false);} updateFooter(); updateRadarChart(); }
 
-      const todayStr = targetDate.toISOString().split('T')[0];
-      if (task.activeFrom && todayStr < task.activeFrom) return false;
-      if (task.activeUntil && todayStr > task.activeUntil) return false;
+    function renderDailyView(container) {
+      const di=getCurrentDayIndex(), cdn=days[di], allTasks=getChildTasks(currentChild), stateObj=getChildState(currentChild), cw=getCurrentWeekStamp(), ws=stateObj[cw]||{};
+      const tasks=allTasks.filter(t=>isTaskActiveForDay(t,di));
+      const isSpec=cloudData.isSpecialDayActive;
+      let badgeLabel=isSpec?'GAUR EGUN BEREZIA DA!':'Gaur: '+cdn;
+      let html='<div class="day-badge-wrap"><div class="day-badge '+(isSpec?'special-mode':'')+'">'+badgeLabel+'</div></div>';
+      if(tasks.length===0) html+='<div style="text-align:center;padding:40px;color:var(--secondary);font-weight:bold;">Egun honetarako ez dago zereginik pentsatuta!</div>';
+      tasks.forEach(task=>{
+        const nc=task.checks||1; let ch='';
+        for(let i=1;i<=nc;i++){const k=task.id+'_'+cdn+'_chk'+i, done=ws[k]===true; ch+='<div class="checkbox-large '+(done?'state-done':'')+'" onclick="toggleCheck(\''+currentChild+'\',\''+k+'\')"></div>';}
+        const imgSrc=task.image&&task.image.trim()!==''?task.image:''; const imgTag=imgSrc?'<img class="daily-task-img-bg" src="'+imgSrc+'" alt="bg" onerror="this.style.display=\'none\'">':'';
+        
+        let schedBadge = '';
+        if (task.schedule === 'special') schedBadge = '<div class="badge-special">Berezia</div>';
+        else if (task.schedule === 'specific_date' && task.specificDate) schedBadge = '<div class="badge-date">📅 ' + task.specificDate + '</div>';
 
-      const dayIndex = (targetDate.getDay() + 6) % 7;
-      const isWeekend = dayIndex === 5 || dayIndex === 6;
-
-      if (task.schedule === 'weekdays' && isWeekend) return false;
-      if (task.schedule === 'weekend' && !isWeekend) return false;
-      if (task.schedule === 'special' && !cloudData.isSpecialDayActive) return false;
-
-      return true;
-    }
-
-    // 4. RENDERING DE PANTALLAS
-    function renderLanding() {
-      const container = document.getElementById('profile-container');
-      container.innerHTML = '';
-
-      document.getElementById('toggle-special-day').checked = !!cloudData.isSpecialDayActive;
-
-      cloudData.children.forEach(child => {
-        const points = (cloudData.points && cloudData.points[child]) || 0;
-        const card = document.createElement('div');
-        card.className = 'profile-card';
-        card.onclick = () => showChildScreen(child);
-
-        card.innerHTML = `
-          <div class="profile-info">
-            <div class="avatar-circle">${child.charAt(0).toUpperCase()}</div>
-            <div>
-              <div class="profile-name">${child}</div>
-              <div class="profile-points">${points} pt</div>
-            </div>
-          </div>
-          <span>➔</span>
-        `;
-        container.appendChild(card);
+        html+='<div class="daily-task-card-large">'+imgTag+'<div class="daily-task-overlay"><div><div class="badges-row"><div class="badge-dark">'+task.category+'</div><div class="badge-dark"><span class="star-icon">'+task.points+' pts</span></div>'+(task.shared?'<div class="badge-shared">Partekatua (x2)</div>':'')+schedBadge+(nc>1?'<div class="badge-dark">Checks: '+nc+'</div>':'')+'</div><div class="task-title-large">'+task.name+'</div></div><div class="checks-container">'+ch+'</div></div></div>';
       });
+      container.innerHTML=html;
     }
 
-    function renderChildTasks() {
-      const container = document.getElementById('child-task-container');
-      container.innerHTML = '';
-
-      const activeTasks = cloudData.globalTasks.filter(t => isTaskActiveForChildAndDate(t, currentChild));
-
-      if (activeTasks.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #95A5A6;">Gaurkoz ez dago zereginik gertu! 🎉</div>`;
-        return;
-      }
-
-      activeTasks.forEach(task => {
-        const card = document.createElement('div');
-        card.className = 'task-card';
-
-        const imgHtml = task.image 
-          ? `<img src="${task.image}" class="task-img">` 
-          : `<div class="task-img" style="display:flex;align-items:center;justify-content:center;color:#BDC3C7;font-size:1.5rem;">📋</div>`;
-
-        card.innerHTML = `
-          ${imgHtml}
-          <div class="task-info">
-            <div class="task-title">${task.name}</div>
-            <div class="task-meta">${task.category || 'Orokorra'}</div>
-          </div>
-          <div class="task-points">+${task.points} pt</div>
-        `;
-        container.appendChild(card);
+    function renderWeeklyView(container, childName, isEditable=false) {
+      const tasks=getChildTasks(childName), stateObj=getChildState(childName), cw=getCurrentWeekStamp(), ws=stateObj[cw]||{};
+      let html='<h3 style="margin-bottom:10px;color:var(--dark);">'+childName+' - Egutegi Astea</h3><table class="weekly-table"><thead><tr><th style="text-align:left;">Zeregina</th>';
+      days.forEach(d=>html+='<th>'+d.substring(0,3)+'</th>'); html+='</tr></thead><tbody>';
+      tasks.forEach(task=>{
+        html+='<tr><td style="font-weight:bold;text-align:left;font-size:0.9rem;">'+task.name+'<br><span style="font-size:0.75rem;color:var(--secondary);">'+task.points+'pts '+(task.shared?'(x2)':'')+'</span></td>';
+        days.forEach((day,dayIdx)=>{
+          const applies=isTaskActiveForDay(task,dayIdx);
+          html+='<td style="'+(!applies?'background:#F8FAFC;':'')+'">';
+          if(applies){const nc=task.checks||1; for(let i=1;i<=nc;i++){const k=task.id+'_'+day+'_chk'+i, done=ws[k]===true; if(isEditable) html+='<div class="chk-weekly editable '+(done?'done':'')+'" onclick="toggleWeeklyCheckFromAdmin(\''+childName+'\',\''+k+'\')"></div>'; else html+='<div class="chk-weekly '+(done?'done':'')+'"></div>';}}
+          else html+='<span style="color:#CBD5E1;font-size:0.8rem;">-</span>';
+          html+='</td>';
+        });
+        html+='</tr>';
       });
+      html+='</tbody></table>'; container.innerHTML=html;
     }
 
-    function renderAdminTasks() {
-      const container = document.getElementById('admin-task-container');
-      container.innerHTML = '';
-
-      if (!cloudData.globalTasks || cloudData.globalTasks.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 30px; color: #95A5A6;">Ez dago zereginik kargatuta.</div>`;
-        return;
-      }
-
-      cloudData.globalTasks.forEach(task => {
-        const card = document.createElement('div');
-        card.className = 'task-card';
-        card.style.cursor = 'pointer';
-        card.onclick = () => openTaskModal(task.id);
-
-        const imgHtml = task.image 
-          ? `<img src="${task.image}" class="task-img">` 
-          : `<div class="task-img" style="display:flex;align-items:center;justify-content:center;color:#BDC3C7;font-size:1.5rem;">📋</div>`;
-
-        const childrenBadges = (task.assignedChildren || [])
-          .map(c => `<span class="badge badge-child">${c}</span>`)
-          .join('');
-
-        const disabledBadge = task.disabled ? `<span class="badge badge-disabled">Desaktibatuta</span>` : '';
-        const dateBadge = task.activeFrom ? `<span class="badge badge-date">Desde: ${task.activeFrom}</span>` : '';
-
-        card.innerHTML = `
-          ${imgHtml}
-          <div class="task-info">
-            <div class="task-title">${task.name}</div>
-            <div style="margin-top: 4px;">
-              ${childrenBadges}
-              ${disabledBadge}
-              ${dateBadge}
-            </div>
-          </div>
-          <div class="task-points">${task.points} pt</div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    // 5. GESTIÓN DEL MODAL
-    function openTaskModal(taskId = null) {
-      const modal = document.getElementById('task-modal');
-      const childrenContainer = document.getElementById('t-assigned-children-container');
+    function renderBadgesView() {
+      const userBadges = (cloudData.childBadges && cloudData.childBadges[currentChild]) || [];
+      document.getElementById('badges-count-text').innerText = userBadges.length + ' / ' + BADGES.length;
+      const container = document.getElementById('badges-grid-container');
       
-      childrenContainer.innerHTML = '';
-      cloudData.children.forEach(child => {
-        const label = document.createElement('label');
-        label.className = 'checkbox-label';
-        label.innerHTML = `<input type="checkbox" value="${child}" class="child-checkbox"> ${child}`;
-        childrenContainer.appendChild(label);
+      let html = '';
+      BADGES.forEach(badge => {
+        const isUnlocked = userBadges.includes(badge.id);
+        html += `
+          <div class="badge-item-card ${isUnlocked ? 'unlocked' : 'locked'}">
+            <div class="badge-item-icon">${isUnlocked ? badge.icon : '🔒'}</div>
+            <div class="badge-item-title">${badge.name}</div>
+            <div class="badge-item-desc">${badge.desc}</div>
+          </div>
+        `;
       });
+      container.innerHTML = html;
+    }
 
-      if (taskId) {
-        const task = cloudData.globalTasks.find(t => t.id === taskId);
-        if (!task) return;
+    function updateRadarChart() {
+      const canvas=document.getElementById('radarImprovementChart'); if(!canvas)return; const ctx=canvas.getContext('2d');
+      const ct={'Higiene':0,'Ordena':0,'Ikasketak':0,'Jokabidea':0,'Besteak':0};
+      const allTasks=getChildTasks(currentChild), stateObj=getChildState(currentChild), cw=getCurrentWeekStamp(), ws=stateObj[cw]||{};
+      days.forEach((day,di)=>{allTasks.forEach(task=>{if(isTaskActiveForDay(task,di)){const nc=task.checks||1, rawCat=task.category||'Besteak', cat=CATEGORIES.includes(rawCat)?rawCat:'Besteak'; for(let i=1;i<=nc;i++){const k=task.id+'_'+day+'_chk'+i; if(!ws[k]) ct[cat]+=1;}}});});
+      const chartData=CATEGORIES.map(c=>ct[c]);
+      if(radarChartInstance) radarChartInstance.destroy();
+      radarChartInstance=new Chart(ctx,{type:'radar',data:{labels:['Higiene','Ordena','Ikasketak','Jokabidea','Besteak'],datasets:[{label:'Falta diren zereginak',data:chartData,backgroundColor:'rgba(239,68,68,0.25)',borderColor:'rgba(239,68,68,1)',pointBackgroundColor:'rgba(239,68,68,1)',pointBorderColor:'#fff',pointHoverBackgroundColor:'#fff',pointHoverBorderColor:'rgba(239,68,68,1)',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{angleLines:{color:'#E2E8F0'},grid:{color:'#CBD5E1'},pointLabels:{font:{size:12,weight:'bold'},color:'#1E293B'},ticks:{beginAtZero:true,stepSize:1,precision:0}}},plugins:{legend:{display:false}}}});
+    }
 
-        document.getElementById('modal-title-text').innerText = "Editatu Zeregina";
-        document.getElementById('t-id').value = task.id;
-        document.getElementById('t-name').value = task.name;
-        document.getElementById('t-category').value = task.category || '';
-        document.getElementById('t-points').value = task.points;
-        document.getElementById('t-checks').value = task.checks || 1;
-        document.getElementById('t-schedule').value = task.schedule || 'all';
-        document.getElementById('t-active-from').value = task.activeFrom || '';
-        document.getElementById('t-disabled').checked = !!task.disabled;
-        document.getElementById('t-image').value = task.image || '';
+    function calculateChildPointsDetails(childName) {
+      let stateObj=getChildState(childName), recentWeeks=getRecentWeeks(), totalEarned=0, totalBonus=0, kidsList=getChildrenList();
+      recentWeeks.forEach(week=>{
+        let weekState=stateObj[week]||{}, tasks=getChildTasks(childName);
+        tasks.forEach(task=>{
+          const nc=task.checks||1;
+          days.forEach(day=>{
+            let allDone=true;
+            for(let i=1;i<=nc;i++){if(!weekState[task.id+'_'+day+'_chk'+i]){allDone=false;break;}}
+            if(allDone&&nc>0){
+              let basePts=task.points, mult=1;
+              if(task.shared){
+                let allKidsDone=true;
+                if(kidsList.length<=1) allKidsDone=false;
+                else{
+                  kidsList.forEach(other=>{
+                    let otherTasks=getChildTasks(other.name), mt=otherTasks.find(ot=>ot.name===task.name);
+                    if(!mt) allKidsDone=false;
+                    else{let otherState=getChildState(other.name), ows=otherState[week]||{}, onc=mt.checks||1; for(let i=1;i<=onc;i++){if(!ows[mt.id+'_'+day+'_chk'+i]){allKidsDone=false;break;}}}
+                  });
+                }
+                if(allKidsDone) mult=2;
+              }
+              let earned=basePts*mult; totalEarned+=earned; if(mult>1) totalBonus+=basePts*(mult-1);
+            }
+          });
+        });
+      });
+      let spentMap=cloudData.rewardsSpent||{}, spent=spentMap[childName]||0;
+      return {available:Math.max(0,Math.round(totalEarned-spent)),bonus:Math.round(totalBonus)};
+    }
 
-        document.querySelectorAll('.child-checkbox').forEach(cb => {
-          cb.checked = task.assignedChildren && task.assignedChildren.includes(cb.value);
+    function renderRewardsView() {
+      const pd=calculateChildPointsDetails(currentChild);
+      document.getElementById('rewards-available-points').innerText=pd.available+' pts';
+      const container=document.getElementById('rewards-grid-container'), rewards=getChildRewards(currentChild);
+      let html='';
+      rewards.forEach(reward=>{
+        const canAfford=pd.available>=reward.points, missing=reward.points-pd.available;
+        const imgSrc=reward.image&&reward.image.trim()!==''?reward.image:'';
+        const imgTag=imgSrc?'<img class="reward-img-bg" src="'+imgSrc+'" alt="reward" onerror="this.style.display=\'none\'">':'';
+        const action=canAfford?'<div class="available-badge-box">Eskuragarri! Sakatu trukatzeko</div>':'<div class="missing-points-box">-'+missing+' pts</div>';
+        html+='<div class="reward-card '+(canAfford?'':'locked')+'" onclick="'+(canAfford?'redeemReward(\''+reward.id+'\','+reward.points+',\''+reward.name+'\')':'alert(\'Ez dituzu nahikoa puntu. Falta zaizkizu: '+missing+' pts\')')+'">'+imgTag+'<div class="reward-overlay"><div class="badges-row"><div class="badge-dark">'+reward.points+' pts</div></div><div><div class="reward-title">'+reward.name+'</div><div style="margin-top:15px;">'+action+'</div></div></div></div>';
+      });
+      container.innerHTML=html;
+    }
+
+    async function redeemReward(rewardId,cost,rewardName) {
+      if(!confirm('Ziur "'+rewardName+'" saria trukatu nahi duzula '+cost+' puntugatik?'))return;
+      if(!cloudData.rewardsSpent) cloudData.rewardsSpent={};
+      let spent=cloudData.rewardsSpent[currentChild]||0;
+      spent+=cost; cloudData.rewardsSpent[currentChild]=spent;
+      if (!SyncManager.isOnline) {
+        await SyncManager.queueChange({ type: 'redeemReward', child: currentChild, cost: cost });
+        saveLocalBackup();
+      } else {
+        await saveCloudData();
+      }
+      alert('Zorionak! Saria lortu duzu: '+rewardName);
+      renderRewardsView();
+    }
+
+    async function toggleCheck(child,key) {
+      let stateObj=getChildState(child), cw=getCurrentWeekStamp();
+      if(!stateObj[cw]) stateObj[cw]={};
+      const isDone=stateObj[cw][key]===true, newState=!isDone;
+      stateObj[cw][key]=newState;
+      cloudData.tasksState[child] = stateObj;
+      if (!SyncManager.isOnline) {
+        await SyncManager.queueChange({ type: 'toggleCheck', child: child, week: cw, key: key, value: newState });
+        saveLocalBackup();
+      } else {
+        await saveChildStateToCloud(child, stateObj);
+      }
+      if(newState) {
+        triggerGamificationEffect();
+        checkAndGrantBadges(child);
+      }
+      renderView();
+    }
+
+    async function toggleWeeklyCheckFromAdmin(childName,key) {
+      let stateObj=getChildState(childName), cw=getCurrentWeekStamp();
+      if(!stateObj[cw]) stateObj[cw]={};
+      const isDone=stateObj[cw][key]===true;
+      stateObj[cw][key]=!isDone;
+      cloudData.tasksState[childName] = stateObj;
+      if (!SyncManager.isOnline) {
+        await SyncManager.queueChange({ type: 'toggleCheck', child: childName, week: cw, key: key, value: !isDone });
+        saveLocalBackup();
+      } else {
+        await saveChildStateToCloud(childName,stateObj);
+      }
+      renderAdminWeeklyView();
+    }
+
+    function updateFooter() {
+      const di=getCurrentDayIndex(), cdn=days[di], allTasks=getChildTasks(currentChild), stateObj=getChildState(currentChild), cw=getCurrentWeekStamp(), ws=stateObj[cw]||{};
+      const tasks=allTasks.filter(t=>isTaskActiveForDay(t,di));
+      let earnedToday=0, totalToday=0;
+      tasks.forEach(task=>{totalToday+=task.points; const ppc=task.points/(task.checks||1); for(let i=1;i<=(task.checks||1);i++){if(ws[task.id+'_'+cdn+'_chk'+i]) earnedToday+=ppc;}});
+      document.getElementById('today-points').innerText=Math.round(earnedToday)+' pts';
+      const pct=totalToday>0?(earnedToday/totalToday)*100:0;
+      document.getElementById('progress-bar-fill').style.width=pct+'%';
+      const pd=calculateChildPointsDetails(currentChild);
+      document.getElementById('bonus-points').innerText=pd.bonus+' pts';
+    }
+
+    function prepareImageForCrop(input,targetType) {
+      if(input.files&&input.files[0]){
+        cropTargetType=targetType;
+        const reader=new FileReader();
+        reader.onload=function(e){cropImageObj.onload=function(){openCropModal();};cropImageObj.src=e.target.result;};
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+    function openCropModal() {
+      lockScroll(true); document.getElementById('crop-modal').style.display='flex';
+      canvasCrop.width=320; canvasCrop.height=cropTargetType==='avatar'?320:180;
+      let hRatio=canvasCrop.width/cropImageObj.width, vRatio=canvasCrop.height/cropImageObj.height;
+      imgScale=Math.max(hRatio,vRatio);
+      imgPosX=(canvasCrop.width-cropImageObj.width*imgScale)/2;
+      imgPosY=(canvasCrop.height-cropImageObj.height*imgScale)/2;
+      redrawCropCanvas();
+    }
+    function redrawCropCanvas() {
+      ctxCrop.clearRect(0,0,canvasCrop.width,canvasCrop.height);
+      ctxCrop.save(); ctxCrop.translate(imgPosX,imgPosY); ctxCrop.scale(imgScale,imgScale); ctxCrop.drawImage(cropImageObj,0,0); ctxCrop.restore();
+      ctxCrop.fillStyle='rgba(0,0,0,0.5)';
+      if(cropTargetType==='avatar'){
+        ctxCrop.beginPath(); ctxCrop.rect(0,0,canvasCrop.width,canvasCrop.height);
+        let r=canvasCrop.width/2; ctxCrop.arc(r,r,r,0,Math.PI*2,true); ctxCrop.fill();
+        ctxCrop.strokeStyle='#3B82F6'; ctxCrop.lineWidth=3; ctxCrop.beginPath(); ctxCrop.arc(r,r,r,0,Math.PI*2); ctxCrop.stroke();
+      } else { ctxCrop.strokeStyle='#3B82F6'; ctxCrop.lineWidth=3; ctxCrop.strokeRect(0,0,canvasCrop.width,canvasCrop.height); }
+    }
+    function adjustZoom(delta){imgScale=Math.max(0.2,imgScale+delta);redrawCropCanvas();}
+    canvasCrop.onmousedown=canvasCrop.ontouchstart=function(e){isDragging=true;let cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;startX=cx-imgPosX;startY=cy-imgPosY;if(e.type==='touchstart')e.preventDefault();};
+    window.onmousemove=window.ontouchmove=function(e){if(!isDragging)return;let cx=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY;imgPosX=cx-startX;imgPosY=cy-startY;redrawCropCanvas();if(e.type==='touchmove')e.preventDefault();};
+    window.onmouseup=window.ontouchend=function(){isDragging=false;};
+    function closeCropModal(){lockScroll(false);document.getElementById('crop-modal').style.display='none';}
+    function confirmCropImage(){
+      let fc=document.createElement('canvas'),fctx=fc.getContext('2d');
+      let ow=cropTargetType==='avatar'?200:450,oh=Math.round(ow*(canvasCrop.height/canvasCrop.width));
+      fc.width=ow;fc.height=oh;fctx.fillStyle='#FFFFFF';fctx.fillRect(0,0,ow,oh);
+      let ratio=ow/canvasCrop.width;
+      fctx.save();fctx.translate(imgPosX*ratio,imgPosY*ratio);fctx.scale(imgScale*ratio,imgScale*ratio);fctx.drawImage(cropImageObj,0,0);fctx.restore();
+      let cdu=fc.toDataURL('image/jpeg',0.65);
+      if(cropTargetType==='avatar'){let kids=getChildrenList(),co=kids.find(c=>c.name===adminSelectedChild);if(co){co.avatar=cdu;cloudData.children=kids;saveCloudData();}}
+      else if(cropTargetType==='task'){document.getElementById('t-image-result').value=cdu;let thumb=document.getElementById('t-preview-thumb');thumb.src=cdu;thumb.style.display='block';if(editingTaskIndex>=0&&cloudData.tasksMaster[editingTaskIndex]){cloudData.tasksMaster[editingTaskIndex].image=cdu;saveCloudData();}}
+      else if(cropTargetType==='reward'){document.getElementById('r-image-result').value=cdu;let thumb=document.getElementById('r-preview-thumb');thumb.src=cdu;thumb.style.display='block';let rewards=getChildRewards(adminSelectedChild);if(editingRewardIndex>=0&&rewards[editingRewardIndex]){rewards[editingRewardIndex].image=cdu;if(!cloudData.rewardsConfig)cloudData.rewardsConfig={};cloudData.rewardsConfig[adminSelectedChild]=rewards;saveCloudData();}}
+      closeCropModal();
+    }
+
+    function renderAdminPanel() {
+      const isSpec=!!cloudData.isSpecialDayActive, btnSpec=document.getElementById('btn-toggle-special-day');
+      btnSpec.innerText=isSpec?'Aktibatuta (Desaktibatu)':'Desaktibatuta (Aktibatu)';
+      btnSpec.className='btn-action '+(isSpec?'btn-purple':''); if(!isSpec)btnSpec.style.background='var(--secondary)';
+      renderAdminChildTabs(); renderAdminTasks(); renderAdminRewards(); renderAdminWeeklyView();
+    }
+
+    function renderAdminChildTabs() { const tc=document.getElementById('admin-child-tabs'); let html=''; getChildrenList().forEach(child=>{const ac=adminSelectedChild===child.name?'active':'';html+='<div class="child-tab '+ac+'" onclick="selectAdminChild(\''+child.name+'\')">'+child.name+'</div>';});tc.innerHTML=html; }
+    function selectAdminChild(name){adminSelectedChild=name;renderAdminPanel();}
+    function editCurrentChildAvatar(){document.getElementById('avatar-file-input').click();}
+    function addNewChild(){
+      const name=prompt('Haurraren izena:');if(!name)return;
+      let kids=getChildrenList();
+      kids.push({name,avatar:''});
+      cloudData.children=kids;
+      saveCloudData();
+      adminSelectedChild=name;
+      renderAdminPanel();
+    }
+
+    function deleteCurrentChild(){
+      let kids=getChildrenList();if(kids.length<=1){alert('Ezin da haur bakarra ezabatu.');return;}
+      if(!adminSelectedChild)return;
+      if(!confirm('Ziur '+adminSelectedChild+' ezabatu nahi duzula?'))return;
+      const rc=adminSelectedChild;
+      kids=kids.filter(c=>c.name!==rc);
+      cloudData.children=kids;
+      
+      if (cloudData.tasksMaster && Array.isArray(cloudData.tasksMaster)) {
+        cloudData.tasksMaster.forEach(t => {
+          if (Array.isArray(t.assignedChildren)) {
+            t.assignedChildren = t.assignedChildren.filter(c => c !== rc);
+          }
+        });
+      }
+
+      if(cloudData.rewardsConfig)delete cloudData.rewardsConfig[rc];
+      if(cloudData.rewardsSpent)delete cloudData.rewardsSpent[rc];
+      if(cloudData.tasksState)delete cloudData.tasksState[rc];
+      if(cloudData.childBadges)delete cloudData.childBadges[rc];
+      
+      adminSelectedChild=kids[0].name;
+      if(currentChild===rc)currentChild=kids[0].name;
+      saveCloudData();
+      renderAdminPanel();
+    }
+
+    function moveTask(index,direction){
+      if(!cloudData.tasksMaster) return;
+      let tasks=cloudData.tasksMaster, ti=index+direction;
+      if(ti<0||ti>=tasks.length)return;
+      let temp=tasks[index]; tasks[index]=tasks[ti]; tasks[ti]=temp;
+      saveCloudData(); renderAdminPanel();
+    }
+
+    function toggleTaskActive(index) {
+      if(!cloudData.tasksMaster || !cloudData.tasksMaster[index]) return;
+      cloudData.tasksMaster[index].active = !(cloudData.tasksMaster[index].active !== false);
+      saveCloudData();
+      renderAdminPanel();
+    }
+
+    function toggleTaskChildAssignment(taskIndex, childName) {
+      if(!cloudData.tasksMaster || !cloudData.tasksMaster[taskIndex]) return;
+      let task = cloudData.tasksMaster[taskIndex];
+      if(!Array.isArray(task.assignedChildren)) task.assignedChildren = [];
+      const idx = task.assignedChildren.indexOf(childName);
+      if(idx >= 0) {
+        task.assignedChildren.splice(idx, 1);
+      } else {
+        task.assignedChildren.push(childName);
+      }
+      saveCloudData();
+      renderAdminPanel();
+    }
+
+    function renderAdminTasks(){
+      const lc=document.getElementById('admin-task-list');
+      const tasks=cloudData.tasksMaster||[];
+      const kids=getChildrenList();
+      let html='';
+
+      tasks.forEach((task,index)=>{
+        const th=task.image&&task.image.trim()!==''?'<img src="'+task.image+'" alt="thumb">':'<div class="task-admin-placeholder">Ez dago</div>';
+        const isF=index===0, isL=index===tasks.length-1;
+        
+        let sl='Egunero';
+        if(task.schedule==='weekdays') sl='Eskola (L-V)';
+        if(task.schedule==='weekend') sl='Asteburua (S-D)';
+        if(task.schedule==='special') sl='Berezia';
+        if(task.schedule==='specific_date') sl='📅 ' + (task.specificDate||'Data gabe');
+
+        const isGloballyActive = task.active !== false;
+
+        let childPillsHtml = '';
+        kids.forEach(k => {
+          const isAssigned = Array.isArray(task.assignedChildren) && task.assignedChildren.includes(k.name);
+          childPillsHtml += `<span class="child-pill ${isAssigned ? 'active' : ''}" onclick="toggleTaskChildAssignment(${index}, '${k.name}')">${isAssigned ? '✓ ' : '+ '}${k.name}</span>`;
         });
 
-        const preview = document.getElementById('t-preview-img');
-        if (task.image) {
-          preview.src = task.image;
-          preview.style.display = 'block';
-        } else {
-          preview.style.display = 'none';
-        }
+        html += `
+          <div class="task-admin-row">
+            <div class="task-admin-img-col">${th}</div>
+            <div class="task-admin-content-col">
+              <div>
+                <b style="font-size:1.05rem;color:var(--dark);">${task.name}</b> ${task.shared ? '(x2)' : ''}
+                <br>
+                <span style="font-size:0.8rem;color:var(--secondary);">${task.points} pts | ${sl} | ${task.category||'Gabe'}</span>
+              </div>
+              <div class="child-pills-row">
+                <span style="font-size:0.75rem; font-weight:bold; color:var(--secondary); align-self:center;">Nori esleitua:</span>
+                ${childPillsHtml}
+              </div>
+              <div class="task-admin-btns">
+                <button class="btn-action" style="padding:6px 10px;width:auto;background:${isGloballyActive ? 'var(--success)' : 'var(--danger)'};font-size:0.8rem;" onclick="toggleTaskActive(${index})">
+                  ${isGloballyActive ? '✓ Aktibatuta' : '✕ Desaktibatuta'}
+                </button>
+                <button class="btn-action" style="padding:6px 8px;width:auto;background:var(--secondary);font-size:0.8rem;${isF?'opacity:0.3;cursor:default;':''}" onclick="${isF?'':'moveTask('+index+',-1)'}">Gora</button>
+                <button class="btn-action" style="padding:6px 8px;width:auto;background:var(--secondary);font-size:0.8rem;${isL?'opacity:0.3;cursor:default;':''}" onclick="${isL?'':'moveTask('+index+',1)'}">Behera</button>
+                <button class="btn-action" style="padding:6px 10px;width:auto;background:var(--primary);font-size:0.85rem;" onclick="openTaskEditor(${index})">Editatu</button>
+                <button class="btn-action btn-red" style="padding:6px 10px;width:auto;font-size:0.85rem;" onclick="deleteTask(${index})">Ezabatu</button>
+              </div>
+            </div>
+          </div>`;
+      });
+      lc.innerHTML=html;
+    }
 
-        document.getElementById('btn-delete-task').style.display = 'block';
+    function renderAdminRewards(){const lc=document.getElementById('admin-reward-list'),rewards=getChildRewards(adminSelectedChild);let html='';rewards.forEach((reward,index)=>{const th=reward.image&&reward.image.trim()!==''?'<img src="'+reward.image+'" alt="thumb">':'<div class="task-admin-placeholder">Ez dago</div>';html+='<div class="task-admin-row"><div class="task-admin-img-col">'+th+'</div><div class="task-admin-content-col"><div><b style="font-size:1.05rem;color:var(--dark);">'+reward.name+'</b><br><span style="font-size:0.8rem;color:var(--secondary);">'+reward.points+' pts</span></div><div class="task-admin-btns"><button class="btn-action" style="padding:6px 10px;width:auto;background:var(--primary);font-size:0.85rem;" onclick="openRewardEditor('+index+')">Editatu</button><button class="btn-action btn-red" style="padding:6px 10px;width:auto;font-size:0.85rem;" onclick="deleteReward('+index+')">Ezabatu</button></div></div></div>';});lc.innerHTML=html;}
+
+    function onScheduleChange() {
+      const val = document.getElementById('t-schedule').value;
+      const wrap = document.getElementById('t-specific-date-wrap');
+      if (val === 'specific_date') {
+        wrap.style.display = 'flex';
       } else {
-        document.getElementById('modal-title-text').innerText = "Zeregin Berria";
-        document.getElementById('t-id').value = '';
-        document.getElementById('t-name').value = '';
-        document.getElementById('t-category').value = '';
-        document.getElementById('t-points').value = 10;
-        document.getElementById('t-checks').value = 1;
-        document.getElementById('t-schedule').value = 'all';
-        document.getElementById('t-active-from').value = '';
-        document.getElementById('t-disabled').checked = false;
-        document.getElementById('t-image').value = '';
-        document.getElementById('t-preview-img').style.display = 'none';
+        wrap.style.display = 'none';
+      }
+    }
 
-        document.querySelectorAll('.child-checkbox').forEach(cb => cb.checked = true);
-        document.getElementById('btn-delete-task').style.display = 'none';
+    function openTaskEditor(index=-1){
+      lockScroll(true);
+      editingTaskIndex=index;
+      const tasks=cloudData.tasksMaster||[], thumb=document.getElementById('t-preview-thumb');
+      const kids=getChildrenList();
+
+      const childrenContainer = document.getElementById('t-assigned-children-container');
+      childrenContainer.innerHTML = '';
+
+      if(index>=0){
+        let t=tasks[index];
+        document.getElementById('task-modal-title').innerText='Zeregina Editatu';
+        document.getElementById('t-name').value=t.name;
+        document.getElementById('t-points').value=t.points;
+        document.getElementById('t-category').value=t.category||'Ordena';
+        document.getElementById('t-checks').value=t.checks||1;
+        document.getElementById('t-schedule').value=t.schedule||'all';
+        document.getElementById('t-specific-date').value=t.specificDate||'';
+        document.getElementById('t-shared').checked=!!t.shared;
+        document.getElementById('t-image-result').value=t.image||'';
+        if(t.image){thumb.src=t.image;thumb.style.display='block';}else{thumb.style.display='none';}
+
+        kids.forEach(k => {
+          const checked = Array.isArray(t.assignedChildren) && t.assignedChildren.includes(k.name);
+          childrenContainer.innerHTML += `
+            <label class="checkbox-chip-wrap">
+              <input type="checkbox" value="${k.name}" class="t-child-checkbox" ${checked ? 'checked' : ''}>
+              <span>${k.name}</span>
+            </label>
+          `;
+        });
+
+      } else {
+        document.getElementById('task-modal-title').innerText='Zeregin Berria Gehitu';
+        document.getElementById('t-name').value='';
+        document.getElementById('t-points').value='10';
+        document.getElementById('t-category').value='Ordena';
+        document.getElementById('t-checks').value='1';
+        document.getElementById('t-schedule').value='all';
+        document.getElementById('t-specific-date').value='';
+        document.getElementById('t-shared').checked=false;
+        document.getElementById('t-image-result').value='';
+        thumb.style.display='none';
+
+        kids.forEach(k => {
+          childrenContainer.innerHTML += `
+            <label class="checkbox-chip-wrap">
+              <input type="checkbox" value="${k.name}" class="t-child-checkbox" checked>
+              <span>${k.name}</span>
+            </label>
+          `;
+        });
       }
 
-      modal.classList.add('active');
+      onScheduleChange();
+      document.getElementById('t-file-input').value='';
+      document.getElementById('task-modal').style.display='flex';
     }
 
-    function closeTaskModal() {
-      document.getElementById('task-modal').classList.remove('active');
-    }
+    function closeTaskModal(){lockScroll(false);document.getElementById('task-modal').style.display='none';}
 
-    function handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    function saveTaskFromModal(){
+      const name=document.getElementById('t-name').value;
+      if(!name)return alert('Idatzi zereginaren izena');
+      const points=parseInt(document.getElementById('t-points').value)||10;
+      const category=document.getElementById('t-category').value||'Ordena';
+      const checks=parseInt(document.getElementById('t-checks').value)||1;
+      const schedule=document.getElementById('t-schedule').value||'all';
+      const specificDate=document.getElementById('t-specific-date').value||'';
+      const shared=document.getElementById('t-shared').checked;
+      const image=document.getElementById('t-image-result').value;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('t-image').value = e.target.result;
-        const preview = document.getElementById('t-preview-img');
-        preview.src = e.target.result;
-        preview.style.display = 'block';
-      };
-      reader.readAsDataURL(file);
-    }
+      const assignedChildren = [];
+      document.querySelectorAll('.t-child-checkbox:checked').forEach(cb => {
+        assignedChildren.push(cb.value);
+      });
 
-    function saveTask() {
-      const id = document.getElementById('t-id').value || "task_" + Date.now();
-      const name = document.getElementById('t-name').value.trim();
-      const category = document.getElementById('t-category').value.trim();
-      const points = parseInt(document.getElementById('t-points').value) || 0;
-      const checks = parseInt(document.getElementById('t-checks').value) || 1;
-      const schedule = document.getElementById('t-schedule').value;
-      const activeFrom = document.getElementById('t-active-from').value || null;
-      const disabled = document.getElementById('t-disabled').checked;
-      const image = document.getElementById('t-image').value;
+      if(!cloudData.tasksMaster) cloudData.tasksMaster = [];
 
-      const assignedChildren = Array.from(document.querySelectorAll('.child-checkbox:checked')).map(cb => cb.value);
-
-      if (!name) {
-        alert("Sartu zereginaren izena, mesedez.");
-        return;
-      }
-
-      const taskData = {
-        id,
-        name,
-        category,
-        points,
-        checks,
-        schedule,
-        assignedChildren,
-        activeFrom,
-        activeUntil: null,
-        disabled,
-        image
-      };
-
-      const existingIndex = cloudData.globalTasks.findIndex(t => t.id === id);
-      if (existingIndex >= 0) {
-        cloudData.globalTasks[existingIndex] = taskData;
+      if(editingTaskIndex>=0 && cloudData.tasksMaster[editingTaskIndex]) {
+        cloudData.tasksMaster[editingTaskIndex] = {
+          ...cloudData.tasksMaster[editingTaskIndex],
+          name, points, category, checks, schedule, specificDate, shared, image, assignedChildren
+        };
       } else {
-        cloudData.globalTasks.push(taskData);
+        cloudData.tasksMaster.push({
+          id:'t_'+Date.now(),
+          name, points, category, checks, schedule, specificDate, shared, image,
+          active: true,
+          assignedChildren
+        });
       }
 
       saveCloudData();
       closeTaskModal();
-      renderAdminTasks();
+      renderAdminPanel();
     }
 
-    function deleteTask() {
-      const id = document.getElementById('t-id').value;
-      if (!id) return;
-
-      if (confirm("Ziur zaude zeregin hau ezabatu nahi duzula?")) {
-        cloudData.globalTasks = cloudData.globalTasks.filter(t => t.id !== id);
+    function deleteTask(index){
+      if(!confirm('Ziur zeregin hau ezabatu nahi duzula?'))return;
+      if(cloudData.tasksMaster && cloudData.tasksMaster[index]) {
+        cloudData.tasksMaster.splice(index,1);
         saveCloudData();
-        closeTaskModal();
-        renderAdminTasks();
+        renderAdminPanel();
       }
     }
 
-    // INICIALIZACIÓN
-    window.onload = function() {
-      migrateExistingTasks();
-      showLandingScreen();
-    };
+    function openRewardEditor(index=-1){lockScroll(true);editingRewardIndex=index;const rewards=getChildRewards(adminSelectedChild),thumb=document.getElementById('r-preview-thumb');if(index>=0){let r=rewards[index];document.getElementById('reward-modal-title').innerText='Saria Editatu';document.getElementById('r-name').value=r.name;document.getElementById('r-points').value=r.points;document.getElementById('r-image-result').value=r.image||'';if(r.image){thumb.src=r.image;thumb.style.display='block';}else{thumb.style.display='none';}}else{document.getElementById('reward-modal-title').innerText='Sari Berria Gehitu';document.getElementById('r-name').value='';document.getElementById('r-points').value='50';document.getElementById('r-image-result').value='';thumb.style.display='none';}document.getElementById('r-file-input').value='';document.getElementById('reward-modal').style.display='flex';}
+    function closeRewardModal(){lockScroll(false);document.getElementById('reward-modal').style.display='none';}
+    function saveRewardFromModal(){const name=document.getElementById('r-name').value;if(!name)return alert('Idatzi sariaren izena');const points=parseInt(document.getElementById('r-points').value)||50;const image=document.getElementById('r-image-result').value;let rewards=getChildRewards(adminSelectedChild);if(editingRewardIndex>=0)rewards[editingRewardIndex]={...rewards[editingRewardIndex],name,points,image};else rewards.push({id:'r_'+Date.now(),name,points,image});if(!cloudData.rewardsConfig)cloudData.rewardsConfig={};cloudData.rewardsConfig[adminSelectedChild]=rewards;saveCloudData();closeRewardModal();renderAdminRewards();}
+    function deleteReward(index){if(!confirm('Ziur saria ezabatu nahi duzula?'))return;let rewards=getChildRewards(adminSelectedChild);rewards.splice(index,1);cloudData.rewardsConfig[adminSelectedChild]=rewards;saveCloudData();renderAdminRewards();}
+    function renderAdminWeeklyView(){const c=document.getElementById('admin-weekly-view-container');if(adminSelectedChild)renderWeeklyView(c,adminSelectedChild,true);}
+    function updatePassword(){const np=document.getElementById('new-admin-pass').value;if(!np)return alert('Idatzi pasahitz bat');cloudData.adminPassword=np;saveCloudData();alert('Pasahitza gorde da!');document.getElementById('new-admin-pass').value='';}
+
+    SyncManager.init();
+    initFirestoreSync();
   </script>
 </body>
 </html>
